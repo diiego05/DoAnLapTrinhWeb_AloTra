@@ -1,0 +1,234 @@
+/* src/main/resources/static/css/style.css */
+
+/* CÁC STYLE TỔNG THỂ */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa; /* Màu nền nhẹ cho toàn trang */
+}
+
+.section-title {
+    text-align: center;
+    margin-top: 50px; /* Khoảng cách trên */
+    margin-bottom: 40px;
+    font-size: 2.5rem;
+    color: #006633; /* Màu xanh lá cây đậm hơn cho tiêu đề */
+    font-weight: bold;
+}
+
+/* HEADER STYLES (ĐIỀU CHỈNH) */
+.navbar-top {
+    background-color: white; /* Nền trắng cho phần trên của header */
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.navbar-bottom {
+    background-color: #006633; /* Nền xanh lá cây cho menu chính */
+    padding: 0;
+}
+
+.navbar-brand img {
+    height: 40px; /* Chiều cao của logo */
+}
+
+.search-bar {
+    width: 300px; /* Độ rộng của thanh tìm kiếm */
+    margin-left: 20px; /* Khoảng cách so với logo */
+}
+
+.navbar-nav .nav-link {
+    color: white !important; /* Màu chữ trắng cho menu */
+    font-weight: 600;
+    padding: 10px 30px; /* Điều chỉnh padding cho các item menu */
+    text-transform: uppercase;
+}
+.navbar-nav .nav-link:hover {
+    background-color: #004d26; /* Màu nền khi hover */
+}
+
+.user-actions .nav-link {
+    color: #333 !important; /* Màu chữ cho các icon/nút trên cùng bên phải */
+    padding: 0 10px;
+}
+
+/* HERO SECTION STYLES */
+.hero-section {
+    background: url('/alotra-website/images/banner3.png') no-repeat center center;
+    background-size: 100% 100%; /* Kéo giãn toàn bộ */
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    margin-bottom: 50px;
+    margin-top: 5px;
+}
+
+.hero-section h1 {
+    font-size: 3.5rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+.hero-section p {
+    font-size: 1.5rem;
+}
+.hero-section .btn {
+    background-color: #006633; /* Nút màu xanh lá */
+    border-color: #006633;
+    color: white;
+    font-weight: bold;
+    padding: 10px 30px;
+    font-size: 1.2rem;
+}
+.hero-section .btn:hover {
+    background-color: #004d26;
+    border-color: #004d26;
+}
+
+/* PRODUCT CARD STYLES */
+.product-card {
+    border: 1px solid #e0e0e0; /* Viền mỏng */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Bóng nhẹ */
+    transition: all 0.3s ease;
+    background-color: white;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.product-card img {
+    height: 180px; /* Chiều cao cố định cho ảnh sản phẩm */
+    object-fit: cover;
+    width: 100%;
+}
+.product-card .card-body {
+    padding: 15px;
+    text-align: center;
+}
+.product-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+.product-card .card-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+.product-card .price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #006633; /* Màu xanh lá cây cho giá */
+    margin-bottom: 15px;
+}
+.product-card .btn-add-to-cart {
+    background-color: #006633;
+    color: white;
+    border-radius: 5px;
+    font-weight: 600;
+    padding: 8px 20px;
+}
+.product-card .btn-add-to-cart:hover {
+    background-color: #004d26;
+}
+
+
+/* RESPONSIVE ADJUSTMENTS */
+@media (max-width: 991.98px) { /* Cho tablet và mobile */
+    .search-bar {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    .navbar-bottom .navbar-nav {
+        width: 100%;
+        text-align: center;
+    }
+    .navbar-bottom .nav-item {
+        width: 100%;
+    }
+    .navbar-bottom .nav-link {
+        padding: 10px 15px;
+    }
+    .hero-section {
+        min-height: 300px;
+        padding: 60px 0;
+    }
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    .hero-section p {
+        font-size: 1.2rem;
+    }
+    .section-title {
+        font-size: 2rem;
+    }
+}
+@media (max-width: 767.98px) { /* Cho mobile */
+    .hero-section {
+        min-height: 250px;
+        padding: 40px 0;
+    }
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    .hero-section p {
+        font-size: 1rem;
+    }
+    .section-title {
+        font-size: 1.8rem;
+    }
+}
+/* 📁 src/main/resources/static/css/style.css */
+
+/* --- Footer Styles --- */
+.footer-section {
+    background-color:  #004d26;
+}
+
+.footer-section h5 {
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.footer-section p {
+    color: #adb5bd;
+}
+
+.footer-link {
+    color: #adb5bd;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.footer-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+    padding-left: 5px;
+}
+
+.footer-social-icon {
+    display: inline-block;
+    height: 40px;
+    width: 40px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 0 10px 10px 0;
+    text-align: center;
+    line-height: 40px;
+    border-radius: 50%;
+    color: #ffffff;
+    transition: all 0.5s ease;
+}
+
+.footer-social-icon:hover {
+    color: #212529;
+    background-color: #ffffff;
+}

@@ -1,0 +1,88 @@
+package com.alotra.controller;
+
+
+import com.alotra.dto.ProductDTO; // Thêm import
+import com.alotra.service.ProductService; // Thêm import
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List; // Thêm import
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import com.alotra.dto.ProductDTO;
+
+@Controller
+public class HomeController {
+	 @Autowired
+	    private ProductService productService;
+    @GetMapping("/")
+    public String homePage(Model model) {
+        model.addAttribute("pageTitle", "AloTra - Trang Chủ");
+        // Sau này bạn có thể thêm dữ liệu sản phẩm nổi bật vào đây
+     // Lấy danh sách sản phẩm bán chạy từ service
+        List<ProductDTO> bestSellers = productService.findBestSellers();
+
+        // Đưa danh sách vào model với tên là "bestSellers" để HTML có thể dùng
+        model.addAttribute("bestSellers", bestSellers);
+        return "home/index"; // Trả về tên file template (home/index.html)
+    }
+
+    // Tạm thời tạo các controller cơ bản cho các link trên header/footer để tránh lỗi 404
+    @GetMapping("/products")
+    public String productsPage(Model model) {
+        model.addAttribute("pageTitle", "Sản Phẩm của AloTra");
+        return "products/product_list"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(Model model) {
+        model.addAttribute("pageTitle", "Về Chúng Tôi");
+        return "about/about"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/contact")
+    public String contactPage(Model model) {
+        model.addAttribute("pageTitle", "Liên Hệ AloTra");
+        return "contact/contact"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/login")
+    public String loginPage(Model model) {
+        model.addAttribute("pageTitle", "Đăng Nhập");
+        return "auth/login"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/cart")
+    public String cartPage(Model model) {
+        model.addAttribute("pageTitle", "Giỏ Hàng");
+        return "cart/cart"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/policy")
+    public String policyPage(Model model) {
+        model.addAttribute("pageTitle", "Chính Sách");
+        return "policy/policy"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/register")
+    public String registerPage(Model model) {
+        model.addAttribute("pageTitle", "Đăng Ký Tài Khoản");
+        return "auth/register"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage(Model model) {
+        model.addAttribute("pageTitle", "Quên Mật Khẩu");
+        return "auth/forgot_password"; // Sẽ tạo trang này sau
+    }
+
+    @GetMapping("/profile")
+    public String profilePage(Model model) {
+        model.addAttribute("pageTitle", "Thông Tin Tài Khoản");
+        return "profile/profile"; // Sẽ tạo trang này sau
+    }
+}

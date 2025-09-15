@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title th:text="${pageTitle}">AloTra</title>
+
+
+
+
+<!-- Nơi cho phép chèn thêm CSS riêng của từng trang -->
+<th:block th:fragment="additionalCss"></th:block>
+</head>
+<body class="d-flex flex-column h-100">
+	<!-- Bootstrap CSS -->
+	<link
+		href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+		rel="stylesheet">
+	<!-- CSS -->
+	<link rel="stylesheet" th:href="@{/css/style.css}" />
+	<!-- Header -->
+	<header th:replace="~{fragments/header :: header}"></header>
+
+	<!-- Main -->
+	<main class="flex-shrink-0">
+		<div class="container">
+			<div th:replace="${content}"></div>
+		</div>
+	</main>
+
+	<!-- Footer -->
+	<footer th:replace="~{fragments/footer :: footer}"></footer>
+	<link rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+	<!-- jQuery -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- Bootstrap JS  (bottom) -->
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Custom JS  (bottom) -->
+	<script th:src="@{/js/main.js}"></script>
+</body>
+</html>
