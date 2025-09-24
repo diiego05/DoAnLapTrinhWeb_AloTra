@@ -3,7 +3,15 @@
 -- Tác giả: Gemini
 -- Ngày cập nhật: 15/09/2025
 -- ===================================================================================
+/* Đề tài:
+¨Xây dựng website chuỗi bán trà sữa AloTra bằng Spring boot + Thymeleaf + Bootstrap + JPA + SQLServer/MySQL/ postgreSQL+JWT+websocket+Cloudairy."
+Chức năng chung: tìm kiếm và lọc sản phẩm, đăng ký tài khoản có gửi mã OTP kích hoạt qua Email, đăng nhập, đăng xuất, quên mật khẩu có gửi mã OTP kích hoạt qua Email. Mật khẩu phải được mã hóa. Nếu dùng Spring boot thì dùng Spring Security.
 
+Guest: Giao diện Trang chủ (hiển thị sản phẩm bán trên 10 sản phẩm của các shop (sắp xếp theo thứ tự từ lớn đến nhỏ)
+User: Giao diện trang chủ, trang sản phẩm theo danh mục, 20 (sản phẩm mới, bán chạy, đánh giá, yêu thích) nhất được phân trang (hoặc lazy loading), trang profile user (có quản lý địa chỉ nhận hàng khác nhau nếu làm đề tài về Bán hàng), trang chi tiết sản phẩm, giỏ hàng được lưu trên database, thanh toán(COD, VNPAY hoặc MOMO), quản lý lịch sử mua hàng theo trạng thái (đơn hàng mới, đã xác nhận, đang giao, đã giao, hủy, trả hàng- hoàn tiền), thích sản phẩm, sản phẩm đã xem, đánh giá sản phẩm đã mua, bình luận (text (tối thiểu 50 ký tự), hình ảnh/video) sản phẩm đã mua, chọn mã giảm giá,...
+Vendor (Seller): có các quyền của User và thêm các chức năng: đăng ký shop, quản lý trang chủ shop, quản lý sản phẩm của mình, quản lý đơn hàng của shop theo trạng thái (đơn hàng mới, đã xác nhận, đang giao, đã giao, hủy, trả hàng- hoàn tiền), tạo chương trình khuyến mãi, quản lý doanh thu của shop.
+Admin: tìm kiếm và quản lý user, quản lý sản phẩm của từng shop, Quản lý doanh mục, quản lý chiết khấu app cho các shop, quản lý chương trình khuyến mãi (giảm % sản phẩm, giảm phí vận chuyển), quản lý nhà vận chuyển (tên nhà vận chuyển, phí vận chuyển).
+Shipper (phần thêm): Quản lý đơn hàng được phân công đi giao, thống kê đơn hàng được phân công giao*/
 -- Xóa database nếu tồn tại để tạo lại từ đầu
 IF DB_ID('AloTra') IS NOT NULL
 BEGIN
@@ -112,6 +120,10 @@ CREATE TABLE Toppings (
     Status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'        -- Trạng thái ('ACTIVE': đang bán, 'INACTIVE': tạm ngưng).
 );
 GO
+USE AloTra
+Go
+ALTER TABLE Toppings
+ADD CONSTRAINT UQ_Toppings_Name UNIQUE (Name);
 CREATE TABLE Products (
     Id BIGINT IDENTITY(1,1) PRIMARY KEY,                 -- Khóa chính tự tăng, định danh duy nhất cho mỗi sản phẩm gốc.
     CategoryId BIGINT NOT NULL,                         -- Khóa ngoại, liên kết tới danh mục mà sản phẩm này thuộc về.

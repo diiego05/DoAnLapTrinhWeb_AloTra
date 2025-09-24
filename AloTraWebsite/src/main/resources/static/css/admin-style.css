@@ -1,0 +1,59 @@
+body {
+    overflow-x: hidden;
+    background-color: #f8f9fa;
+}
+
+#wrapper {
+    display: flex;
+}
+
+#sidebar-wrapper {
+    width: 280px;
+    min-height: 100vh;
+    flex-shrink: 0; /* Ngăn sidebar bị co lại */
+}
+
+#page-content-wrapper {
+    flex-grow: 1;
+    width: 100%;
+}
+
+.sidebar-heading {
+    padding: 1.1rem 1.25rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.list-group-item {
+    border: none;
+    padding: 0.9rem 1.25rem;
+}
+
+/* === PHẦN QUAN TRỌNG: MÀU XANH LÁ NHẠT KHI ACTIVE === */
+.list-group-item.active-custom {
+    background-color: #d4edda; /* Màu xanh lá nhạt */
+    color: #155724;            /* Màu chữ xanh đậm tương phản */
+    border-left: 5px solid #28a745; /* Thêm điểm nhấn */
+    font-weight: 600;
+}
+.list-group-item-action:hover, .list-group-item-action:focus {
+    background-color: #e9ecef;
+}
+#page-content-wrapper .navbar {
+    padding-top: 1rem;      /* Tăng khoảng đệm trên */
+    padding-bottom: 1rem;   /* Tăng khoảng đệm dưới */
+}
+
+/* ===================== TOGGLE SIDEBAR ===================== */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -280px; /* Ẩn sidebar đi */
+    transition: margin 0.3s ease;
+}
+
+#wrapper #sidebar-wrapper {
+    transition: margin 0.3s ease;
+}
+
+#wrapper #page-content-wrapper {
+    transition: margin 0.3s ease;
+}

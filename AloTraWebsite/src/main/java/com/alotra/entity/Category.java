@@ -1,72 +1,36 @@
 package com.alotra.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import java.util.List;
 
+@Data
 @Entity
 @Table(name = "Categories")
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "Id")
     private Long id;
 
-    @Column(name = "ParentId")
-    private Long parentId;
-
+    @NotBlank(message = "Tên danh mục không được để trống")
     @Column(name = "Name", nullable = false)
     private String name;
 
-    @Column(name = "Slug", nullable = false, unique = true)
+    @NotBlank(message = "Slug không được để trống")
+    @Column(name = "Slug", unique = true, nullable = false)
     private String slug;
 
     @Column(name = "SortOrder")
-    private int sortOrder;
+    private int sortOrder = 0;
 
-    // --- Getters and Setters ---
+    // Mối quan hệ tự tham chiếu: Nhiều danh mục con thuộc về MỘT danh mục cha
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ParentId")
+    private Category parent;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public int getSortOrder() {
-        return sortOrder;
-    }
-
-    public void setSortOrder(int sortOrder) {
-        this.sortOrder = sortOrder;
-    }
+    // Một danh mục cha có thể có nhiều danh mục con
+    @OneToMany(mappedBy = "parent")
+    private List<Category> children;
 }

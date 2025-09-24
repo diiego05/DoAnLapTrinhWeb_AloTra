@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/site-layout :: ~{body(content=~{::main})}}">
+<head>
+    <title>Lịch Sử Đơn Hàng</title>
+</head>
+<body>
+    <main>
+        <h2 class="mb-4">Tài khoản của tôi</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a th:href="@{/account/profile}" class="list-group-item list-group-item-action">Thông tin cá nhân</a>
+                    <a th:href="@{/account/orders}" class="list-group-item list-group-item-action active">Lịch sử đơn hàng</a>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Lịch sử đơn hàng</h5>
+                        <p>Một bảng danh sách các đơn hàng đã đặt sẽ được hiển thị ở đây.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

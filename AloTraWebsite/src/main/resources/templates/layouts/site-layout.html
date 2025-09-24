@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle} ?: 'AloTra'"></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+<body>
+    <header th:fragment="header" class="bg-light p-3">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <a class="navbar-brand" th:href="@{/}">AloTra</a>
+                </nav>
+        </div>
+    </header>
+
+    <main class="container my-4">
+        <div th:replace="${content}">
+            <p>Nội dung trang...</p>
+        </div>
+    </main>
+
+    <footer th:fragment="footer" class="bg-light p-3 mt-auto">
+        <div class="container text-center">
+            <p>&copy; 2025 AloTra. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

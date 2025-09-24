@@ -1,5 +1,57 @@
 USE AloTra
 GO
+-- Đảm bảo bạn đang dùng đúng database
+USE AloTra;
+GO
+
+-- Đảm bảo bạn đang dùng đúng database
+USE AloTra;
+GO
+
+-- 1. XÓA DỮ LIỆU CŨ
+-- ===================================================================
+DELETE FROM Addresses;
+DELETE FROM Branches;
+DELETE FROM Users;
+DELETE FROM Roles;
+GO
+
+-- 2. RESET BỘ ĐẾM ID VỀ 0 (QUAN TRỌNG)
+-- ===================================================================
+DBCC CHECKIDENT ('[Roles]', RESEED, 0);
+DBCC CHECKIDENT ('[Users]', RESEED, 0);
+DBCC CHECKIDENT ('[Branches]', RESEED, 0);
+DBCC CHECKIDENT ('[Addresses]', RESEED, 0);
+GO
+
+-- 3. CHÈN LẠI DỮ LIỆU
+-- ===================================================================
+
+-- Bảng Roles (Bây giờ ID sẽ bắt đầu lại từ 1)
+INSERT INTO Roles (Code, Name) VALUES
+('ADMIN', N'Quản trị viên'),
+('VENDOR', N'Chủ cửa hàng'),
+('USER', N'Khách hàng');
+GO
+
+-- Bảng Users (Bây giờ RoleId 1, 2, 3 sẽ hợp lệ)
+INSERT INTO Users (Email, Phone, IdCardNumber, PasswordHash, FullName, RoleId) VALUES
+('admin@alotra.com', '0901000001', '001001001001', 'hashed_password', N'Admin Tổng', 1),
+('manager.td@alotra.com', '0901000002', '001001001002', 'hashed_password', N'Quản lý Thủ Đức', 2),
+('manager.q1@alotra.com', '0901000003', '001001001003', 'hashed_password', N'Quản lý Quận 1', 2),
+('khachhang.a@email.com', '0901000004', '001001001004', 'hashed_password', N'Khách Hàng A', 3);
+GO
+
+-- Bảng Branches
+INSERT INTO Branches (ManagerId, Name, Slug, Address, Phone, Status) VALUES
+(2, N'AloTra Chi nhánh Thủ Đức', 'alotra-thu-duc', N'123 Võ Văn Ngân, TP. Thủ Đức', '0281112223', 'ACTIVE'),
+(3, N'AloTra Chi nhánh Quận 1', 'alotra-quan-1', N'456 Lê Lợi, Quận 1, TP. HCM', '0284445556', 'ACTIVE');
+GO
+
+-- Bảng Addresses
+INSERT INTO Addresses (UserId, Label, Recipient, Phone, Line1, Ward, District, City, IsDefault) VALUES
+(4, N'Nhà riêng', N'Khách Hàng A', '0901000004', N'789 Đường ABC, Phường 10', N'Phường 10', N'Quận Gò Vấp', N'TP. HCM', 1);
+GO
 INSERT INTO Sizes (Code, Name) 
 VALUES 
     ('S', N'Size Nhỏ'),
