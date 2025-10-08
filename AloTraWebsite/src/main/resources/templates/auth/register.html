@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/auth_layout :: body(pageTitle='Đăng ký', content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+
+<th:block th:fragment="content">
+    <div class="container my-5 d-flex justify-content-center">
+        <div class="card shadow-sm" style="width: 450px;">
+            <div class="card-body p-4">
+
+                <!-- FORM ĐĂNG KÝ -->
+                <div id="register-form-container">
+                    <h3 class="card-title text-center mb-4">Đăng ký tài khoản AloTra</h3>
+                    <div id="register-error" class="alert alert-danger d-none"></div>
+
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Họ & tên*</label>
+                            <input type="text" class="form-control" id="fullName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email*</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Số điện thoại*</label>
+                            <input type="tel" class="form-control" id="phone"
+                                   placeholder="Ví dụ: 0901234567"
+                                   required pattern="0[0-9]{9,10}"
+                                   title="Số điện thoại phải bắt đầu bằng 0 và có 10 hoặc 11 chữ số">
+                        </div>
+
+                        <!-- Mật khẩu -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mật khẩu*</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Xác nhận mật khẩu -->
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Xác nhận mật khẩu*</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassword">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-auth-primary btn-lg">Đăng ký</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <small>Đã có tài khoản?
+                            <a th:href="@{/login}" class="auth-link">Đăng nhập ngay</a>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- FORM OTP -->
+                <div id="otp-form-container" class="d-none">
+                    <h3 class="card-title text-center mb-3">Xác thực OTP</h3>
+                    <p class="text-center text-muted">
+                        Mã OTP gồm 6 chữ số đã được gửi đến email
+                        <strong id="otp-email" class="text-dark"></strong>.
+                    </p>
+
+                    <div id="otp-error" class="alert alert-danger d-none"></div>
+
+                    <form id="otp-form">
+                        <div class="mb-3">
+                            <label for="otp" class="form-label">Mã OTP*</label>
+                            <input type="text" class="form-control form-control-lg text-center"
+                                   id="otp" required maxlength="6"
+                                   placeholder="_ _ _ _ _ _">
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-auth-primary btn-lg">Xác thực</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const contextPath = document.body.dataset.contextPath || '';
+
+            // Form và input
+            const registerForm = document.getElementById('register-form');
+            const otpForm = document.getElementById('otp-form');
+            const registerFormContainer = document.getElementById('register-form-container');
+            const otpFormContainer = document.getElementById('otp-form-container');
+
+            const fullNameInput = document.getElementById('fullName');
+            const emailInput = document.getElementById('email');
+            const phoneInput = document.getElementById('phone');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const otpInput = document.getElementById('otp');
+
+            const registerError = document.getElementById('register-error');
+            const otpError = document.getElementById('otp-error');
+            const otpEmailDisplay = document.getElementById('otp-email');
+
+            // === HIỆN / ẨN MẬT KHẨU ===
+            document.querySelectorAll('.toggle-password').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const icon = this.querySelector('i');
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    icon.classList.toggle('fa-eye');
+                    icon.classList.toggle('fa-eye-slash');
+                });
+            });
+
+            // === XỬ LÝ FORM ĐĂNG KÝ ===
+            registerForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                registerError.classList.add('d-none');
+
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    registerError.textContent = 'Mật khẩu xác nhận không khớp!';
+                    registerError.classList.remove('d-none');
+                    return;
+                }
+
+                const data = {
+                    fullName: fullNameInput.value,
+                    email: emailInput.value,
+                    phone: phoneInput.value,
+                    password: passwordInput.value
+                };
+
+                try {
+                    const response = await fetch(`${contextPath}api/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        otpEmailDisplay.textContent = emailInput.value;
+                        registerFormContainer.classList.add('d-none');
+                        otpFormContainer.classList.remove('d-none');
+                    } else {
+                        const errorText = await response.text();
+                        registerError.textContent = errorText || 'Đăng ký thất bại.';
+                        registerError.classList.remove('d-none');
+                    }
+                } catch (error) {
+                    registerError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+                    registerError.classList.remove('d-none');
+                }
+            });
+
+            // === XỬ LÝ FORM OTP ===
+            otpForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                otpError.classList.add('d-none');
+
+                const data = {
+                    email: emailInput.value,
+                    otp: otpInput.value
+                };
+
+                try {
+                    const response = await fetch(`${contextPath}api/auth/verify-otp`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.');
+                        window.location.href = `${contextPath}login`;
+                    } else {
+                        const errorText = await response.text();
+                        otpError.textContent = errorText || 'Mã OTP không hợp lệ.';
+                        otpError.classList.remove('d-none');
+                    }
+                } catch (error) {
+                    otpError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+                    otpError.classList.remove('d-none');
+                }
+            });
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

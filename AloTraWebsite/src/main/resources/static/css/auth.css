@@ -1,0 +1,77 @@
+/* --- General Auth Page Style --- */
+body.auth-page {
+    background-color: #f8f9fa; /* Màu nền xám nhạt */
+    font-family: Arial, sans-serif;
+}
+
+/* --- Card Style --- */
+.auth-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 450px; /* Giới hạn chiều rộng card */
+}
+
+.auth-card .card-body {
+    padding: 2.5rem; /* Tăng khoảng cách bên trong card */
+}
+
+.auth-card .card-title {
+    font-weight: 600;
+    color: #333;
+}
+
+/* --- Form Input Style --- */
+.auth-form .form-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.auth-form .form-control {
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Hiệu ứng khi focus vào input: Border màu xanh lá */
+.auth-form .form-control:focus {
+    border-color: #006400; /* Màu xanh lá của Phúc Long */
+    box-shadow: 0 0 0 0.25rem rgba(0, 100, 0, 0.15);
+}
+
+/* --- Button Style --- */
+.btn-auth-primary {
+    background-color: #006400; /* Màu xanh lá */
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+    transition: background-color 0.2s;
+}
+
+.btn-auth-primary:hover {
+    background-color: #004d00; /* Màu xanh lá đậm hơn khi hover */
+    color: #fff;
+}
+
+/* --- Link Style --- */
+.auth-link {
+    color: #006400;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auth-link:hover {
+    color: #004d00;
+}
+
+#togglePassword {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+#togglePassword i {
+    color: #555;
+}

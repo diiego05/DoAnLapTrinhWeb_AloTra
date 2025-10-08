@@ -1,56 +1,145 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
-<head>
-    <title th:replace="~{layouts/default_layout :: title(pageTitle='Đăng Nhập AloTra')}"></title>
-    <th:block th:replace="~{layouts/default_layout :: additionalCss}"></th:block>
-</head>
+      th:replace="~{layouts/auth_layout :: body(pageTitle='Đăng Nhập', content=~{::content}, additionalJs=~{::additionalJs})}">
 <body>
-    <th:block th:fragment="content">
-        <div class="container my-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6 col-lg-5">
-                    <div class="card shadow-lg border-0 rounded-lg mt-5">
-                        <div class="card-header bg-success text-white text-center">
-                            <h3 class="fw-light my-4">Đăng Nhập</h3>
-                        </div>
-                        <div class="card-body">
-                            <div th:if="${param.error}" class="alert alert-danger" role="alert">
-                                Tên đăng nhập hoặc mật khẩu không đúng!
-                            </div>
-                            <div th:if="${param.logout}" class="alert alert-success" role="alert">
-                                Bạn đã đăng xuất thành công.
-                            </div>
 
-                            <form id="loginForm" method="post" th:action="@{/api/auth/login}">
-                                <div class="form-floating mb-3">
-                                    <input class="form-control" id="inputEmail" type="email" placeholder="name@example.com" name="username" required="required"/>
-                                    <label for="inputEmail">Địa chỉ Email</label>
-                                </div>
-                                <div class="form-floating mb-3">
-                                    <input class="form-control" id="inputPassword" type="password" placeholder="Mật khẩu" name="password" required="required"/>
-                                    <label for="inputPassword">Mật khẩu</label>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" id="inputRememberPassword" type="checkbox" value="true" />
-                                    <label class="form-check-label" for="inputRememberPassword">Nhớ mật khẩu</label>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                    <a class="small text-success" th:href="@{/forgot-password}">Quên mật khẩu?</a>
-                                    <button type="submit" class="btn btn-alotra">Đăng Nhập</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="card-footer text-center py-3">
-                            <div class="small"><a th:href="@{/register}" class="text-success">Chưa có tài khoản? Đăng ký ngay!</a></div>
-                        </div>
+<th:block th:fragment="content">
+    <div class="card auth-card">
+        <div class="card-body">
+            <h3 class="card-title text-center mb-4">Đăng nhập tài khoản</h3>
+
+            <!-- Container hiển thị alert -->
+            <div id="alert-container"></div>
+
+            <!-- Form đăng nhập -->
+            <form id="loginForm" class="auth-form">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Email*</label>
+                    <input type="email" class="form-control" id="username" required>
+                </div>
+
+                <div class="mb-3 position-relative">
+                    <label for="password" class="form-label">Mật khẩu*</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" required>
+                        <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">Nhớ mật khẩu</label>
+                    </div>
+                    <a th:href="@{/forgot-password}" class="auth-link small">Quên mật khẩu?</a>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-auth-primary btn-lg">Đăng nhập</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <small>Chưa có tài khoản?
+                    <a th:href="@{/register}" class="auth-link">Đăng ký ngay</a>
+                </small>
             </div>
         </div>
-    </th:block>
-    <th:block th:fragment="additionalJs">
-        <script th:src="@{/js/login.js}"></script> <!-- Tạo file JS riêng cho trang đăng nhập -->
-    </th:block>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // === Context path động ===
+    const contextPath = window.location.pathname.split("/")[1] ? "/" + window.location.pathname.split("/")[1] : "";
+
+    // === Toggle mật khẩu ===
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+    togglePassword.addEventListener("click", () => {
+        const type = passwordInput.type === "password" ? "text" : "password";
+        passwordInput.type = type;
+        togglePassword.querySelector("i").classList.toggle("fa-eye");
+        togglePassword.querySelector("i").classList.toggle("fa-eye-slash");
+    });
+
+    // === Hàm hiển thị alert (Bootstrap) ===
+    function showAlert(message, type = "danger") {
+        const container = document.getElementById("alert-container");
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // === Kiểm tra lỗi từ query string (ví dụ ?error=unauthorized) ===
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get("error");
+    if (errorParam) {
+        let msg = "";
+        if (errorParam === "unauthorized") msg = "Vui lòng đăng nhập để tiếp tục truy cập trang này.";
+        else if (errorParam === "forbidden") msg = "Bạn không có quyền truy cập trang này.";
+        else msg = "Đã xảy ra lỗi. Vui lòng thử lại.";
+        showAlert(msg, "warning");
+    }
+
+    // === Ghi nhớ email nếu có ===
+    const savedEmail = localStorage.getItem("rememberEmail");
+    if (savedEmail) {
+        document.getElementById("username").value = savedEmail;
+        document.getElementById("rememberMe").checked = true;
+    }
+
+    // === Xử lý submit form ===
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        try {
+            const res = await fetch(`${contextPath}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.token) {
+                localStorage.setItem("jwtToken", data.token);
+
+                // Lưu email nếu chọn "Nhớ mật khẩu"
+                if (document.getElementById("rememberMe").checked)
+                    localStorage.setItem("rememberEmail", email);
+                else
+                    localStorage.removeItem("rememberEmail");
+
+                // Thông báo thành công
+                showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
+
+                // Chuyển hướng theo role
+                const role = (data.role || "").toUpperCase();
+                setTimeout(() => {
+                    if (role === "ADMIN") window.location.href = contextPath + "/admin/dashboard";
+                    else if (role === "VENDOR") window.location.href = contextPath + "/vendor/dashboard";
+                    else if (role === "SHIPPER") window.location.href = contextPath + "/shipper/home";
+                    else window.location.href = contextPath + "/";
+                }, 1000);
+            } else {
+                showAlert(data.error || "Sai email hoặc mật khẩu!");
+            }
+        } catch (err) {
+            showAlert("Không thể kết nối đến máy chủ!");
+        }
+    });
+});
+</script>
+</th:block>
+
 </body>
 </html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <div class="row">
+
+            <div class="col-md-3">
+                <div class="list-group shadow-sm">
+                    <h5 class="list-group-item list-group-item-success">Danh Mục Sản Phẩm</h5>
+                    <a th:href="@{/menu}" class="list-group-item list-group-item-action"
+                       th:classappend="${currentCategorySlug == null} ? 'active'">Tất cả</a>
+                    <a th:each="category : ${categories}"
+                       th:href="@{/menu(category=${category.slug})}"
+                       th:text="${category.name}"
+                       class="list-group-item list-group-item-action"
+                       th:classappend="${category.slug == currentCategorySlug} ? 'active'"></a>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <h2 class="mb-4" th:text="${currentCategoryName}">Tên Danh Mục</h2>
+                <hr>
+
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                    <div class="col" th:each="product : ${productPage.content}">
+                        <div class="card product-card h-100 shadow-sm border-0">
+                            <a th:href="@{/product/{id}(id=${product.id})}">
+                                <img th:src="${product.imageUrl}" class="card-img-top" th:alt="${product.name}">
+                            </a>
+                            <div class="card-body d-flex flex-column text-center">
+                                <h5 class="card-title mb-2">
+                                    <a th:href="@{/product/{id}(id=${product.id})}"
+                                       class="text-decoration-none text-dark fw-semibold"
+                                       th:text="${product.name}"></a>
+                                </h5>
+                                <p class="price text-success fw-bold fs-5 mb-3"
+                                   th:text="${#numbers.formatDecimal(product.lowestPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></p>
+                                <button class="btn btn-success btn-sm mt-auto add-to-cart-btn"
+                                        th:data-variant-id="${product.defaultVariantId}">
+                                    <i class="fas fa-shopping-cart me-1"></i> Đặt mua
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${productPage.empty}" class="col-12">
+                        <p class="text-center text-muted">Không có sản phẩm nào trong danh mục này.</p>
+                    </div>
+                </div>
+
+                <nav aria-label="Page navigation" class="mt-5" th:if="${productPage.totalPages > 1}">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${productPage.isFirst()} ? 'disabled'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${productPage.number})}">Trước</a>
+                        </li>
+
+                        <li class="page-item" th:each="pageNumber : ${pageNumbers}" th:classappend="${pageNumber == productPage.number + 1} ? 'active'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${pageNumber})}" th:text="${pageNumber}"></a>
+                        </li>
+
+                        <li class="page-item" th:classappend="${productPage.isLast()} ? 'disabled'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${productPage.number + 2})}">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const variantId = this.dataset.variantId;
+
+                    if (variantId) {
+                        console.log(`Thêm variant ID: ${variantId} vào giỏ hàng.`);
+                        alert(`Sản phẩm (variant ID: ${variantId}) đã được thêm vào giỏ!`);
+
+                        // TODO: Gọi API thêm vào giỏ hàng ở đây
+                    }
+                });
+            });
+        });
+    </script>
+</th:block>
+
+</body>
+</html>

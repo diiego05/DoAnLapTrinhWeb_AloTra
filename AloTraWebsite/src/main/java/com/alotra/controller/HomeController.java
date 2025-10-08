@@ -50,11 +50,7 @@ public class HomeController {
         return "contact/contact"; // Sẽ tạo trang này sau
     }
 
-    @GetMapping("/login")
-    public String loginPage(Model model) {
-        model.addAttribute("pageTitle", "Đăng Nhập");
-        return "auth/login"; // Sẽ tạo trang này sau
-    }
+
 
     @GetMapping("/cart")
     public String cartPage(Model model) {
@@ -68,17 +64,7 @@ public class HomeController {
         return "policy/policy"; // Sẽ tạo trang này sau
     }
 
-    @GetMapping("/register")
-    public String registerPage(Model model) {
-        model.addAttribute("pageTitle", "Đăng Ký Tài Khoản");
-        return "auth/register"; // Sẽ tạo trang này sau
-    }
 
-    @GetMapping("/forgot-password")
-    public String forgotPasswordPage(Model model) {
-        model.addAttribute("pageTitle", "Quên Mật Khẩu");
-        return "auth/forgot_password"; // Sẽ tạo trang này sau
-    }
 
     @GetMapping("/profile")
     public String profilePage(Model model) {

@@ -24,7 +24,11 @@ CREATE DATABASE AloTra
 GO
 USE AloTra
 GO
-
+USE AloTra;
+GO
+ALTER TABLE Products
+ALTER COLUMN Description NVARCHAR(MAX);
+GO
 -- ===================================================================================
 -- PHẦN 1: QUẢN LÝ USER, PHÂN QUYỀN VÀ THÔNG TIN CÁ NHÂN
 -- ===================================================================================
@@ -380,3 +384,31 @@ GO
 -- ===================================================================================
 -- KẾT THÚC SCRIPT
 -- ===================================================================================
+
+USE AloTra
+GO
+ALTER TABLE Users DROP CONSTRAINT UQ__Users__713A7B9145E128CB;
+GO
+
+-- 1️⃣ Gán giá trị mặc định cho các dòng hiện tại (nếu đang NULL)
+UPDATE Users
+SET FailedLoginAttempts = 0
+WHERE FailedLoginAttempts IS NULL;
+
+-- 2️⃣ Xóa ràng buộc DEFAULT cũ nếu có (tránh trùng)
+DECLARE @constraintName NVARCHAR(255);
+SELECT @constraintName = dc.name
+FROM sys.default_constraints dc
+JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
+WHERE OBJECT_NAME(dc.parent_object_id) = 'Users' AND c.name = 'FailedLoginAttempts';
+
+IF @constraintName IS NOT NULL
+    EXEC('ALTER TABLE Users DROP CONSTRAINT ' + @constraintName);
+
+-- 3️⃣ Tạo lại cột với NOT NULL
+ALTER TABLE Users
+ALTER COLUMN FailedLoginAttempts INT NOT NULL;
+
+-- 4️⃣ Thêm DEFAULT constraint mới
+ALTER TABLE Users
+ADD CONSTRAINT DF_Users_FailedLoginAttempts DEFAULT 0 FOR FailedLoginAttempts;

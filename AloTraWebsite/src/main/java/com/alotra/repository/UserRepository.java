@@ -14,4 +14,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "(:status IS NULL OR u.status = :status)")
     List<User> searchAndFilter(String keyword, Long roleId, String status);
     Optional<User> findByEmail(String email);
+    Optional<User> findByPhone(String phone);
 }

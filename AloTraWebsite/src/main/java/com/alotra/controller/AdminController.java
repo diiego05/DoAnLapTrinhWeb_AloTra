@@ -21,11 +21,13 @@ import com.alotra.entity.Address;
 import com.alotra.entity.Branch;
 import com.alotra.entity.Category;
 import com.alotra.entity.Role;
+import com.alotra.entity.Size;
 import com.alotra.entity.Topping;
 import com.alotra.entity.User;
 import com.alotra.repository.UserRepository;
 import com.alotra.service.BranchService;
 import com.alotra.service.CategoryService;
+import com.alotra.service.SizeService;
 import com.alotra.service.UserService;
 import com.alotra.service.ToppingService;
 
@@ -46,7 +48,9 @@ public class AdminController {
 	    private CategoryService categoryService;
 	    @Autowired
 	    private ToppingService toppingService;
-
+	  //... các @Autowired khác
+	    @Autowired
+	    private SizeService sizeService;
 	    @GetMapping
 
 	    public String showAdminRoot() {
@@ -456,6 +460,19 @@ public class AdminController {
 	        }
 	        return "redirect:/admin/toppings";
 	    }
+
+	 // --- QUẢN LÝ KÍCH THƯỚC (SIZE) ---
+
+	    @GetMapping("/sizes")
+	    public String showSizes(Model model) {
+	        List<Size> sizeList = sizeService.findAll();
+	        model.addAttribute("sizeList", sizeList);
+	        model.addAttribute("pageTitle", "Quản lý Kích thước");
+	        model.addAttribute("currentPage", "sizes");
+
+	        return "admin/sizes"; // ✅ Thymeleaf tự load layout qua th:replace
+	    }
+
 
 	    @GetMapping("/products")
     public String showProductPage(Model model) {

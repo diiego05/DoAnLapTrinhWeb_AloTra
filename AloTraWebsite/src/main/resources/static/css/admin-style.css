@@ -27,6 +27,7 @@ body {
 .list-group-item {
     border: none;
     padding: 0.9rem 1.25rem;
+
 }
 
 /* === PHẦN QUAN TRỌNG: MÀU XANH LÁ NHẠT KHI ACTIVE === */
@@ -56,4 +57,69 @@ body {
 
 #wrapper #page-content-wrapper {
     transition: margin 0.3s ease;
+}
+
+/* ===== FIX RESPONSIVE CHO BẢNG SẢN PHẨM (Admin - Product List) ===== */
+
+/* Giữ nội dung không bị xuống dòng */
+#product-table-body td,
+#product-table-body th {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Cột "Trạng thái" (thứ 4) — mở rộng tối thiểu 120px để badge hiển thị đẹp */
+.table thead th:nth-child(4),
+.table tbody td:nth-child(4) {
+    min-width: 120px !important;
+    text-align: center;
+}
+
+/* Cột "Hành động" (thứ 5) — chứa nhiều nút nên cần rộng hơn */
+.table thead th:nth-child(5),
+.table tbody td:nth-child(5) {
+    min-width: 200px !important;
+    text-align: center;
+}
+
+/* Ảnh sản phẩm trong bảng */
+.table img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+/* ===== FIX RESPONSIVE + PHÂN TRANG CHO BẢNG SẢN PHẨM ===== */
+#product-table-body td,
+#product-table-body th {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.table th:nth-child(4),
+.table td:nth-child(4) {
+    min-width: 120px !important;
+    text-align: center;
+}
+
+.table th:nth-child(5),
+.table td:nth-child(5) {
+    min-width: 200px !important;
+    text-align: center;
+}
+
+.table img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Phân trang */
+.pagination {
+    justify-content: center;
+}
+.page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
 }

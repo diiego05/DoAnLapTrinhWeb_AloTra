@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+	th:replace="~{layouts/default_layout :: body(content=~{::content}, pageTitle='Về Chúng Tôi', additionalJs=~{::additionalJs})}">
+
+<body>
+
+	<th:block th:fragment="content">
+		<div class="container my-5">
+
+			<!-- Breadcrumb -->
+			<nav aria-label="breadcrumb">
+				<ol class="breadcrumb bg-light p-2 px-3 rounded shadow-sm">
+					<li class="breadcrumb-item"><a th:href="@{/}"
+						class="text-decoration-none">Trang chủ</a></li>
+					<li class="breadcrumb-item active" aria-current="page">Về
+						Chúng Tôi</li>
+				</ol>
+			</nav>
+
+			<div class="row mt-4">
+
+				<!-- Sidebar -->
+				<div class="col-md-3">
+					<div class="list-group shadow-sm sticky-top" style="top: 20px;"
+						id="about-sidebar">
+						<a data-bs-toggle="collapse" href="#gioi-thieu" role="button"
+							aria-expanded="true"
+							class="list-group-item list-group-item-action active"> Giới
+							thiệu công ty </a> <a data-bs-toggle="collapse" href="#lien-he"
+							role="button" class="list-group-item list-group-item-action">
+							Thông tin liên hệ </a> <a data-bs-toggle="collapse"
+							href="#hinh-anh-menu" role="button"
+							class="list-group-item list-group-item-action"> Hình ảnh Menu
+						</a>
+					</div>
+				</div>
+
+				<!-- Nội dung -->
+				<div class="col-md-9">
+					<div id="about-content-accordion">
+
+						<!-- GIỚI THIỆU -->
+						<div class="collapse show" id="gioi-thieu"
+							data-bs-parent="#about-content-accordion">
+							<section class="mb-5">
+								<h2 class="section-title text-success mb-3">GIỚI THIỆU CÔNG
+									TY</h2>
+								<hr class="mb-4">
+
+								<!-- Lịch sử công ty -->
+								<h4 class="text-primary fw-bold mt-4 mb-3">1.1. LỊCH SỬ
+									CÔNG TY</h4>
+								<p class="text-justify">Năm 1968, tại cao nguyên chè danh
+									tiếng Bảo Lộc (Lâm Đồng), Phúc Long được ra đời với kỳ vọng
+									mang đến những sản phẩm trà và cà phê chất lượng...</p>
+								<p class="text-justify">Trải qua hơn 50 năm chắt chiu tinh
+									hoa từ những búp trà xanh và hạt cà phê thượng hạng... Không
+									dừng lại tại đó, chúng tôi tiếp tục định hướng phát triển mở
+									rộng hệ thống cửa hàng trải dài từ Nam ra Bắc.</p>
+
+								<!-- Tầm nhìn -->
+								<h4 class="text-primary fw-bold mt-5 mb-3">1.2. TẦM NHÌN</h4>
+								<ul class="list-group list-group-flush">
+									<li class="list-group-item">1️⃣ Phấn đấu trở thành công ty
+										chuyên sản xuất và xuất khẩu trà, cà phê có giá trị cao tại
+										Việt Nam.</li>
+									<li class="list-group-item">2️⃣ Tạo nên thương hiệu Việt
+										đẳng cấp và chất lượng, khẳng định vị thế trên thị trường quốc
+										tế.</li>
+								</ul>
+
+								<!-- Sứ mệnh -->
+								<h4 class="text-primary fw-bold mt-5 mb-3">1.3. SỨ MỆNH</h4>
+								<ul class="list-group list-group-flush">
+									<li class="list-group-item">1️⃣ Trở thành người tiên phong
+										với những ý tưởng sáng tạo trong ngành trà và cà phê.</li>
+									<li class="list-group-item">2️⃣ Cùng đưa thương hiệu tỏa
+										sáng bằng tinh thần gắn kết, tôn trọng và lắng nghe.</li>
+									<li class="list-group-item">3️⃣ Không ngừng đổi mới, thách
+										thức khó khăn và phát triển bản thân.</li>
+									<li class="list-group-item">4️⃣ Mang đến giá trị thật sự
+										và niềm vui cho khách hàng qua từng sản phẩm.</li>
+								</ul>
+
+								<!-- Giá trị cốt lõi -->
+								<h4 class="text-primary fw-bold mt-5 mb-3">1.4. GIÁ TRỊ CỐT
+									LÕI</h4>
+								<ul class="list-group list-group-flush">
+									<li class="list-group-item"><strong>Đối với khách
+											hàng:</strong> Cung cấp sản phẩm và dịch vụ tốt nhất.</li>
+									<li class="list-group-item"><strong>Đối với nhân
+											viên:</strong> Xây dựng môi trường chuyên nghiệp, năng động, sáng tạo.</li>
+									<li class="list-group-item"><strong>Đối với xã
+											hội:</strong> Đóng góp tích cực vào các hoạt động cộng đồng.</li>
+								</ul>
+
+								<!-- Lĩnh vực hoạt động -->
+								<h4 class="text-primary fw-bold mt-5 mb-3">1.5. LĨNH VỰC
+									HOẠT ĐỘNG</h4>
+								<ul class="list-group list-group-flush">
+									<li class="list-group-item">• Sản xuất, xuất khẩu, kinh
+										doanh các sản phẩm trà và cà phê đóng gói.</li>
+									<li class="list-group-item">• Kinh doanh dịch vụ ăn uống:
+										thức uống, bánh ngọt, bánh mặn, giao hàng tận nơi.</li>
+								</ul>
+							</section>
+						</div>
+
+						<!-- LIÊN HỆ -->
+						<div class="collapse" id="lien-he"
+							data-bs-parent="#about-content-accordion">
+							<section class="mb-5">
+								<h2 class="section-title text-success">THÔNG TIN LIÊN HỆ</h2>
+								<hr class="mb-4">
+								<p>
+									<strong>Trụ sở chính:</strong> Công ty TNHH AloTra Việt Nam
+								</p>
+								<p>
+									<strong>Địa chỉ:</strong> Số 1, Võ Văn Ngân, TP. Thủ Đức, TP.
+									Hồ Chí Minh
+								</p>
+								<p>
+									<strong>Hotline:</strong> 1900 1234
+								</p>
+								<p>
+									<strong>Email:</strong> cskh@alotra.com.vn
+								</p>
+							</section>
+						</div>
+
+						<!-- HÌNH ẢNH -->
+						<div class="collapse" id="hinh-anh-menu"
+							data-bs-parent="#about-content-accordion">
+							<section>
+								<h2 class="section-title text-success">HÌNH ẢNH MENU</h2>
+								<hr class="mb-4">
+								<p>Khám phá thực đơn đa dạng và hấp dẫn của chúng tôi...</p>
+								<div class="container text-center mt-5">
+									<!-- Thực đơn Tiếng Việt -->
+									<div class="menu-section mb-5">
+										<h4 class="fw-bold text-uppercase mb-4"
+											style="color: #006633;">1. Thực đơn Tiếng Việt</h4>
+										<img th:src="@{/images/menu_VN.png}"
+											class="img-fluid rounded shadow-lg mx-auto d-block"
+											alt="Thực đơn Tiếng Việt"
+											style="max-width: 100%; border: 4px solid #e8f5e9; transition: transform .3s ease-in-out;">
+									</div>
+
+									<!-- Thực đơn Tiếng Anh -->
+									<div class="menu-section mb-5">
+										<h4 class="fw-bold text-uppercase mb-4"
+											style="color: #006633;">2. Thực đơn Tiếng Anh</h4>
+										<img th:src="@{/images/menu_EN.png}"
+											class="img-fluid rounded shadow-lg mx-auto d-block"
+											alt="Thực đơn Tiếng Anh"
+											style="max-width: 100%; border: 4px solid #e8f5e9; transition: transform .3s ease-in-out;">
+									</div>
+								</div>
+
+								<!-- Thêm hiệu ứng hover -->
+								<style>
+.menu-section img:hover {
+	transform: scale(1.03);
+}
+</style>
+
+							</section>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</th:block>
+
+	<th:block th:fragment="additionalJs">
+		<script>
+        // Sidebar active link
+        document.addEventListener('DOMContentLoaded', function () {
+            const links = document.querySelectorAll('#about-sidebar a');
+            links.forEach(link => {
+                link.addEventListener('click', function() {
+                    links.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+	</th:block>
+
+</body>
+</html>
