@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="header">
+
+    <!-- ======================= 🌿 THANH TRÊN ======================= -->
+    <nav class="navbar navbar-expand-lg navbar-light navbar-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <img th:src="@{/images/logo.jpg}" alt="AloTra Logo" style="height: 60px;">
+            </a>
+
+            <form class="d-flex mx-auto search-bar" role="search">
+                <input class="form-control me-2" type="search" placeholder="Bạn muốn mua gì..." aria-label="Search">
+                <button class="btn btn-outline-success" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+
+            <ul class="navbar-nav user-actions ms-auto align-items-center">
+
+                <!-- ❤️ Yêu thích -->
+                <li class="nav-item dropdown position-static me-3" id="wishlist-item">
+                    <a class="nav-link" href="#" id="wishlistDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-heart"></i>
+                        <span id="wishlistCount" class="badge bg-danger rounded-pill"
+                              style="font-size: 11px; position: relative; top: -8px; right: 6px; display: none;">0</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby="wishlistDropdown" style="width: 340px;">
+                        <li class="dropdown-header fw-bold text-danger text-center">Yêu thích</li>
+                        <li><hr class="dropdown-divider"></li>
+                        <div id="wishlistList" class="px-2" style="max-height: 350px; overflow-y: auto;">
+                            <p class="text-center text-muted small mb-0">Không có sản phẩm yêu thích</p>
+                        </div>
+                    </ul>
+                </li>
+
+                <!-- 🔔 Thông báo -->
+                <li class="nav-item dropdown position-static me-3" id="notif-item">
+                    <a class="nav-link" href="#" id="notifDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        <span id="notifCount" class="badge bg-danger rounded-pill"
+                              style="font-size: 11px; position: relative; top: -8px; right: 6px; display: none;">0</span>
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow"
+                        aria-labelledby="notifDropdown" style="width: 340px;">
+                        <li class="dropdown-header fw-bold text-success text-center">Thông báo</li>
+                        <li><hr class="dropdown-divider"></li>
+                        <div id="notifList" class="px-2" style="max-height: 350px; overflow-y: auto;">
+                            <p class="text-center text-muted small mb-0">Không có thông báo</p>
+                        </div>
+                    </ul>
+                </li>
+
+                <!-- 👤 Người dùng -->
+                <li class="nav-item" id="nav-login">
+                    <a class="nav-link" th:href="@{/login}">
+                        <i class="fas fa-user"></i> Đăng nhập
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown d-none" id="nav-user">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Xin chào, <span id="userName"></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" th:href="@{/profile}">Thông tin cá nhân</a></li>
+                        <li class="dropdown-submenu">
+                            <a class="dropdown-item dropdown-toggle" href="#">Đăng ký dịch vụ  ></a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" th:href="@{/register-branch}">Đăng ký chi nhánh</a></li>
+                                <li><a class="dropdown-item" th:href="@{/register-shipper}">Đăng ký người giao hàng</a></li>
+                            </ul>
+                        </li>
+                        <li><a class="dropdown-item text-danger" id="logoutBtn" href="#">Đăng xuất</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ======================= 🌿 THANH MENU DƯỚI ======================= -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-bottom">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavBottom" aria-controls="navbarNavBottom"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNavBottom">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/}">TRANG CHỦ</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/menu}">MENU</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/about}">VỀ CHÚNG TÔI</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/promotion}">KHUYẾN MÃI</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/profile}">HỘI VIÊN</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ======================= 🌿 SCRIPT ======================= -->
+    <script type="module">
+        import { getJwtToken, apiFetch } from '/alotra-website/js/auth-helper.js';
+
+        // 📌 Xác định context-path
+        const detectContextPath = () => {
+            const parts = window.location.pathname.split('/').filter(Boolean);
+            return parts.length > 0 ? '/' + parts[0] : '';
+        };
+        const contextPath = detectContextPath();
+
+        const token = getJwtToken();
+        const loginItem = document.getElementById("nav-login");
+        const userItem = document.getElementById("nav-user");
+        const userName = document.getElementById("userName");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        // 🧩 Kiểm tra đăng nhập
+        if (token) {
+            (async () => {
+                const res = await apiFetch(`/api/users/me`);
+                if (res && res.ok) {
+                    const user = await res.json();
+                    loginItem.classList.add("d-none");
+                    userItem.classList.remove("d-none");
+                    userName.textContent = user.fullName || "User";
+                    await Promise.all([loadNotifications(), loadWishlist(), updateCartFloatingCount()]);
+                } else {
+                    localStorage.removeItem("jwtToken");
+                    loginItem.classList.remove("d-none");
+                    userItem.classList.add("d-none");
+                }
+            })();
+        } else {
+            loginItem.classList.remove("d-none");
+            userItem.classList.add("d-none");
+        }
+
+        logoutBtn?.addEventListener("click", () => {
+            localStorage.removeItem("jwtToken");
+            window.location.href = `${contextPath}/login`;
+        });
+
+        // ======================= 📂 SUBMENU =======================
+        document.querySelectorAll('.dropdown-submenu .dropdown-toggle').forEach(function (element) {
+            element.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const submenu = this.parentElement;
+                submenu.classList.toggle('show');
+                const parentUl = submenu.closest('.dropdown-menu');
+                parentUl.querySelectorAll('.dropdown-submenu.show').forEach(function(otherSubmenu) {
+                    if (otherSubmenu !== submenu) otherSubmenu.classList.remove('show');
+                });
+            });
+        });
+
+        // ======================= 🔔 THÔNG BÁO =======================
+        async function loadNotifications() {
+            const notifCountEl = document.getElementById("notifCount");
+            const notifListEl = document.getElementById("notifList");
+            try {
+                const res = await apiFetch(`/api/notifications`);
+                if (!res?.ok) throw new Error("Không thể tải thông báo");
+                const data = await res.json();
+
+                const unreadCount = data.filter(n => !n.read).length;
+                notifCountEl.textContent = unreadCount || "";
+                notifCountEl.style.display = unreadCount > 0 ? "inline-block" : "none";
+
+                notifListEl.innerHTML = data.length
+                    ? data.map(n => `
+                        <div class="dropdown-item notif-content ${!n.read ? 'fw-bold' : ''}" data-id="${n.id}" style="cursor:pointer;">
+                            <div>${n.title}</div>
+                            <small class="text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</small>
+                        </div>`).join('')
+                    : `<p class="text-center text-muted small mb-0">Không có thông báo</p>`;
+
+                notifListEl.querySelectorAll(".notif-content").forEach(el => {
+                    el.addEventListener("click", async () => {
+                        const id = el.dataset.id;
+                        await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" });
+                        await showNotificationDetail(id);
+                        await loadNotifications();
+                    });
+                });
+            } catch {
+                notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không thể tải thông báo</p>`;
+            }
+        }
+
+        async function showNotificationDetail(id) {
+            try {
+                const res = await apiFetch(`/api/notifications/${id}`);
+                if (!res?.ok) throw new Error();
+                const notif = await res.json();
+
+                const oldModal = document.getElementById("notifDetailModal");
+                if (oldModal) oldModal.remove();
+
+                const modalHtml = `
+                    <div class="modal fade" id="notifDetailModal" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">${notif.title || "Thông báo"}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                          </div>
+                          <div class="modal-body">
+                            <p>${notif.message || "Không có nội dung chi tiết."}</p>
+                            <small class="text-muted">${new Date(notif.createdAt).toLocaleString('vi-VN')}</small>
+                          </div>
+                          <div class="modal-footer d-flex justify-content-between">
+                            <button type="button" class="btn btn-danger" id="deleteNotifBtn">
+                                <i class="fas fa-trash me-1"></i> Xóa thông báo
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>`;
+                document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+                const modal = new bootstrap.Modal(document.getElementById("notifDetailModal"));
+                modal.show();
+
+                document.getElementById("deleteNotifBtn").addEventListener("click", async () => {
+                    if (confirm("Bạn có chắc muốn xóa thông báo này không?")) {
+                        await apiFetch(`/api/notifications/${id}`, { method: "DELETE" });
+                        modal.hide();
+                        await loadNotifications();
+                    }
+                });
+            } catch {
+                alert("Không thể tải chi tiết thông báo!");
+            }
+        }
+
+        // ======================= ❤️ YÊU THÍCH =======================
+        async function loadWishlist() {
+            const wishlistCountEl = document.getElementById("wishlistCount");
+            const wishlistListEl = document.getElementById("wishlistList");
+
+            try {
+                const res = await apiFetch(`/api/wishlist`);
+                if (!res?.ok) throw new Error();
+                const data = await res.json();
+                wishlistCountEl.textContent = data.length || "";
+                wishlistCountEl.style.display = data.length > 0 ? "inline-block" : "none";
+
+                wishlistListEl.innerHTML = data.length
+                    ? data.map(p => `
+                        <div class="dropdown-item d-flex align-items-center justify-content-between py-2 border-bottom wishlist-product" data-id="${p.id}">
+                            <div class="d-flex align-items-center flex-grow-1 product-click" style="cursor:pointer;">
+                                <img src="${p.thumbnailUrl || contextPath + '/images/placeholder.png'}"
+                                     width="48" height="48"
+                                     class="rounded me-2 border"
+                                     style="object-fit: cover;">
+                                <div class="text-truncate" style="max-width: 180px;">
+                                    <div class="fw-semibold text-dark text-truncate">${p.name}</div>
+                                    <small class="text-success">${p.price ? p.price.toLocaleString('vi-VN') + ' ₫' : ''}</small>
+                                </div>
+                            </div>
+                            <a href="#" class="btn btn-sm btn-outline-success d-flex align-items-center justify-content-center rounded-circle hover-cart btn-add-to-cart"
+                               style="width:36px;height:36px;" title="Thêm vào giỏ hàng" data-product-id="${p.id}">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </div>
+                      `).join('')
+                    : `<p class="text-center text-muted small mb-0 py-2">Không có sản phẩm yêu thích</p>`;
+
+                wishlistListEl.querySelectorAll(".product-click").forEach(el => {
+                    el.addEventListener("click", () => {
+                        const productId = el.closest(".wishlist-product").dataset.id;
+                        window.location.href = `${contextPath}/product/${productId}`;
+                    });
+                });
+            } catch {
+                wishlistListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không thể tải danh sách yêu thích</p>`;
+            }
+        }
+
+        // ======================= 🛒 CART TOAST =======================
+        document.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".btn-add-to-cart");
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const productId = btn.dataset.productId;
+            const t = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+            if (!t) {
+                showCartToast("⚠️ Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng", true);
+                return;
+            }
+
+            const res = await fetch(`${contextPath}/api/cart/items`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${t}`
+                },
+                body: JSON.stringify({ productId, quantity: 1 })
+            });
+            if (!res.ok) throw new Error();
+            showCartToast("✅ Đã thêm sản phẩm vào giỏ hàng!");
+            bounceCartIcon();
+            updateCartFloatingCount();
+        });
+
+        window.showCartToast = function (message, isError = false) {
+            let toast = document.getElementById("cart-toast");
+            if (!toast) {
+                toast = document.createElement("div");
+                toast.id = "cart-toast";
+                toast.className = "cart-toast";
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.style.background = isError ? "#dc3545" : "#198754";
+            toast.classList.add("show");
+            clearTimeout(toast.hideTimeout);
+            toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
+        };
+
+        function bounceCartIcon() {
+            const cartBtn = document.querySelector("#floating-cart .cart-btn");
+            if (!cartBtn) return;
+            cartBtn.classList.add("bounce");
+            setTimeout(() => cartBtn.classList.remove("bounce"), 500);
+        }
+
+        function updateCartFloatingCount() {
+            const t = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+            if (!t) return;
+            fetch(`${contextPath}/api/cart`, {
+                headers: { "Authorization": `Bearer ${t}` }
+            }).then(res => res.json()).then(cart => {
+                const badge = document.getElementById("cart-count");
+                if (badge) badge.textContent = cart.itemsCount || 0;
+            });
+        }
+
+        // Gắn các hàm ra global
+        window.loadNotifications = loadNotifications;
+        window.loadWishlist = loadWishlist;
+        window.updateCartFloatingCount = updateCartFloatingCount;
+    </script>
+
+    <!-- ======================= 🌿 CSS ======================= -->
+    <style>
+        /* Submenu */
+        .dropdown-submenu { position: relative; }
+        .dropdown-submenu > .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: -6px;
+            display: none;
+            min-width: 220px;
+            border-radius: .375rem;
+        }
+        .dropdown-submenu.show > .dropdown-menu { display: block; }
+        .dropdown-submenu > a.dropdown-toggle { display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-submenu > a.dropdown-toggle::after { display: none; }
+        .dropdown-submenu > a::after {
+            content: "\f105";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+        }
+        .dropdown-submenu .dropdown-item:hover {
+            background-color: #006633;
+            color: #fff !important;
+        }
+
+        /* Hover cart */
+        .hover-cart:hover { background-color: #28a745; color: white !important; transform: scale(1.1) rotate(-5deg); transition: all 0.25s ease-in-out; }
+        .hover-cart i { transition: transform 0.25s ease; }
+        .hover-cart:hover i { transform: rotate(10deg); }
+        .navbar-nav .nav-link:hover i { color: #28a745; transform: scale(1.1); transition: all 0.2s; }
+
+        /* Toast */
+        .cart-toast {
+            position: fixed;
+            right: 120px;
+            bottom: 110px;
+            background: #198754;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .cart-toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Bounce */
+        @keyframes bounce {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.25); }
+            60%  { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .bounce { animation: bounce 0.4s ease; }
+    </style>
+</th:block>
+</html>

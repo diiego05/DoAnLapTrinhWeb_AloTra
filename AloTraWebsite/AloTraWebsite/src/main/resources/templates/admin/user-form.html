@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+	th:replace="~{layouts/admin-layout :: layout(
+        pageTitle=${user.id == null ? 'Thêm Mới Người dùng' : 'Chỉnh Sửa Người dùng'},
+        pageContent=~{::pageContent},
+        additionalJs=~{::additionalJs}
+    )}">
+
+    <div class="page-content" th:fragment="pageContent">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="mb-0"
+					th:text="${user.id == null ? 'Thêm Mới Người dùng' : 'Chỉnh Sửa Người dùng'}"></h5>
+			</div>
+			<div class="card-body">
+				<form th:action="@{/admin/users/save}" th:object="${user}" method="post" enctype="multipart/form-data">
+					<input type="hidden" th:field="*{id}" />
+
+					<!-- 🧑 Ảnh đại diện -->
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="form-label">Ảnh đại diện</label><br>
+                            <img th:src="@{${user.avatarUrl} ?: '/images/avatar-default.jpg'}"
+								alt="Avatar" class="img-thumbnail mb-2"
+								style="width: 100px; height: 100px;">
+                            <input type="file" name="avatarFile" class="form-control">
+						</div>
+
+						<!-- 👤 Họ tên -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Họ tên</label>
+							<input type="text" class="form-control"
+								th:field="*{fullName}"
+								th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+						</div>
+
+						<!-- 📧 Email -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Email</label>
+							<input type="email" class="form-control"
+								th:field="*{email}"
+								th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+						</div>
+
+						<!-- 📱 SĐT -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Số điện thoại</label>
+							<input type="text" class="form-control"
+								th:field="*{phone}"
+								th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+						</div>
+
+						<!-- 🔐 Mật khẩu -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Mật khẩu</label>
+							<input type="password" class="form-control"
+								th:field="*{rawPassword}"
+								th:placeholder="${user.id != null ? 'Để trống nếu không đổi' : ''}"
+								th:classappend="${#fields.hasErrors('rawPassword')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('rawPassword')}" th:errors="*{rawPassword}"></div>
+						</div>
+
+						<!-- 🪪 CCCD -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Số CCCD</label>
+							<input type="text" class="form-control"
+								th:field="*{idCardNumber}"
+								th:classappend="${#fields.hasErrors('idCardNumber')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('idCardNumber')}" th:errors="*{idCardNumber}"></div>
+						</div>
+
+						<!-- 🎂 Ngày sinh -->
+						<div class="col-md-6 mb-3">
+							<label class="form-label">Ngày sinh</label>
+							<input type="date" class="form-control"
+								th:field="*{dateOfBirth}"
+								th:classappend="${#fields.hasErrors('dateOfBirth')} ? 'is-invalid' : ''" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('dateOfBirth')}" th:errors="*{dateOfBirth}"></div>
+						</div>
+
+						<!-- 🚻 Giới tính -->
+						<div class="col-md-4 mb-3">
+							<label class="form-label">Giới tính</label>
+							<select class="form-select" th:field="*{gender}"
+								th:classappend="${#fields.hasErrors('gender')} ? 'is-invalid' : ''">
+								<option value="">-- Chọn giới tính --</option>
+								<option value="Nam">Nam</option>
+								<option value="Nữ">Nữ</option>
+								<option value="Khác">Khác</option>
+							</select>
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+						</div>
+
+						<!-- 🧑 Vai trò -->
+						<div class="col-md-4 mb-3">
+							<label class="form-label">Vai trò</label>
+							<select class="form-select" th:field="*{role}" id="roleSelect"
+								th:classappend="${#fields.hasErrors('role')} ? 'is-invalid' : ''">
+								<option th:each="role : ${roleList}" th:value="${role.id}"
+									th:text="${role.name}" th:attr="data-code=${role.code}"></option>
+							</select>
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></div>
+						</div>
+
+						<!-- 🟡 Trạng thái -->
+						<div class="col-md-4 mb-3">
+							<label class="form-label">Trạng thái</label>
+							<select class="form-select" th:field="*{status}"
+								th:classappend="${#fields.hasErrors('status')} ? 'is-invalid' : ''">
+								<option value="ACTIVE">Hoạt động</option>
+								<option value="BANNED">Bị cấm</option>
+								<option value="INACTIVE">Ngừng hoạt động</option>
+							</select>
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></div>
+						</div>
+					</div>
+
+					<!-- 🏠 Địa chỉ khách hàng -->
+					<div id="address-section" style="display: none;">
+						<hr>
+						<h5>Địa chỉ mặc định của khách hàng</h5>
+						<div class="row">
+							<div class="col-12 mb-3">
+								<label class="form-label">Địa chỉ chi tiết</label>
+								<input type="text" class="form-control" name="addressLine1"
+									th:value="${defaultAddress != null ? defaultAddress.line1 : ''}">
+							</div>
+							<div class="col-md-4 mb-3">
+								<label class="form-label">Tỉnh / Thành phố</label>
+								<input type="text" class="form-control" name="addressCity"
+									th:value="${defaultAddress != null ? defaultAddress.city : ''}">
+							</div>
+							<div class="col-md-4 mb-3">
+								<label class="form-label">Quận / Huyện</label>
+								<input type="text" class="form-control" name="addressDistrict"
+									th:value="${defaultAddress != null ? defaultAddress.district : ''}">
+							</div>
+							<div class="col-md-4 mb-3">
+								<label class="form-label">Phường / Xã</label>
+								<input type="text" class="form-control" name="addressWard"
+									th:value="${defaultAddress != null ? defaultAddress.ward : ''}">
+							</div>
+						</div>
+					</div>
+
+					<button type="submit" class="btn btn-primary mt-3">Lưu lại</button>
+					<a th:href="@{/admin/users}" class="btn btn-secondary mt-3">Hủy</a>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- ✅ Thêm fragment JS -->
+	<th:block th:fragment="additionalJs">
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const roleSelect = document.getElementById('roleSelect');
+				const addressSection = document.getElementById('address-section');
+
+				function toggleAddressSection() {
+					const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+					const roleCode = selectedOption.getAttribute('data-code');
+					if (roleCode === 'USER') {
+						addressSection.style.display = 'block';
+					} else {
+						addressSection.style.display = 'none';
+					}
+				}
+
+				toggleAddressSection();
+				roleSelect.addEventListener('change', toggleAddressSection);
+			});
+		</script>
+	</th:block>
+</html>

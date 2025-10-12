@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(pageTitle=${pageTitle}, pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+
+<!-- 📢 DANH SÁCH CHIẾN DỊCH KHUYẾN MÃI -->
+<th:block th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>📢 Chiến dịch khuyến mãi</h3>
+        <button class="btn btn-primary" id="btnAddCampaign">
+            <i class="fas fa-plus me-2"></i> Thêm mới
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên</th>
+                        <th>Loại</th>
+                        <th>Giá trị</th>
+                        <th>Thời gian</th>
+                        <th>Lượt xem</th>
+                        <th>Banner</th>
+
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="campaignTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 🪄 Modal thêm / sửa chiến dịch -->
+    <div class="modal fade" id="campaignModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chiến dịch khuyến mãi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="campaignForm" enctype="multipart/form-data">
+                        <input type="hidden" name="id" id="campaignId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Tên chiến dịch</label>
+                            <input type="text" class="form-control" name="name" id="campaignName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" name="description" id="campaignDescription" rows="3"></textarea>
+                        </div>
+
+                        <!-- 🎯 Loại giảm giá -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Loại giảm giá</label>
+                                <select class="form-select" name="type" id="campaignType" required>
+                                    <option value="ORDER_PERCENT">Giảm % trên đơn hàng</option>
+                                    <option value="ORDER_FIXED">Giảm tiền cố định trên đơn hàng</option>
+                                    <option value="SHIPPING_PERCENT">Giảm % phí vận chuyển</option>
+                                    <option value="SHIPPING_FIXED">Giảm tiền cố định phí vận chuyển</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giá trị giảm</label>
+                                <input type="number" step="0.01" class="form-control" name="value" id="campaignValue" required>
+                            </div>
+                        </div>
+
+                        <!-- 🕒 Thời gian -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Bắt đầu</label>
+                                <input type="datetime-local" class="form-control" name="startAt" id="campaignStart" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Kết thúc</label>
+                                <input type="datetime-local" class="form-control" name="endAt" id="campaignEnd" required>
+                            </div>
+                        </div>
+
+                        <!-- 🖼️ Banner -->
+                        <div class="mb-3">
+                            <label class="form-label">Banner</label>
+                            <input type="file" class="form-control" name="bannerFile" id="campaignBanner" accept="image/*">
+                            <img id="previewBanner" class="img-fluid mt-2 d-none rounded shadow-sm" style="max-height: 200px;">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button class="btn btn-primary" id="btnSaveCampaign">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👁️ Modal xem chi tiết chiến dịch -->
+    <div class="modal fade" id="campaignDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">Chi tiết chiến dịch</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <img id="detailBanner" class="img-fluid rounded shadow-sm mb-3" style="max-height: 300px;">
+                        <h4 id="detailTitle" class="fw-bold"></h4>
+                        <p id="detailTime" class="text-muted small"></p>
+                    </div>
+                    <div class="border-top pt-3">
+                        <h6 class="fw-bold mb-2">📄 Mô tả</h6>
+                        <p id="detailDescription" class="mb-0"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" th:src="@{/js/promotions/admin-campaign.js}"></script>
+</th:block>
+</html>

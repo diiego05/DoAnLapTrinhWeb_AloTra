@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <div class="row">
+
+            <!-- Danh mục -->
+            <div class="col-md-3">
+                <div class="list-group shadow-sm">
+                    <h5 class="list-group-item list-group-item-success">Danh Mục Sản Phẩm</h5>
+                    <a th:href="@{/menu}" class="list-group-item list-group-item-action"
+                       th:classappend="${currentCategorySlug == null} ? 'active'">Tất cả</a>
+                    <a th:each="category : ${categories}"
+                       th:href="@{/menu(category=${category.slug})}"
+                       th:text="${category.name}"
+                       class="list-group-item list-group-item-action"
+                       th:classappend="${category.slug == currentCategorySlug} ? 'active'"></a>
+                </div>
+            </div>
+
+            <!-- Danh sách sản phẩm -->
+            <div class="col-md-9">
+                <h2 class="mb-4" th:text="${currentCategoryName}">Tên Danh Mục</h2>
+                <hr>
+
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                    <div class="col" th:each="product : ${productPage.content}">
+                        <div class="card product-card h-100 shadow-sm border-0">
+                            <a th:href="@{/product/{id}(id=${product.id})}">
+                                <img th:src="${product.imageUrl}" class="card-img-top" th:alt="${product.name}">
+                            </a>
+                            <div class="card-body d-flex flex-column text-center">
+                                <h5 class="card-title mb-2">
+                                    <a th:href="@{/product/{id}(id=${product.id})}"
+                                       class="text-decoration-none text-dark fw-semibold"
+                                       th:text="${product.name}"></a>
+                                </h5>
+                                <p class="price text-success fw-bold fs-5 mb-3"
+                                   th:text="${#numbers.formatDecimal(product.lowestPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></p>
+                                <button class="btn btn-success btn-sm mt-auto menu-add-to-cart-btn"
+                                        th:data-product-id="${product.id}">
+                                    <i class="fas fa-shopping-cart me-1"></i> Đặt mua
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${productPage.empty}" class="col-12">
+                        <p class="text-center text-muted">Không có sản phẩm nào trong danh mục này.</p>
+                    </div>
+                </div>
+
+                <!-- Phân trang -->
+                <nav aria-label="Page navigation" class="mt-5" th:if="${productPage.totalPages > 1}">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item" th:classappend="${productPage.isFirst()} ? 'disabled'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${productPage.number})}">Trước</a>
+                        </li>
+                        <li class="page-item" th:each="pageNumber : ${pageNumbers}" th:classappend="${pageNumber == productPage.number + 1} ? 'active'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${pageNumber})}" th:text="${pageNumber}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${productPage.isLast()} ? 'disabled'">
+                            <a class="page-link" th:href="@{/menu(category=${currentCategorySlug}, page=${productPage.number + 2})}">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<!-- ================== SCRIPT ================== -->
+<th:block th:fragment="additionalJs">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('.menu-add-to-cart-btn');
+
+            // Lấy contextPath động
+            const detectContextPath = () => {
+                const parts = window.location.pathname.split('/').filter(Boolean);
+                return parts.length > 0 ? '/' + parts[0] : '';
+            };
+            const contextPath = detectContextPath();
+
+            // Thêm vào giỏ hàng
+            buttons.forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // tránh ảnh hưởng click vào thẻ a
+
+                    const productId = btn.dataset.productId;
+                    const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+
+                    if (!token) {
+                        showCartToast("⚠️ Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng", true);
+                        return;
+                    }
+
+                    if (productId) {
+                        try {
+                            const res = await fetch(`${contextPath}/api/cart/items`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ productId: productId, quantity: 1 })
+                            });
+
+                            if (!res.ok) throw new Error("Lỗi server");
+
+                            showCartToast("✅ Đã thêm sản phẩm vào giỏ hàng!");
+                            bounceCartIcon();
+                            updateCartFloatingCount();
+                        } catch (err) {
+                            console.error(err);
+                            showCartToast("❌ Lỗi khi thêm sản phẩm!", true);
+                        }
+                    }
+                });
+            });
+
+            // 🧭 Toast thông báo
+            window.showCartToast = function (message, isError = false) {
+                let toast = document.getElementById("cart-toast");
+                if (!toast) {
+                    toast = document.createElement("div");
+                    toast.id = "cart-toast";
+                    toast.className = "cart-toast";
+                    document.body.appendChild(toast);
+                }
+                toast.textContent = message;
+                toast.style.background = isError ? "#dc3545" : "#198754";
+                toast.classList.add("show");
+                clearTimeout(toast.hideTimeout);
+                toast.hideTimeout = setTimeout(() => toast.classList.remove("show"), 2000);
+            };
+
+            // 🛍 Rung icon giỏ hàng
+            function bounceCartIcon() {
+                const cartBtn = document.querySelector("#floating-cart .cart-btn");
+                if (!cartBtn) return;
+                cartBtn.classList.add("bounce");
+                setTimeout(() => cartBtn.classList.remove("bounce"), 500);
+            }
+
+            // 🔄 Cập nhật số lượng giỏ hàng
+            function updateCartFloatingCount() {
+                const t = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+                if (!t) return;
+                fetch(`${contextPath}/api/cart`, {
+                    headers: { "Authorization": `Bearer ${t}` }
+                }).then(res => res.json()).then(cart => {
+                    const badge = document.getElementById("cart-count");
+                    if (badge) badge.textContent = cart.itemsCount || 0;
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .cart-toast {
+            position: fixed;
+            right: 120px;
+            bottom: 110px;
+            background: #198754;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .cart-toast.show { opacity: 1; transform: translateY(0); }
+
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.25); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .bounce { animation: bounce 0.4s ease; }
+    </style>
+</th:block>
+
+</body>
+</html>

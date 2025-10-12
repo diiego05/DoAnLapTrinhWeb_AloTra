@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle='Nhà vận chuyển',
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<!-- NỘI DUNG TRANG -->
+<th:block th:fragment="pageContent">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">🚚 Quản lý Nhà Vận Chuyển</h3>
+        <button class="btn btn-primary" id="btn-add">
+            <i class="fas fa-plus me-2"></i> Thêm mới
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-success">
+                        <tr>
+                            <th>Tên</th>
+                            <th>Logo</th>
+                            <th>Phí cơ bản</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center" style="width: 220px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carrier-table-body">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Đang tải dữ liệu...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal thêm/sửa -->
+    <div class="modal fade" id="carrierModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">Thêm / Sửa Nhà Vận Chuyển</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="carrier-id">
+
+            <div class="mb-3">
+                <label for="carrier-name" class="form-label fw-semibold">Tên</label>
+                <input type="text" id="carrier-name" class="form-control" placeholder="Tên nhà vận chuyển" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Logo</label>
+                <input type="file" id="carrier-logo-file" class="form-control" accept="image/*">
+                <div class="mt-3 d-flex justify-content-center">
+                    <img id="carrier-logo-preview"
+                         src="/images/no-logo.png"
+                         alt="Preview"
+                         class="img-thumbnail"
+                         style="width:250px; height:150px; object-fit:contain;">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="carrier-fee" class="form-label fw-semibold">Phí cơ bản (₫)</label>
+                <input type="number" id="carrier-fee" class="form-control" placeholder="0" min="0" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+            <button class="btn btn-success" id="btn-save">Lưu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</th:block>
+
+<!-- JS RIÊNG CHO TRANG -->
+<th:block th:fragment="additionalJs">
+<script type="module">
+// 🧭 Lấy context path để import JS (chỉ dùng cho import, không dùng để gọi API)
+const contextPath = '/' + window.location.pathname.split('/')[1];
+const jsPath = contextPath === '/' ? '/js/auth-helper.js' : `${contextPath}/js/auth-helper.js`;
+const { apiFetch } = await import(jsPath);
+
+// Biến DOM
+const tableBody = document.getElementById("carrier-table-body");
+const modalEl = new bootstrap.Modal(document.getElementById('carrierModal'));
+const nameInput = document.getElementById("carrier-name");
+const feeInput = document.getElementById("carrier-fee");
+const idInput = document.getElementById("carrier-id");
+const logoFileInput = document.getElementById("carrier-logo-file");
+const logoPreview = document.getElementById("carrier-logo-preview");
+
+let currentLogoUrl = "";
+
+// 🟢 Load danh sách
+async function loadCarriers() {
+    const res = await apiFetch(`/api/admin/shipping-carriers`);
+    if (!res.ok) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Không thể tải dữ liệu</td></tr>`;
+        return;
+    }
+
+    const data = await res.json();
+    if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Chưa có nhà vận chuyển nào</td></tr>`;
+        return;
+    }
+
+    tableBody.innerHTML = data.map(c => `
+        <tr>
+            <td>${c.name}</td>
+            <td>
+                <img src="${c.logoUrl || '/images/no-logo.png'}"
+                     class="img-thumbnail"
+                     style="width:180px; height:100px; object-fit:contain;">
+            </td>
+            <td>${Number(c.baseFee).toLocaleString('vi-VN')} ₫</td>
+            <td><span class="badge ${c.active ? 'bg-success' : 'bg-secondary'}">${c.active ? 'Hoạt động' : 'Ẩn'}</span></td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-info me-1" onclick="editCarrier(${c.id}, '${c.name}', '${c.logoUrl || ''}', ${c.baseFee})"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-sm btn-warning me-1" onclick="toggleStatus(${c.id})"><i class="fas fa-toggle-on"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteCarrier(${c.id})"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ➕ Thêm mới
+document.getElementById("btn-add").addEventListener("click", () => {
+    idInput.value = "";
+    nameInput.value = "";
+    feeInput.value = "";
+    logoFileInput.value = "";
+    logoPreview.src = "/images/no-logo.png";
+    currentLogoUrl = "";
+    modalEl.show();
+});
+
+// 💾 Lưu (thêm hoặc sửa)
+document.getElementById("btn-save").addEventListener("click", async () => {
+    let logoUrl = currentLogoUrl;
+    const file = logoFileInput.files[0];
+
+    // 📤 Nếu có chọn file => upload lên Cloudinary
+    if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch(`${contextPath}/api/upload/logo`, {
+            method: "POST",
+            body: formData
+        });
+
+        if (!uploadRes.ok) {
+            alert("❌ Lỗi upload ảnh");
+            return;
+        }
+
+        const uploadData = await uploadRes.json();
+        logoUrl = uploadData.url;
+    }
+
+    const payload = {
+        name: nameInput.value.trim(),
+        logoUrl: logoUrl,
+        baseFee: Number(feeInput.value),
+        active: true
+    };
+
+    const id = idInput.value;
+    const method = id ? "PUT" : "POST";
+    const url = id ? `/api/admin/shipping-carriers/${id}` : `/api/admin/shipping-carriers`;
+
+    const res = await apiFetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        modalEl.hide();
+        loadCarriers();
+    } else {
+        alert("❌ Lỗi khi lưu nhà vận chuyển");
+    }
+});
+
+// ✏️ Edit
+window.editCarrier = (id, name, logo, fee) => {
+    idInput.value = id;
+    nameInput.value = name;
+    feeInput.value = fee;
+    logoPreview.src = logo || '/images/no-logo.png';
+    currentLogoUrl = logo;
+    logoFileInput.value = "";
+    modalEl.show();
+};
+
+// 🔁 Bật / Tắt trạng thái
+window.toggleStatus = async (id) => {
+    await apiFetch(`/api/admin/shipping-carriers/${id}/toggle`, { method: "PUT" });
+    loadCarriers();
+};
+
+// 🗑️ Xóa
+window.deleteCarrier = async (id) => {
+    if (confirm("Bạn có chắc muốn xóa nhà vận chuyển này?")) {
+        await apiFetch(`/api/admin/shipping-carriers/${id}`, { method: "DELETE" });
+        loadCarriers();
+    }
+};
+
+// 🖼️ Preview ảnh khi chọn file
+logoFileInput.addEventListener("change", () => {
+    const file = logoFileInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => logoPreview.src = e.target.result;
+        reader.readAsDataURL(file);
+    }
+});
+
+// 🚀 Khởi động
+loadCarriers();
+</script>
+</th:block>
+
+</html>

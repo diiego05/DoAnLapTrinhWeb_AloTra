@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+<th:block th:fragment="content">
+    <div class="container py-5">
+        <h3 class="mb-4 text-success fw-bold text-center">🏪 Đăng ký chi nhánh</h3>
+
+        <!-- =============== 🧑 THÔNG TIN NGƯỜI DÙNG =============== -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="text-success mb-3">🧑 Thông tin cá nhân</h5>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3 text-center">
+                        <img id="avatarPreview" src="/alotra-website/images/avatar-default.jpg"
+                             class="rounded-circle shadow-sm mb-2" width="120" height="120" alt="Avatar">
+                        <input type="file" id="avatarInput" accept="image/*" class="form-control form-control-sm mt-2">
+                    </div>
+
+                    <div class="col-md-9">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" id="fullName" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" id="phone" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="email" class="form-control" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Căn cước công dân</label>
+                                <input type="text" id="idCardNumber" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Giới tính</label>
+                                <select id="gender" class="form-select">
+                                    <option value="">--Chọn--</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ngày sinh</label>
+                                <input type="date" id="dob" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="btnSaveProfile" class="btn btn-success mt-3">
+                    <i class="fas fa-save me-2"></i>Cập nhật thông tin
+                </button>
+            </div>
+        </div>
+
+        <!-- 🏪 FORM ĐĂNG KÝ CHI NHÁNH -->
+        <div class="card shadow-sm p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-success">🏪 Thông tin đăng ký</h5>
+            <div class="mb-3">
+                <label for="registerType" class="form-label fw-semibold">Hình thức đăng ký</label>
+                <select id="registerType" class="form-select">
+                    <option value="CREATE">Tạo chi nhánh mới</option>
+                    <option value="JOIN">Tham gia chi nhánh có sẵn</option>
+                </select>
+            </div>
+
+            <!-- 🔸 Tham gia chi nhánh có sẵn -->
+            <div class="mb-3 d-none" id="branch-join-group">
+                <label class="form-label fw-semibold">Chọn chi nhánh</label>
+                <select id="branchSelect" class="form-select"></select>
+            </div>
+
+            <!-- 🆕 Tạo chi nhánh mới -->
+            <div id="branch-create-group">
+                <div class="mb-3">
+                    <label for="branchName" class="form-label fw-semibold">Tên chi nhánh</label>
+                    <input type="text" id="branchName" class="form-control" placeholder="Nhập tên chi nhánh">
+                </div>
+                <div class="mb-3">
+                    <label for="branchPhone" class="form-label fw-semibold">Số điện thoại</label>
+                    <input type="text" id="branchPhone" class="form-control" placeholder="Nhập số điện thoại">
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label fw-semibold">Địa chỉ chi nhánh</label>
+                    <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ chi nhánh">
+                </div>
+            </div>
+
+            <button class="btn btn-success w-100" id="btnSubmitBranch">
+                🚀 Gửi yêu cầu đăng ký
+            </button>
+        </div>
+
+        <!-- 📜 LỊCH SỬ YÊU CẦU -->
+        <h5 class="fw-bold text-success">📜 Lịch sử yêu cầu</h5>
+        <div class="card shadow-sm p-3" id="historyList">
+            <p class="text-muted text-center m-0">Đang tải...</p>
+        </div>
+    </div>
+
+    <!-- 📝 Modal sửa yêu cầu -->
+    <div class="modal fade" id="editBranchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-success fw-bold">✏️ Sửa yêu cầu chi nhánh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editRequestId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên chi nhánh</label>
+                        <input type="text" id="editBranchName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Số điện thoại</label>
+                        <input type="text" id="editBranchPhone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Địa chỉ</label>
+                        <input type="text" id="editBranchAddress" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button class="btn btn-success" id="btnSaveEditBranch">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script type="module" src="/alotra-website/js/register-branch.js"></script>
+</th:block>
+</body>
+</html>

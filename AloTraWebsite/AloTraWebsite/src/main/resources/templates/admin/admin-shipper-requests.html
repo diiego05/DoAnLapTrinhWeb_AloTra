@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(pageTitle='Yêu cầu Shipper', pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+<th:block th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-success">
+            🚚 Yêu cầu Shipper
+        </h3>
+        <div>
+            <select id="shipperStatusFilter" class="form-select form-select-sm d-inline-block w-auto">
+                <option value="">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ duyệt</option>
+                <option value="APPROVED">Đã duyệt</option>
+                <option value="REJECTED">Đã từ chối</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary ms-2" id="reloadShipperRequests">
+                <i class="fas fa-rotate"></i> Làm mới
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Người dùng</th>
+                        <th>Nhà vận chuyển</th>
+                        <th>Khu vực</th>
+                        <th>Phương tiện</th>
+                        <th>Biển số</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Ghi chú</th>
+                        <th class="text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="shipperRequestsTableBody">
+                    <tr><td colspan="10" class="text-center text-muted">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 📌 Modal Từ chối -->
+    <div class="modal fade" id="rejectShipperModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">❌ Từ chối yêu cầu Shipper</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectShipperId">
+                    <div class="mb-3">
+                        <label class="form-label">Lý do từ chối</label>
+                        <textarea id="rejectShipperNote" class="form-control" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-danger" id="btnRejectShipperConfirm">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📄 Modal Xem chi tiết yêu cầu Shipper -->
+<div class="modal fade" id="shipperDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">📄 Chi tiết yêu cầu Shipper</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="row g-3">
+          <!-- 🧍 Thông tin người dùng -->
+          <div class="col-md-6">
+            <h6 class="fw-bold text-success mb-2">🧍 Thông tin cá nhân</h6>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item"><strong>Họ và tên:</strong> <span id="detailUserName"></span></li>
+              <li class="list-group-item"><strong>Email:</strong> <span id="detailUserEmail"></span></li>
+              <li class="list-group-item"><strong>Số điện thoại:</strong> <span id="detailUserPhone"></span></li>
+              <li class="list-group-item"><strong>CCCD:</strong> <span id="detailUserIdCard"></span></li>
+              <li class="list-group-item"><strong>Giới tính:</strong> <span id="detailUserGender"></span></li>
+              <li class="list-group-item"><strong>Ngày sinh:</strong> <span id="detailUserDob"></span></li>
+            </ul>
+          </div>
+
+          <!-- 🗺️ Khu vực hoạt động -->
+          <div class="col-md-6">
+            <h6 class="fw-bold text-success mb-2">🗺️ Khu vực hoạt động</h6>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item"><strong>Phường/Xã:</strong> <span id="detailWard"></span></li>
+              <li class="list-group-item"><strong>Quận/Huyện:</strong> <span id="detailDistrict"></span></li>
+              <li class="list-group-item"><strong>Tỉnh/Thành phố:</strong> <span id="detailCity"></span></li>
+            </ul>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- 🚚 Thông tin đăng ký -->
+        <h6 class="fw-bold text-success mb-2">🚚 Thông tin đăng ký Shipper</h6>
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>Nhà vận chuyển:</strong> <span id="detailCarrier"></span></li>
+          <li class="list-group-item"><strong>Phương tiện:</strong> <span id="detailVehicle"></span></li>
+          <li class="list-group-item"><strong>Biển số xe:</strong> <span id="detailPlate"></span></li>
+        </ul>
+
+        <!-- 📜 Trạng thái & ghi chú -->
+        <h6 class="fw-bold text-success mb-2">📜 Trạng thái & ghi chú</h6>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <strong>Trạng thái:</strong>
+            <span id="detailStatus" class="badge"></span>
+          </li>
+          <li class="list-group-item"><strong>Ghi chú (Admin):</strong> <span id="detailNote"></span></li>
+          <li class="list-group-item"><strong>Ngày tạo:</strong> <span id="detailCreated"></span></li>
+          <li class="list-group-item"><strong>Ngày cập nhật:</strong> <span id="detailUpdated"></span></li>
+        </ul>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" src="/alotra-website/js/admin-shipper-requests.js"></script>
+</th:block>
+</body>
+</html>

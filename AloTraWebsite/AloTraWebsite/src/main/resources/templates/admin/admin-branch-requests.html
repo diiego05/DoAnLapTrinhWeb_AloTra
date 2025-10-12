@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(pageTitle='Yêu cầu Chi nhánh', pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+<th:block th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-success">
+            🏪 Yêu cầu Chi nhánh
+        </h3>
+        <div>
+            <select id="branchStatusFilter" class="form-select form-select-sm d-inline-block w-auto">
+                <option value="">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ duyệt</option>
+                <option value="APPROVED">Đã duyệt</option>
+                <option value="REJECTED">Đã từ chối</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary ms-2" id="reloadBranchRequests">
+                <i class="fas fa-rotate"></i> Làm mới
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tên chi nhánh</th>
+                        <th>Địa chỉ</th>
+                        <th>SĐT</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Ghi chú</th>
+                        <th class="text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="branchRequestsTableBody">
+                    <tr><td colspan="8" class="text-center text-muted">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ❌ Modal Từ chối -->
+    <div class="modal fade" id="rejectBranchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">❌ Từ chối yêu cầu chi nhánh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectBranchId">
+                    <div class="mb-3">
+                        <label class="form-label">Lý do từ chối</label>
+                        <textarea id="rejectBranchNote" class="form-control" rows="3" placeholder="Nhập lý do từ chối..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-danger" id="btnRejectBranchConfirm">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📄 Modal Chi tiết -->
+    <div class="modal fade" id="branchDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">📄 Chi tiết yêu cầu Chi nhánh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Tên chi nhánh:</strong> <span id="detailBranchName"></span></li>
+                        <li class="list-group-item"><strong>Địa chỉ:</strong> <span id="detailBranchAddress"></span></li>
+                        <li class="list-group-item"><strong>SĐT:</strong> <span id="detailBranchPhone"></span></li>
+                        <li class="list-group-item"><strong>Trạng thái:</strong> <span id="detailBranchStatus"></span></li>
+                        <li class="list-group-item"><strong>Ghi chú:</strong> <span id="detailBranchNote"></span></li>
+                        <li class="list-group-item"><strong>Ngày tạo:</strong> <span id="detailBranchCreated"></span></li>
+                    </ul>
+                    <hr>
+                    <h6 class="fw-bold mb-2">🧍 Thông tin người gửi yêu cầu</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Họ tên:</strong> <span id="detailRequesterName"></span></li>
+                        <li class="list-group-item"><strong>Email:</strong> <span id="detailRequesterEmail"></span></li>
+                        <li class="list-group-item"><strong>SĐT:</strong> <span id="detailRequesterPhone"></span></li>
+                        <li class="list-group-item"><strong>CMND/CCCD:</strong> <span id="detailRequesterIdCard"></span></li>
+                        <li class="list-group-item"><strong>Giới tính:</strong> <span id="detailRequesterGender"></span></li>
+                        <li class="list-group-item"><strong>Ngày sinh:</strong> <span id="detailRequesterDob"></span></li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" src="/alotra-website/js/admin-branch-requests.js"></script>
+</th:block>
+</body>
+</html>

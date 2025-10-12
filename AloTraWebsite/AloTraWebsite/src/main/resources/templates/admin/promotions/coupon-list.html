@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(pageTitle=${pageTitle}, pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+
+<th:block th:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>🎟️ Mã giảm giá</h3>
+        <button class="btn btn-primary" id="btnAddCoupon">
+            <i class="fas fa-plus me-2"></i> Thêm mới
+        </button>
+    </div>
+
+    <!-- ==================== 📋 DANH SÁCH COUPON ==================== -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Mã</th>
+                        <th>Chiến dịch</th>
+                        <th>Bắt đầu</th>
+                        <th>Kết thúc</th>
+                        <th>Loại</th>
+                        <th>Giá trị</th>
+                        <th>Lượt</th>
+                        <th>Đã dùng</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="couponTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 🪄 MODAL THÊM / SỬA ==================== -->
+    <div class="modal fade" id="couponModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="couponModalTitle">Thêm mã giảm giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="couponForm">
+                        <input type="hidden" name="id" id="couponId">
+
+                        <!-- 🆔 Mã giảm giá -->
+                        <div class="mb-3">
+                            <label class="form-label">Mã</label>
+                            <input type="text" class="form-control" name="code" id="couponCode" required>
+                        </div>
+
+                        <!-- 📢 Chiến dịch -->
+                        <div class="mb-3">
+                            <label class="form-label">Chiến dịch</label>
+                            <select class="form-select" name="campaignId" id="couponCampaign" required>
+                                <option value="" disabled selected>— Vui lòng chọn chiến dịch —</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                Loại và giá trị giảm sẽ tự động lấy từ chiến dịch đã chọn.
+                            </div>
+                        </div>
+
+                        <!-- 📅 Thời gian -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ngày bắt đầu</label>
+                                <input type="date" class="form-control" id="campaignStartAt" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ngày kết thúc</label>
+                                <input type="date" class="form-control" id="campaignEndAt" readonly>
+                            </div>
+                        </div>
+
+                        <!-- 🧾 Loại giảm giá -->
+                        <div class="mb-3">
+                            <label class="form-label">Loại mã giảm giá</label>
+                            <!-- ⚡ Hidden gửi enum gốc -->
+                            <input type="hidden" name="type" id="couponTypeHidden">
+                            <!-- 👁️ Hiển thị tiếng Việt -->
+                            <input type="text" class="form-control" id="couponType" readonly>
+                        </div>
+
+                        <!-- 💸 Giá trị -->
+                        <div class="mb-3">
+                            <label class="form-label">Giá trị giảm</label>
+                            <input type="text" class="form-control" name="value" id="couponValue" readonly>
+                        </div>
+
+                        <!-- 🪙 Mức giảm tối đa (nếu là % đơn hàng) -->
+                        <div class="mb-3" id="maxDiscountGroup" style="display: none;">
+                            <label class="form-label">Mức giảm tối đa (VND)</label>
+                            <input type="number" step="0.01" class="form-control" name="maxDiscount" id="couponMaxDiscount">
+                        </div>
+
+                        <!-- 🧾 Đơn hàng tối thiểu -->
+                        <div class="mb-3">
+                            <label class="form-label">Đơn hàng tối thiểu (VND)</label>
+                            <input type="number" step="0.01" class="form-control" name="minOrderTotal" id="couponMinOrderTotal">
+                        </div>
+
+                        <!-- 🔢 Số lượt -->
+                        <div class="mb-3">
+                            <label class="form-label">Số lượt sử dụng</label>
+                            <input type="number" class="form-control" name="usageLimit" id="couponUsageLimit" min="0">
+                        </div>
+
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-primary" id="btnSaveCoupon">Lưu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" th:src="@{/js/promotions/admin-coupon.js}"></script>
+</th:block>
+</html>

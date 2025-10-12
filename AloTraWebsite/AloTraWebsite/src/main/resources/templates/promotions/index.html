@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+
+<!-- ======================= 📄 CONTENT ======================= -->
+<th:block th:fragment="content">
+
+    <div class="container my-5">
+        <!-- 🌟 Tiêu đề -->
+        <h2 class="section-title text-center mb-4 fw-bold">
+            🎁 Ưu đãi & Khuyến mãi
+        </h2>
+
+        <!-- 📌 Danh sách chiến dịch khuyến mãi -->
+        <div id="campaignList" class="row g-4">
+            <!-- JS render danh sách chiến dịch -->
+        </div>
+
+        <!-- 📄 Thanh phân trang -->
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul id="paginationContainer" class="pagination mb-0">
+                    <!-- JS render nút phân trang -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+</th:block>
+
+<!-- ======================= 📜 JAVASCRIPT ======================= -->
+<th:block th:fragment="additionalJs">
+<script type="module" th:src="@{/js/promotions/promotions-list.js}"></script>
+</th:block>
+</html>

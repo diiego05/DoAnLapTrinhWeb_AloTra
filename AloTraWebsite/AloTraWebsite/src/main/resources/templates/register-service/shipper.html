@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+<th:block th:fragment="content">
+
+    <div class="container my-5">
+        <h3 class="text-success mb-4 text-center">
+            <i class="fas fa-truck me-2"></i>Đăng ký Shipper
+        </h3>
+
+        <!-- =============== 🧑 THÔNG TIN NGƯỜI DÙNG =============== -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="text-success mb-3">🧑 Thông tin cá nhân</h5>
+                <div class="row g-3 align-items-center">
+                    <!-- Ảnh đại diện -->
+                    <div class="col-md-3 text-center">
+                        <img id="avatarPreview" src="/alotra-website/images/avatar-default.jpg"
+                             class="rounded-circle shadow-sm mb-2" width="120" height="120" alt="Avatar">
+                        <input type="file" id="avatarInput" accept="image/*" class="form-control form-control-sm mt-2">
+                    </div>
+
+                    <div class="col-md-9">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Họ và tên</label>
+                                <input type="text" id="fullName" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" id="phone" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="email" class="form-control" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Căn cước công dân</label>
+                                <input type="text" id="idCardNumber" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Giới tính</label>
+                                <select id="gender" class="form-select">
+                                    <option value="">--Chọn--</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ngày sinh</label>
+                                <input type="date" id="dob" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="btnSaveProfile" class="btn btn-success mt-3">
+                    <i class="fas fa-save me-2"></i>Cập nhật thông tin
+                </button>
+            </div>
+        </div>
+
+        <!-- =============== 🏠 KHU VỰC HOẠT ĐỘNG =============== -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-map-marker-alt me-2"></i>Khu vực hoạt động
+                </h5>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Phường/Xã</label>
+                        <input id="ward" class="form-control" placeholder="Phường/Xã">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Quận/Huyện</label>
+                        <input id="district" class="form-control" placeholder="Quận/Huyện">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tỉnh/Thành phố</label>
+                        <input id="city" class="form-control" placeholder="Tỉnh/Thành phố">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =============== 🚚 THÔNG TIN ĐĂNG KÝ SHIPPER =============== -->
+        <div class="card shadow-sm p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-success">🚚 Thông tin đăng ký Shipper</h5>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Chọn nhà vận chuyển</label>
+                <select id="carrierSelect" class="form-select"></select>
+            </div>
+
+            <div class="mb-3">
+                <label for="vehicleType" class="form-label fw-semibold">Phương tiện</label>
+                <input type="text" id="vehicleType" class="form-control" placeholder="VD: Xe máy">
+            </div>
+
+            <div class="mb-3">
+                <label for="vehiclePlate" class="form-label fw-semibold">Biển số xe</label>
+                <input type="text" id="vehiclePlate" class="form-control" placeholder="VD: 59X3-12345">
+            </div>
+
+            <button class="btn btn-success w-100" id="btnSubmitShipper">
+                Gửi yêu cầu đăng ký
+            </button>
+        </div>
+
+        <!-- 📜 Lịch sử yêu cầu -->
+        <h5 class="fw-bold text-success">📜 Lịch sử yêu cầu</h5>
+        <div class="card shadow-sm p-3" id="shipperHistoryContainer">
+            <p class="text-muted text-center m-0">Đang tải...</p>
+        </div>
+    </div>
+
+    <!-- ✏️ Modal chỉnh sửa yêu cầu -->
+    <div class="modal fade" id="editShipperModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">✏️ Cập nhật yêu cầu Shipper</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+  <input type="hidden" id="editShipperId">
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Nhà vận chuyển</label>
+    <select id="editCarrierSelect" class="form-select"></select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Phương tiện</label>
+    <input type="text" id="editVehicleType" class="form-control">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Biển số xe</label>
+    <input type="text" id="editVehiclePlate" class="form-control">
+  </div>
+
+  <!-- 🗺️ Khu vực hoạt động (THÊM MỚI) -->
+  <div class="row g-2">
+    <div class="col-md-4">
+      <label class="form-label">Phường/Xã</label>
+      <input id="editWard" class="form-control" placeholder="Phường/Xã">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Quận/Huyện</label>
+      <input id="editDistrict" class="form-control" placeholder="Quận/Huyện">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Tỉnh/Thành phố</label>
+      <input id="editCity" class="form-control" placeholder="Tỉnh/Thành phố">
+    </div>
+  </div>
+</div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button class="btn btn-success" id="btnSaveEditShipper">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" src="/alotra-website/js/register-shipper.js"></script>
+</th:block>
+
+</body>
+</html>

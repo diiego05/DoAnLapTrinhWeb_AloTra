@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle='Chi tiết Người dùng',
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<body>
+    <div class="page-content" th:fragment="pageContent">
+        <div class="row">
+            <!-- 🧍 Thông tin cá nhân -->
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Thông tin cá nhân</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img th:src="@{${user.avatarUrl} ?: '/images/avatar-default.jpg'}"
+                             alt="Avatar"
+                             class="img-thumbnail rounded-circle mb-3"
+                             style="width: 120px; height: 120px;">
+                        <h4 th:text="${user.fullName}"></h4>
+                        <p class="text-muted" th:text="${user.role.name}"></p>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Email:</strong> <span th:text="${user.email}"></span></li>
+                        <li class="list-group-item"><strong>SĐT:</strong> <span th:text="${user.phone}"></span></li>
+                        <li class="list-group-item"><strong>Số CCCD:</strong> <span th:text="${user.idCardNumber != null ? user.idCardNumber : 'Chưa cập nhật'}"></span></li>
+                        <li class="list-group-item"><strong>Giới tính:</strong> <span th:text="${user.gender != null ? user.gender.toString() : 'Chưa cập nhật'}"></span></li>
+                        <li class="list-group-item"><strong>Ngày sinh:</strong>
+                            <span th:if="${user.dateOfBirth}" th:text="${#temporals.format(user.dateOfBirth, 'dd/MM/yyyy')}"></span>
+                            <span th:unless="${user.dateOfBirth}">Chưa cập nhật</span>
+                        </li>
+                        <li class="list-group-item"><strong>Trạng thái:</strong>
+                            <span class="badge"
+                                  th:text="${user.status == 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}"
+                                  th:classappend="${user.status == 'ACTIVE' ? 'bg-success' : 'bg-danger'}"></span>
+                        </li>
+                        <li class="list-group-item"><strong>Xác thực Email:</strong>
+                            <span th:if="${user.emailVerifiedAt != null}" class="badge bg-success">
+                                Đã xác thực lúc <span th:text="${#temporals.format(user.emailVerifiedAt, 'HH:mm dd/MM/yyyy')}"></span>
+                            </span>
+                            <span th:unless="${user.emailVerifiedAt != null}" class="badge bg-secondary">Chưa xác thực</span>
+                        </li>
+                        <li class="list-group-item"><strong>Ngày tạo:</strong>
+                            <span th:if="${user.createdAt}" th:text="${#temporals.format(user.createdAt, 'HH:mm dd/MM/yyyy')}"></span>
+                        </li>
+                        <li class="list-group-item"><strong>Cập nhật lần cuối:</strong>
+                            <span th:if="${user.updatedAt}" th:text="${#temporals.format(user.updatedAt, 'HH:mm dd/MM/yyyy')}"></span>
+                        </li>
+                    </ul>
+                    <div class="card-body">
+                        <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-primary w-100">Chỉnh sửa</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🏡 Địa chỉ khách hàng -->
+            <div class="col-md-7">
+                <div class="card" th:if="${#strings.equals(user.role.code, 'USER')}">
+                    <div class="card-header">
+                        <h5 class="mb-0">Địa chỉ của khách hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(user.addresses)}">
+                             <p class="text-center text-muted">Người dùng này chưa có địa chỉ nào.</p>
+                        </div>
+                        <div th:unless="${#lists.isEmpty(user.addresses)}">
+                            <ul class="list-group">
+                                <li class="list-group-item" th:each="address : ${user.addresses}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1" th:text="${address.recipient}"></h6>
+                                            <p class="mb-1" th:text="${address.getFullAddress()}"></p>
+                                            <small class="text-muted" th:text="'SĐT: ' + ${address.phone}"></small>
+                                        </div>
+                                        <span th:if="${address.isDefault}" class="badge bg-primary rounded-pill">Mặc định</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Bổ sung fragment additionalJs -->
+    <th:block th:fragment="additionalJs">
+        <!-- Nếu sau này bạn cần JS cho trang chi tiết user thì đặt vào đây -->
+        <!-- <script>console.log("Trang chi tiết người dùng đã load");</script> -->
+    </th:block>
+</body>
+</html>

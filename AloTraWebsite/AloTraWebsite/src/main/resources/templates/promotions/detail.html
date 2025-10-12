@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+
+<th:block th:fragment="content">
+
+<div class="container my-5">
+    <!-- Banner -->
+    <div class="text-center mb-4">
+        <img id="campaignBanner" class="img-fluid rounded shadow-sm" style="max-height: 400px; object-fit: cover;">
+    </div>
+
+    <!-- Tiêu đề + Thông tin -->
+    <div class="text-center mb-3">
+        <h2 id="campaignName" class="fw-bold" style="color:#006633;"></h2>
+        <div class="text-muted">
+            <span id="campaignDate"></span>
+            <span class="ms-3"><i class="fa fa-eye"></i> <span id="campaignViews">0</span></span>
+        </div>
+    </div>
+
+    <!-- Mô tả -->
+    <div class="mb-4" id="campaignDescription"></div>
+
+    <!-- Đối tượng -->
+    <div class="mb-4">
+        <h5 class="fw-bold" style="color:#006633;">🎯 Đối tượng áp dụng</h5>
+        <ul id="targetList" class="list-unstyled mb-0"></ul>
+    </div>
+
+    <!-- Coupon -->
+    <div class="mb-4">
+        <h5 class="fw-bold" style="color:#006633;">🎟 Mã giảm giá</h5>
+        <div id="couponContainer" class="d-flex flex-wrap gap-2"></div>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" th:src="@{/js/promotions/promotions-detail.js}"></script>
+</th:block>
+</html>

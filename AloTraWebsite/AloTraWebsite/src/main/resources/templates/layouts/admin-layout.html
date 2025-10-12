@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+	th:fragment="layout(pageTitle, pageContent, additionalJs)">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title th:text="${pageTitle} + ' - AloTra Admin'"></title>
+
+<!-- Bootstrap & FontAwesome -->
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+<!-- Custom CSS -->
+<link rel="stylesheet" th:href="@{/css/admin-style.css}">
+</head>
+<body>
+	<div class="d-flex" id="wrapper">
+
+		<!-- Sidebar -->
+		<div class="bg-white border-end" id="sidebar-wrapper">
+			<div class="sidebar-heading border-bottom">
+				<a th:href="@{/admin/dashboard}"
+					class="d-flex align-items-center text-decoration-none"> <img
+					th:src="@{/images/logo.jpg}" alt="AloTra Logo"
+					style="height: 60px;">
+				</a>
+			</div>
+			<div class="list-group list-group-flush">
+				<a th:href="@{/admin/dashboard}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'dashboard'} ? 'active-custom' : ''">
+					<i class="fas fa-chart-pie me-2"></i> Tổng quan
+				</a>
+				<!-- 👤 Người dùng -->
+				<a href="#userSubMenu" data-bs-toggle="collapse"
+					class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+					th:classappend="${#lists.contains({'users','shipper-requests','branch-requests'}, currentPage)} ? 'active-custom' : ''">
+					<div>
+						<i class="fas fa-users me-2"></i> Người dùng
+					</div> <i class="fas fa-chevron-down small"></i>
+				</a>
+				<div class="collapse" id="userSubMenu"
+					th:classappend="${#lists.contains({'users','shipper-requests','branch-requests'}, currentPage)} ? 'show' : ''">
+					<div class="list-group list-group-flush ps-4">
+						<a th:href="@{/admin/users}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'users'} ? 'active-submenu' : ''">
+							👤 Tài khoản </a> <a th:href="@{/admin/shipper-requests}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'shipper-requests'} ? 'active-submenu' : ''">
+							🚚 Yêu cầu Shipper </a> <a th:href="@{/admin/branch-requests}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'branch-requests'} ? 'active-submenu' : ''">
+							🏪 Yêu cầu Chi nhánh </a>
+					</div>
+				</div>
+				<a th:href="@{/admin/branches}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'branches'} ? 'active-custom' : ''">
+					<i class="fas fa-store me-2"></i> Cửa hàng
+				</a>
+
+				<!-- Sản phẩm -->
+				<a href="#productSubMenu" data-bs-toggle="collapse"
+					class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+					th:classappend="${#lists.contains({'products', 'categories', 'sizes', 'toppings'}, currentPage)} ? 'active-custom' : ''">
+					<div>
+						<i class="fas fa-boxes me-2"></i> Sản phẩm
+					</div> <i class="fas fa-chevron-down small"></i>
+				</a>
+				<div class="collapse" id="productSubMenu"
+					th:classappend="${#lists.contains({'products', 'categories', 'sizes', 'toppings'}, currentPage)} ? 'show' : ''">
+					<div class="list-group list-group-flush ps-4">
+						<a th:href="@{/admin/products}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'products'} ? 'active-submenu' : ''">Sản
+							phẩm</a> <a th:href="@{/admin/categories}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'categories'} ? 'active-submenu' : ''">Danh
+							mục</a> <a th:href="@{/admin/sizes}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'sizes'} ? 'active-submenu' : ''">Kích
+							thước</a> <a th:href="@{/admin/toppings}"
+							class="list-group-item list-group-item-action"
+							th:classappend="${currentPage == 'toppings'} ? 'active-submenu' : ''">Topping</a>
+					</div>
+				</div>
+
+				<a th:href="@{/admin/shipping-carriers}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'shipping-carriers'} ? 'active-custom' : ''">
+					<i class="fas fa-truck-fast me-2"></i> Nhà vận chuyển
+				</a> </a> <a th:href="@{/admin/orders}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'orders'} ? 'active-custom' : ''">
+					<i class="fas fa-receipt me-2"></i> Đơn hàng
+				</a>
+				<!-- 📢 Khuyến mãi -->
+<a href="#promotionSubMenu" data-bs-toggle="collapse"
+   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+   th:classappend="${#lists.contains({'campaigns','coupons','targets'}, currentPage)} ? 'active-custom' : ''">
+    <div>
+        <i class="fas fa-tags me-2"></i> Khuyến mãi
+    </div>
+    <i class="fas fa-chevron-down small"></i>
+</a>
+<div class="collapse" id="promotionSubMenu"
+     th:classappend="${#lists.contains({'campaigns','coupons','targets'}, currentPage)} ? 'show' : ''">
+    <div class="list-group list-group-flush ps-4">
+        <a th:href="@{/admin/promotions/campaign-list}"
+           class="list-group-item list-group-item-action"
+           th:classappend="${currentPage == 'campaigns'} ? 'active-submenu' : ''">
+           🎯 Chiến dịch
+        </a>
+        <a th:href="@{/admin/promotions/coupon-list}"
+           class="list-group-item list-group-item-action"
+           th:classappend="${currentPage == 'coupons'} ? 'active-submenu' : ''">
+           🏷️ Mã giảm giá
+        </a>
+        <a th:href="@{/admin/promotions/campaign-target}"
+           class="list-group-item list-group-item-action"
+           th:classappend="${currentPage == 'targets'} ? 'active-submenu' : ''">
+           🪄 Đối tượng áp dụng
+        </a>
+    </div>
+</div>
+				<a th:href="@{/admin/marketing}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'marketing'} ? 'active-custom' : ''">
+					<i class="fas fa-bullhorn me-2"></i> Marketing
+				</a> <a th:href="@{/admin/settings}"
+					class="list-group-item list-group-item-action"
+					th:classappend="${currentPage == 'settings'} ? 'active-custom' : ''">
+					<i class="fas fa-cog me-2"></i> Cài đặt
+				</a>
+			</div>
+		</div>
+
+		<!-- Page Content -->
+		<div id="page-content-wrapper">
+			<nav
+				class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+				<div class="container-fluid">
+					<button class="btn btn-light" id="sidebarToggle">
+						<i class="fas fa-bars"></i>
+					</button>
+
+					<div class="d-flex align-items-center ms-auto">
+
+						<!-- 🔔 THÔNG BÁO ADMIN -->
+						<div class="dropdown me-3">
+							<a href="#" class="btn btn-light position-relative"
+								id="adminNotifDropdown" data-bs-toggle="dropdown"
+								aria-expanded="false"> <i class="fas fa-bell fs-5"></i> <span
+								id="adminNotifCount"
+								class="badge bg-danger rounded-pill position-absolute top-0 end-0 translate-middle"
+								style="display: none;">0</span>
+							</a>
+							<ul class="dropdown-menu dropdown-menu-end shadow"
+								aria-labelledby="adminNotifDropdown" style="width: 340px;">
+								<li class="dropdown-header text-center fw-bold text-success">Thông
+									báo</li>
+								<li><hr class="dropdown-divider"></li>
+								<div id="adminNotifList" class="px-2"
+									style="max-height: 350px; overflow-y: auto;">
+									<p class="text-center text-muted small mb-0">Không có thông
+										báo</p>
+								</div>
+							</ul>
+						</div>
+
+						<!-- 👤 JWT User -->
+						<div class="dropdown d-none" id="adminUserDropdown">
+							<a href="#"
+								class="d-flex align-items-center text-decoration-none dropdown-toggle"
+								id="dropdownAdminUser" data-bs-toggle="dropdown"
+								aria-expanded="false"> <img id="adminAvatar"
+								src="/alotra-website/images/avatar-default.jpg"
+								alt="Admin Avatar" width="32" height="32"
+								class="rounded-circle me-2">
+								<div>
+									<div class="fw-bold" id="adminName">...</div>
+									<div class="small text-muted" id="adminRole">...</div>
+								</div>
+							</a>
+							<ul class="dropdown-menu dropdown-menu-end"
+								aria-labelledby="dropdownAdminUser">
+								<li><a class="dropdown-item"
+									th:href="@{/admin/users/details/{id}(id=${#authentication.principal.id})}">
+										<i class="fas fa-user-circle me-2"></i>Hồ sơ
+								</a></li>
+								<li><a class="dropdown-item" id="logoutBtn" href="#"> <i
+										class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+								</a></li>
+							</ul>
+						</div>
+
+						<a th:href="@{/login}" id="loginBtn"
+							class="btn btn-primary d-none">Đăng nhập</a>
+					</div>
+				</div>
+			</nav>
+
+			<!-- Nội dung trang -->
+			<div class="container-fluid p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Trang
+								chủ</a></li>
+						<li class="breadcrumb-item" th:if="${parentPageTitle}"><a
+							th:href="@{${parentPageUrl}}" th:text="${parentPageTitle}"></a></li>
+						<li class="breadcrumb-item active" aria-current="page"
+							th:text="${pageTitle}"></li>
+					</ol>
+				</nav>
+				<div class="page-content" th:replace="${pageContent}"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Bootstrap -->
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+	<!-- Sidebar Toggle -->
+	<script>
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const wrapper = document.getElementById('wrapper');
+    sidebarToggle.addEventListener('click', () => wrapper.classList.toggle('toggled'));
+</script>
+
+	<!-- 🔐 JWT + THÔNG BÁO ADMIN -->
+	<script type="module">
+import { getJwtToken, apiFetch } from '/alotra-website/js/auth-helper.js';
+
+const token = getJwtToken();
+const loginBtn = document.getElementById("loginBtn");
+const userDropdown = document.getElementById("adminUserDropdown");
+const nameEl = document.getElementById("adminName");
+const roleEl = document.getElementById("adminRole");
+const avatarEl = document.getElementById("adminAvatar");
+
+if (!token) {
+    loginBtn.classList.remove("d-none");
+    userDropdown.classList.add("d-none");
+    window.location.href = "/alotra-website/login";
+} else {
+    const res = await apiFetch("/api/users/me");
+    if (res && res.ok) {
+        const user = await res.json();
+        loginBtn.classList.add("d-none");
+        userDropdown.classList.remove("d-none");
+        nameEl.textContent = user.fullName;
+        roleEl.textContent = user.role;
+        if (user.avatarUrl) avatarEl.src = user.avatarUrl;
+        loadAdminNotifications();
+        setInterval(loadAdminNotifications, 30000);
+    } else {
+        localStorage.removeItem("jwtToken");
+        window.location.href = "/alotra-website/login";
+    }
+}
+
+// === 🛎️ HÀM LOAD THÔNG BÁO ===
+async function loadAdminNotifications() {
+    const notifCountEl = document.getElementById("adminNotifCount");
+    const notifListEl = document.getElementById("adminNotifList");
+
+    try {
+        const res = await apiFetch("/api/notifications");
+        if (!res || !res.ok) throw new Error("Không thể tải thông báo");
+        const data = await res.json();
+
+        const unreadCount = data.filter(n => !n.isRead).length;
+        notifCountEl.textContent = unreadCount > 0 ? unreadCount : "";
+        notifCountEl.style.display = unreadCount > 0 ? "flex" : "none";
+
+        if (data.length === 0) {
+            notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không có thông báo</p>`;
+            return;
+        }
+
+        notifListEl.innerHTML = data.map(n => `
+            <div class="dropdown-item notif-item ${!n.isRead ? 'fw-bold' : ''}" data-id="${n.id}" style="cursor:pointer;">
+                <div>${n.title}</div>
+                <small class="text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</small>
+            </div>
+        `).join('');
+
+        notifListEl.querySelectorAll(".notif-item").forEach(el => {
+            el.addEventListener("click", async e => {
+                const id = el.dataset.id;
+                await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" });
+                await loadAdminNotifications();
+                showAdminNotificationDetail(id);
+            });
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi tải thông báo admin:", err);
+    }
+}
+
+// === HIỂN THỊ MODAL CHI TIẾT + XÓA ===
+async function showAdminNotificationDetail(id) {
+    try {
+        const res = await apiFetch(`/api/notifications/${id}`);
+        if (!res || !res.ok) throw new Error("Không thể lấy chi tiết thông báo");
+        const notif = await res.json();
+
+        const oldModal = document.getElementById("adminNotifModal");
+        if (oldModal) oldModal.remove();
+
+        const modalHtml = `
+        <div class="modal fade" id="adminNotifModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">${notif.title || "Thông báo"}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>${notif.message || "Không có nội dung chi tiết."}</p>
+                <small class="text-muted">${new Date(notif.createdAt).toLocaleString('vi-VN')}</small>
+              </div>
+              <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-danger" id="deleteAdminNotifBtn">
+                    <i class="fas fa-trash me-1"></i> Xóa thông báo
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById("adminNotifModal"));
+        modal.show();
+
+        // Sự kiện xóa
+        document.getElementById("deleteAdminNotifBtn").addEventListener("click", async () => {
+            if (confirm("Bạn có chắc muốn xóa thông báo này không?")) {
+                await apiFetch(`/api/notifications/${id}`, { method: "DELETE" });
+                modal.hide();
+                await loadAdminNotifications();
+            }
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi hiển thị chi tiết thông báo:", err);
+    }
+}
+
+// === LOGOUT ===
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("jwtToken");
+    window.location.href = "/alotra-website/login";
+});
+</script>
+	<th:block th:if="${additionalJs != null}" th:replace="${additionalJs}"></th:block>
+
+</body>
+</html>

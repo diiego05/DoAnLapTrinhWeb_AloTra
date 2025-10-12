@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+	th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+
+<body>
+	<th:block th:fragment="content">
+
+		<div class="container my-5">
+			<h3 class="text-success mb-4">
+				<i class="fas fa-user-circle me-2"></i>Thông tin cá nhân
+			</h3>
+
+			<!-- =============== THÔNG TIN NGƯỜI DÙNG =============== -->
+			<div class="card shadow-sm mb-4">
+				<div class="card-body">
+					<div class="row g-3 align-items-center">
+						<!-- ẢNH ĐẠI DIỆN -->
+						<div class="col-md-3 text-center">
+							<img id="avatarPreview"
+								src="/alotra-website/images/avatar-default.jpg"
+								class="rounded-circle shadow-sm mb-2" width="120" height="120"
+								alt="Avatar"> <input type="file" id="avatarInput"
+								accept="image/*" class="form-control form-control-sm mt-2">
+						</div>
+
+						<div class="col-md-9">
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label">Họ và tên</label> <input type="text"
+										id="name" class="form-control">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Số điện thoại</label> <input
+										type="text" id="phone" class="form-control">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Giới tính</label> <select id="gender"
+										class="form-select">
+										<option value="">--Chọn--</option>
+										<option value="Nam">Nam</option>
+										<option value="Nữ">Nữ</option>
+										<option value="Khác">Khác</option>
+									</select>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Ngày sinh</label> <input type="date"
+										id="dob" class="form-control">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Căn cước công dân</label> <input
+										type="text" id="idCardNumber" class="form-control">
+								</div>
+							</div>
+						</div>
+					</div>
+					<button id="btnSaveProfile" class="btn btn-success mt-3">
+						<i class="fas fa-save me-2"></i>Cập nhật
+					</button>
+				</div>
+			</div>
+
+			<!-- =============== ĐỊA CHỈ NGƯỜI DÙNG =============== -->
+			<div class="card shadow-sm">
+				<div class="card-body">
+					<div class="d-flex justify-content-between align-items-center mb-3">
+						<h5 class="text-success mb-0">
+							<i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+						</h5>
+						<button class="btn btn-primary btn-sm" id="btnShowAddModal">
+							<i class="fas fa-plus"></i> Thêm địa chỉ
+						</button>
+					</div>
+					<table class="table table-bordered align-middle">
+						<thead class="table-light">
+							<tr>
+								<th>Người nhận</th>
+								<th>SĐT</th>
+								<th>Địa chỉ</th>
+								<th>Mặc định</th>
+								<th class="text-center">Hành động</th>
+							</tr>
+						</thead>
+						<tbody id="addressTableBody">
+							<tr>
+								<td colspan="5" class="text-center text-muted">Đang tải...</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<!-- =============== MODAL THÊM / SỬA ĐỊA CHỈ =============== -->
+		<div class="modal fade" id="addressModal" tabindex="-1"
+			aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Thêm / Sửa địa chỉ</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" id="addressId">
+						<div class="mb-2">
+							<input id="recip" class="form-control" placeholder="Người nhận">
+						</div>
+						<div class="mb-2">
+							<input id="addrPhone" class="form-control"
+								placeholder="Số điện thoại">
+						</div>
+						<div class="mb-2">
+							<input id="line1" class="form-control"
+								placeholder="Địa chỉ chi tiết (số nhà, tên đường)">
+						</div>
+						<div class="row g-2 mb-2">
+							<div class="col-md-4">
+								<input id="ward" class="form-control" placeholder="Phường/Xã">
+							</div>
+							<div class="col-md-4">
+								<input id="district" class="form-control"
+									placeholder="Quận/Huyện">
+							</div>
+							<div class="col-md-4">
+								<input id="city" class="form-control"
+									placeholder="Tỉnh/Thành phố">
+							</div>
+						</div>
+
+
+					</div>
+					<div class="modal-footer">
+						<button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+						<button class="btn btn-success" id="btnSaveAddress">Lưu</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</th:block>
+
+	<!-- JS riêng cho trang này -->
+	<th:block th:fragment="additionalJs">
+		<script src="/alotra-website/js/profile.js"></script>
+	</th:block>
+
+</body>
+</html>

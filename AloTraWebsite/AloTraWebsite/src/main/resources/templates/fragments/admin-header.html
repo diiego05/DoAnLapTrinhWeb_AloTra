@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Header</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.5rem 1rem;
+        }
+        .btn-light {
+            border-color: #dee2e6;
+        }
+        .dropdown-toggle::after {
+            margin-left: 0.5rem;
+        }
+        .navbar-brand {
+            margin-left: 1rem;
+            font-weight: 600;
+        }
+        #sidebarToggle {
+            transition: all 0.3s;
+        }
+        #sidebarToggle:hover {
+            background-color: #e9ecef;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .notification-wrapper {
+            position: relative;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ======= THANH HEADER ADMIN ======= -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+    <div class="container-fluid">
+        <button class="btn btn-light" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+
+        <a class="navbar-brand d-none d-md-block" href="#">Bảng điều khiển</a>
+
+        <div class="d-flex align-items-center ms-auto">
+
+            <div class="notification-wrapper me-2">
+                <a href="#" class="btn btn-light position-relative">
+                    <i class="fas fa-search fs-5"></i>
+                </a>
+            </div>
+
+            <!-- 🛎️ THÔNG BÁO ADMIN -->
+            <div class="dropdown notification-wrapper me-3">
+                <a href="#" class="btn btn-light position-relative" id="adminNotifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell fs-5"></i>
+                    <span id="adminNotifCount" class="notification-badge" style="display:none;">0</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="adminNotifDropdown" style="width: 340px;">
+                    <li class="dropdown-header text-center fw-bold text-success">Thông báo</li>
+                    <li><hr class="dropdown-divider"></li>
+                    <div id="adminNotifList" class="px-2" style="max-height: 350px; overflow-y: auto;">
+                        <p class="text-center text-muted small mb-0">Không có thông báo</p>
+                    </div>
+                </ul>
+            </div>
+
+            <!-- 👤 ADMIN USER -->
+            <div class="dropdown" id="adminUserDropdown">
+                <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="dropdownAdminUser" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=random"
+                         alt="Admin Avatar" width="32" height="32" class="rounded-circle me-2">
+                    <div class="d-none d-md-block">
+                        <div class="fw-bold">Nguyễn Văn Admin</div>
+                        <div class="small text-muted">Quản trị viên</div>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownAdminUser">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Hồ sơ</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Cài đặt</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ======= MAIN NỘI DUNG ======= -->
+<main class="container-fluid py-4">
+    <div class="alert alert-info">
+        <h4>Đã bổ sung tính năng thông báo động:</h4>
+        <ul>
+            <li>Hiển thị danh sách thông báo từ API `/api/notifications`</li>
+            <li>Badge 🔔 hiển thị số lượng chưa đọc, giảm khi bấm đọc</li>
+            <li>Click mở modal hiển thị chi tiết nội dung thông báo</li>
+            <li>Tự động cập nhật mỗi 30 giây</li>
+        </ul>
+    </div>
+</main>
+
+<!-- Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🧩 SCRIPT THÔNG BÁO ADMIN -->
+<script type="module">
+import { getJwtToken, apiFetch } from '/alotra-website/js/auth-helper.js';
+
+const contextPath = document.body.dataset.contextPath || '';
+const token = getJwtToken();
+
+// Nếu chưa đăng nhập, không tải thông báo
+if (!token) console.warn("⚠️ Chưa đăng nhập admin, không tải thông báo.");
+
+// === 🛎️ HÀM TẢI DANH SÁCH THÔNG BÁO ===
+async function loadAdminNotifications() {
+    const notifCountEl = document.getElementById("adminNotifCount");
+    const notifListEl = document.getElementById("adminNotifList");
+
+    try {
+        const res = await apiFetch(`${contextPath}/api/notifications`);
+        if (!res || !res.ok) throw new Error("Không thể tải thông báo");
+        const data = await res.json();
+
+        // Đếm số chưa đọc
+        const unreadCount = data.filter(n => !n.isRead).length;
+        notifCountEl.textContent = unreadCount > 0 ? unreadCount : "";
+        notifCountEl.style.display = unreadCount > 0 ? "flex" : "none";
+
+        // Hiển thị danh sách
+        if (data.length === 0) {
+            notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không có thông báo</p>`;
+            return;
+        }
+
+        notifListEl.innerHTML = data.map(n => `
+            <a href="#" class="dropdown-item ${!n.isRead ? 'fw-bold' : ''}" data-id="${n.id}">
+                <div>${n.title}</div>
+                <small class="text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</small>
+            </a>
+        `).join('');
+
+        // === GẮN SỰ KIỆN CLICK ===
+        notifListEl.querySelectorAll("a.dropdown-item").forEach(el => {
+            el.addEventListener("click", async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = el.getAttribute("data-id");
+
+                // Gọi API đánh dấu đã đọc
+                await apiFetch(`${contextPath}/api/notifications/${id}/read`, { method: "PUT" });
+
+                // Cập nhật giao diện badge
+                if (el.classList.contains("fw-bold")) {
+                    el.classList.remove("fw-bold");
+                    updateAdminBadge(-1);
+                }
+
+                // Hiển thị modal chi tiết
+                showAdminNotificationDetail(id);
+            });
+        });
+
+    } catch (err) {
+        console.error("❌ Lỗi khi tải thông báo admin:", err);
+    }
+}
+
+// === 🔢 CẬP NHẬT BADGE (giảm khi đọc) ===
+function updateAdminBadge(change) {
+    const notifCountEl = document.getElementById("adminNotifCount");
+    let current = parseInt(notifCountEl.textContent || "0");
+    current = Math.max(0, current + change);
+    notifCountEl.textContent = current > 0 ? current : "";
+    notifCountEl.style.display = current > 0 ? "flex" : "none";
+}
+
+// === 📩 HIỂN THỊ MODAL CHI TIẾT ===
+async function showAdminNotificationDetail(id) {
+    try {
+        const res = await apiFetch(`${contextPath}/api/notifications/${id}`);
+        if (!res || !res.ok) throw new Error("Không thể lấy chi tiết thông báo");
+        const notif = await res.json();
+
+        const oldModal = document.getElementById("adminNotifModal");
+        if (oldModal) oldModal.remove();
+
+        const modalHtml = `
+        <div class="modal fade" id="adminNotifModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">${notif.title || "Thông báo"}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>${notif.message || "Không có nội dung chi tiết."}</p>
+                <small class="text-muted">${new Date(notif.createdAt).toLocaleString('vi-VN')}</small>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+        const modal = new bootstrap.Modal(document.getElementById("adminNotifModal"));
+        modal.show();
+    } catch (err) {
+        console.error("❌ Lỗi khi hiển thị chi tiết thông báo:", err);
+    }
+}
+
+// === GỌI KHI TRANG LOAD ===
+if (token) loadAdminNotifications();
+
+// === TỰ ĐỘNG CẬP NHẬT MỖI 30 GIÂY ===
+setInterval(() => {
+    if (token) loadAdminNotifications();
+}, 30000);
+</script>
+
+<!-- SCRIPT PHỤ TRỢ KHÁC -->
+<script>
+$(document).ready(function() {
+    $('#sidebarToggle').click(function() {
+        alert('🧱 Chức năng mở/rthanh menu bên đã được kích hoạt (demo).');
+    });
+});
+</script>
+
+</body>
+</html>

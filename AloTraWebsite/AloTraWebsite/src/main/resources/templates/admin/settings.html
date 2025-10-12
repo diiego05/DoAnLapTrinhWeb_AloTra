@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle='Quản lý Người dùng',
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<body>
+    <!-- PAGE CONTENT -->
+    <div class="page-content" th:fragment="pageContent">
+        <h1>Đây là trang Quản lý Người dùng</h1>
+        <p>Nội dung chi tiết sẽ được phát triển ở đây.</p>
+    </div>
+
+    <!-- ADDITIONAL JS -->
+    <th:block th:fragment="additionalJs">
+        <!-- Thêm JS riêng cho trang Quản lý Người dùng tại đây -->
+        <!-- Ví dụ:
+        <script th:src="@{/js/admin/users.js}"></script>
+        -->
+    </th:block>
+</body>
+</html>

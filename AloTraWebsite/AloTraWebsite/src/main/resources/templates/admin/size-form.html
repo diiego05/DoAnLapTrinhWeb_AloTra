@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle=${size.id == null ? 'Thêm Kích thước' : 'Sửa Kích thước'},
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<body>
+    <div th:fragment="pageContent">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0" th:text="${size.id == null ? 'Thêm Kích thước mới' : 'Chỉnh sửa Kích thước'}"></h5>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/admin/sizes/save}" th:object="${size}" method="post" class="col-md-6">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Tên Kích thước</label>
+                        <input type="text" id="name" class="form-control"
+                               th:field="*{name}"
+                               th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''" />
+                        <div class="invalid-feedback"
+                             th:if="${#fields.hasErrors('name')}"
+                             th:errors="*{name}"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Lưu lại</button>
+                    <a th:href="@{/admin/sizes}" class="btn btn-secondary">Hủy</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:fragment="additionalJs">
+        <!-- Nếu bạn cần viết JS riêng cho form này, thêm ở đây -->
+        <!-- <script>
+            console.log("Trang thêm/sửa kích thước đã load");
+        </script> -->
+    </th:block>
+</body>
+</html>

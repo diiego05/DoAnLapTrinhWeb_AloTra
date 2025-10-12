@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle=${branch.id == null ? 'Thêm Mới Cửa hàng' : 'Chỉnh Sửa Cửa hàng'},
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<body>
+    <!-- PAGE CONTENT -->
+    <div class="page-content" th:fragment="pageContent">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0" th:text="${branch.id == null ? 'Thêm Mới Cửa hàng' : 'Chỉnh Sửa Cửa hàng'}"></h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+                <form th:action="@{/admin/branches/save}" th:object="${branch}" method="post">
+                    <input type="hidden" th:field="*{id}" />
+
+                    <div class="mb-3">
+                        <label for="branchName" class="form-label">Tên chi nhánh</label>
+                        <input type="text" id="branchName" class="form-control" th:field="*{name}"
+                               th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="branchSlug" class="form-label">Slug (URL)</label>
+                        <input type="text" id="branchSlug" class="form-control" th:field="*{slug}" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Địa chỉ</label>
+                        <input type="text" id="address" class="form-control" th:field="*{address}"
+                               th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''">
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Số điện thoại</label>
+                        <input type="text" id="phone" class="form-control" th:field="*{phone}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="managerId" class="form-label">Người quản lý</label>
+                        <select class="form-select" id="managerId" th:field="*{manager.id}">
+                            <option value="">-- Chọn quản lý --</option>
+                            <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.fullName}"></option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="status" th:field="*{status}" required>
+                            <option value="ACTIVE">Hoạt động</option>
+                            <option value="TEMPORARILY_CLOSED">Tạm đóng cửa</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Lưu lại</button>
+                    <a th:href="@{/admin/branches}" class="btn btn-secondary">Hủy</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADDITIONAL JS -->
+    <th:block th:fragment="additionalJs">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const branchNameInput = document.getElementById('branchName');
+                const branchSlugInput = document.getElementById('branchSlug');
+
+                function generateSlug(str) {
+                    if (!str) return '';
+                    str = str.toLowerCase();
+                    str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    str = str.replace(/đ/g, 'd');
+                    str = str.replace(/[^a-z0-9\s-]/g, '');
+                    str = str.replace(/\s+/g, '-');
+                    str = str.replace(/-+/g, '-');
+                    str = str.replace(/^-|-$/g, '');
+                    return str;
+                }
+
+                branchNameInput.addEventListener('input', function() {
+                    branchSlugInput.value = generateSlug(this.value);
+                });
+            });
+        </script>
+    </th:block>
+</body>
+</html>

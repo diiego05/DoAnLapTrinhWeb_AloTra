@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(
+                    pageTitle='Tổng quan',
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
+<body>
+    <!-- PAGE CONTENT -->
+    <div class="dashboard-content" th:fragment="pageContent">
+        <h1>Chào mừng đến với trang quản trị AloTra!</h1>
+    </div>
+
+    <!-- ADDITIONAL JS -->
+    <th:block th:fragment="additionalJs">
+        <!-- Nếu bạn có JS riêng cho trang dashboard, thêm vào đây -->
+        <!-- Ví dụ:
+        <script th:src="@{/js/admin/dashboard.js}"></script>
+        -->
+    </th:block>
+</body>
+</html>

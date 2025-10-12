@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/admin-layout :: layout(pageTitle='Đối tượng áp dụng khuyến mãi', pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+
+<th:block th:fragment="content">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4 class="mb-4 fw-bold">🎯 Đối tượng áp dụng chiến dịch khuyến mãi</h4>
+
+            <!-- ==================== 📢 CHỌN CHIẾN DỊCH ==================== -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">📢 Chọn chiến dịch</label>
+                <select class="form-select" id="campaignSelect" required>
+                    <option value="" disabled selected>— Vui lòng chọn chiến dịch khuyến mãi —</option>
+                </select>
+            </div>
+
+            <hr>
+
+            <!-- ==================== 🧲 ĐỐI TƯỢNG ÁP DỤNG ==================== -->
+            <div class="mb-3">
+                <!-- 1. Toàn bộ sản phẩm -->
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="targetType" id="targetAllProducts" value="ALL_PRODUCTS" checked>
+                    <label class="form-check-label fw-semibold" for="targetAllProducts">
+                        Toàn bộ sản phẩm
+                    </label>
+                </div>
+
+                <!-- 2. Theo danh mục -->
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="radio" name="targetType" id="targetByCategory" value="CATEGORY">
+                    <label class="form-check-label fw-semibold" for="targetByCategory">
+                        Toàn bộ sản phẩm theo danh mục
+                    </label>
+                    <div id="categorySelectWrapper" class="mt-2 ms-4 d-none">
+                        <select class="form-select" id="categorySelect">
+                            <option value="" disabled selected>— Chọn danh mục —</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Sản phẩm cụ thể -->
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="radio" name="targetType" id="targetByProducts" value="PRODUCTS">
+                    <label class="form-check-label fw-semibold" for="targetByProducts">
+                        Chọn sản phẩm cụ thể
+                    </label>
+                    <div id="productSelectWrapper" class="mt-2 ms-4 d-none">
+                        <div class="border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                            <div id="productCheckboxList" class="row row-cols-2 g-2">
+                                <!-- JS render sản phẩm -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- ==================== NÚT LƯU ==================== -->
+            <div class="d-flex justify-content-end mb-4">
+                <button class="btn btn-secondary me-2" id="btnCancelTarget">Hủy</button>
+                <button class="btn btn-primary" id="btnSaveTarget">Lưu đối tượng áp dụng</button>
+            </div>
+
+            <!-- ==================== 📊 BẢNG KẾT QUẢ ==================== -->
+            <h5 class="fw-bold mb-3">📊 Danh sách đối tượng áp dụng</h5>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Chiến dịch</th>
+                            <th>Loại</th>
+                            <th>Sản phẩm</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="targetTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Vui lòng chọn chiến dịch để xem đối tượng áp dụng</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script type="module" th:src="@{/js/promotions/admin-target.js}"></script>
+</th:block>
+</html>
