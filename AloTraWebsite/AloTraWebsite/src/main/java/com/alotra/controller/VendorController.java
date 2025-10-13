@@ -16,5 +16,29 @@ public class VendorController {
         return "vendor/dashboard"; // Trỏ đến file /templates/vendor/dashboard.html
     }
 
+    // Quản lý sản phẩm yêu thích
+    @GetMapping("/favorites")
+    public String showFavorites(Model model) {
+        model.addAttribute("pageTitle", "Kênh Người Bán - Sản phẩm yêu thích");
+        // Logic lấy danh sách sản phẩm yêu thích của vendor
+        return "vendor/favorites"; // Trỏ đến file /templates/vendor/favorites.html
+    }
+
+    // Quản lý khuyến mãi
+    @GetMapping("/promotions")
+    public String showPromotions(Model model) {
+        model.addAttribute("pageTitle", "Kênh Người Bán - Khuyến mãi");
+        // Logic lấy danh sách khuyến mãi của vendor
+        return "vendor/promotions"; // Trỏ đến file /templates/vendor/promotions.html
+    }
+
+    // Quản lý mã giảm giá
+    @GetMapping("/coupons")
+    public String showCoupons(Model model) {
+        model.addAttribute("pageTitle", "Kênh Người Bán - Mã giảm giá");
+        // Logic lấy danh sách mã giảm giá của vendor
+        return "vendor/coupons"; // Trỏ đến file /templates/vendor/coupons.html
+    }
+
     // Thêm các trang khác của vendor ở đây (ví dụ: /vendor/products, /vendor/orders)
 }
