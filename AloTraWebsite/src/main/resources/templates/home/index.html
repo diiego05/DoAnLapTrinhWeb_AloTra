@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<head>
+    <th:block th:fragment="additionalCss"></th:block>
+    <style>
+        .product-card .badge {
+            font-size: 0.85rem;
+        }
+        .product-card .card-img-top {
+            transition: transform 0.3s ease;
+        }
+        .product-card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+        .cart-toast {
+            position: fixed;
+            right: 120px;
+            bottom: 110px;
+            background: #198754;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .cart-toast.show { opacity: 1; transform: translateY(0); }
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.25); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .bounce { animation: bounce 0.4s ease; }
+    </style>
+</head>
+
+<body>
+<th:block th:fragment="content">
+
+    <!-- Hero -->
+    <section class="hero-section text-center d-flex align-items-center justify-content-center">
+        <div class="container"></div>
+    </section>
+
+    <!-- 🏆 SẢN PHẨM BÁN CHẠY -->
+    <section class="container my-5" id="best-sellers">
+        <h2 class="section-title">SẢN PHẨM BÁN CHẠY</h2>
+
+        <div id="product-list-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
+            <div class="col" th:each="product : ${bestSellers}">
+                <div class="card product-card h-100 shadow-sm border-0">
+                    <a th:href="@{/product/{id}(id=${product.id})}">
+                        <img th:src="@{${product.imageUrl != null ? product.imageUrl : '/images/placeholder.png'}}"
+                             class="card-img-top rounded-top"
+                             th:alt="${product.name}" />
+                    </a>
+
+                    <div class="card-body d-flex flex-column text-center">
+                        <h5 class="card-title mb-3">
+                            <a th:href="@{/product/{id}(id=${product.id})}"
+                               class="text-decoration-none text-dark fw-semibold"
+                               th:text="${product.name}">Tên sản phẩm</a>
+                        </h5>
+
+                        <p class="price mt-auto text-success fw-bold fs-5"
+                           th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                            Giá sản phẩm
+                        </p>
+
+                        <a href="#" class="btn btn-success btn-add-to-cart mt-2"
+                           th:data-product-id="${product.id}">
+                            <i class="fas fa-shopping-cart me-1"></i> Đặt mua
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(bestSellers)}" class="col-12 text-center">
+                <p>Chưa có sản phẩm bán chạy nào.</p>
+            </div>
+        </div>
+
+        <!-- Nút xem thêm -->
+        <div class="text-center mt-5" th:if="${#lists.size(bestSellers) > 5}">
+            <th:block th:with="hiddenProductCount=${#lists.size(bestSellers) - 5}">
+                <button id="view-more-btn" class="btn btn-outline-success btn-lg"
+                        th:text="'Xem thêm ' + ${hiddenProductCount} + ' sản phẩm'"></button>
+            </th:block>
+        </div>
+    </section>
+
+    <!-- 🔥 SẢN PHẨM GIẢM GIÁ -->
+    <section class="container my-5" id="discount-products">
+        <h2 class="section-title ">SẢN PHẨM GIẢM GIÁ</h2>
+
+        <div id="discount-product-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
+            <!-- Render bằng JS -->
+        </div>
+
+        <div class="text-center mt-5" id="discount-view-more-container" style="display:none;">
+            <button id="discount-view-more-btn" class="btn btn-outline-success btn-lg"></button>
+        </div>
+    </section>
+
+    <!-- 📢 GIỚI THIỆU -->
+    <section class="container my-5 py-5 bg-light rounded shadow-sm text-center">
+        <h2 class="section-title">Về AloTra</h2>
+        <p class="lead w-75 mx-auto">
+            AloTra mang đến những ly trà sữa chất lượng, pha chế từ nguyên liệu tươi ngon chọn lọc.
+            Chúng tôi tin rằng mỗi ly trà sữa không chỉ là thức uống, mà còn là niềm vui, là khoảnh khắc thư giãn tuyệt vời của bạn.
+        </p>
+        <a th:href="@{/about}" class="btn btn-outline-success btn-lg mt-4">Tìm hiểu thêm</a>
+    </section>
+
+</th:block>
+
+<!-- =================== SCRIPT =================== -->
+<th:block th:fragment="additionalJs">
+<script>
+$(document).ready(function () {
+    console.log("✅ Trang chủ đã sẵn sàng.");
+
+    // ================= 🏆 Phần bán chạy =================
+    const productContainer = $("#product-list-container");
+    const viewMoreBtn = $("#view-more-btn");
+
+    if (productContainer.length && viewMoreBtn.length) {
+        const hiddenProducts = productContainer.find(".col:gt(4)").hide();
+        if (hiddenProducts.length === 0) viewMoreBtn.hide();
+        viewMoreBtn.on('click', function () {
+            hiddenProducts.show();
+            $(this).hide();
+        });
+    }
+
+    // ================= 🔥 Phần sản phẩm giảm giá =================
+    $.get("/alotra-website/api/products/public/top-discount", function (products) {
+        const container = $("#discount-product-list");
+        const viewMoreContainer = $("#discount-view-more-container");
+        const viewMoreBtn = $("#discount-view-more-btn");
+
+        if (!products || products.length === 0) {
+            container.html(`<div class="col-12 text-center"><p>Chưa có sản phẩm giảm giá.</p></div>`);
+            return;
+        }
+
+        products.forEach((p, index) => {
+            const originalPrice = p.originalPrice ? new Intl.NumberFormat('vi-VN').format(p.originalPrice) + " ₫" : "";
+            const discountedPrice = p.discountedPrice ? new Intl.NumberFormat('vi-VN').format(p.discountedPrice) + " ₫" : "";
+
+            const tagSale = p.hasDiscount ? `
+                <div class="badge bg-danger position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
+                    SALE -${p.discountPercent}%
+                </div>` : ``;
+
+            const priceHtml = p.hasDiscount ? `
+                <div class="mb-3">
+                    <span class="text-muted text-decoration-line-through me-2">${originalPrice}</span>
+                    <span class="text-success fw-bold fs-5">${discountedPrice}</span>
+                </div>` :
+                `<div class="mb-3">
+                    <span class="text-success fw-bold fs-5">${originalPrice}</span>
+                </div>`;
+
+            const card = `
+                <div class="col discount-col" ${index >= 5 ? 'style="display:none;"' : ''}>
+                    <div class="card product-card h-100 shadow-sm border-0 position-relative">
+                        ${tagSale}
+                        <a href="/alotra-website/product/${p.id}">
+                            <img src="${p.imageUrl || '/alotra-website/images/placeholder.png'}"
+                                 class="card-img-top rounded-top" alt="${p.name}">
+                        </a>
+                        <div class="card-body d-flex flex-column text-center">
+                            <h5 class="card-title mb-2">
+                                <a href="/alotra-website/product/${p.id}"
+                                   class="text-decoration-none text-dark fw-semibold">${p.name}</a>
+                            </h5>
+                            ${priceHtml}
+                            <a href="#" class="btn btn-success btn-add-to-cart mt-auto"
+                               data-product-id="${p.id}">
+                               <i class="fas fa-shopping-cart me-1"></i> Đặt mua
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.append(card);
+        });
+
+        if (products.length > 5) {
+            const hiddenCount = products.length - 5;
+            viewMoreBtn.text(`Xem thêm ${hiddenCount} sản phẩm`);
+            viewMoreContainer.show();
+            viewMoreBtn.on("click", function () {
+                $(".discount-col").show();
+                $(this).hide();
+            });
+        }
+    });
+
+    // ================= 🛒 Thêm vào giỏ hàng =================
+    $(document).on("click", ".btn-add-to-cart", function (e) {
+        e.preventDefault();
+        const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+        if (!token) {
+            showCartToast("⚠️ Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.", true);
+            return;
+        }
+
+        const productId = $(this).data("product-id");
+        if (!productId) {
+            showCartToast("❌ Không tìm thấy ID sản phẩm.", true);
+            return;
+        }
+
+        $.ajax({
+            url: "/alotra-website/api/cart/items",
+            type: "POST",
+            contentType: "application/json",
+            headers: { "Authorization": "Bearer " + token },
+            data: JSON.stringify({ productId: productId, quantity: 1 }),
+            success: function () {
+                showCartToast("✅ Đã thêm sản phẩm vào giỏ hàng!");
+                bounceCartIcon();
+                updateCartFloatingCount();
+            }
+        });
+    });
+
+    // ================= 🛒 Khi nhấn icon giỏ hàng =================
+    $(document).on("click", "#floating-cart .cart-btn", function (e) {
+        const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+        if (!token) {
+            e.preventDefault();
+            showCartToast("⚠️ Vui lòng đăng nhập để xem giỏ hàng.", true);
+        }
+    });
+
+    // ================= 🔔 Toast thông báo =================
+    function showCartToast(message, isError = false) {
+        const toast = $("#cart-toast");
+        toast.text(message);
+        toast.css("background", isError ? "#dc3545" : "#198754");
+        toast.addClass("show");
+        clearTimeout(toast.data("timeout"));
+        const timeout = setTimeout(() => toast.removeClass("show"), 2000);
+        toast.data("timeout", timeout);
+    }
+
+    // ================= 🛒 Hiệu ứng icon giỏ =================
+    function bounceCartIcon() {
+        const cartBtn = $("#floating-cart .cart-btn");
+        cartBtn.addClass("bounce");
+        setTimeout(() => cartBtn.removeClass("bounce"), 500);
+    }
+
+    // ================= 🧮 Cập nhật số lượng giỏ hàng =================
+    function updateCartFloatingCount() {
+        $.ajax({
+            url: "/alotra-website/api/cart",
+            type: "GET",
+            headers: { "Authorization": "Bearer " + (localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken")) },
+            success: function (cart) {
+                $("#cart-count").text(cart.itemsCount || 0);
+            }
+        });
+    }
+
+    if (localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken")) {
+        updateCartFloatingCount();
+    }
+});
+</script>
+</th:block>
+
+</body>
+</html>

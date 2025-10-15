@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh Toán</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <div class="row g-4">
+
+            <!-- 🧭 Cột trái -->
+            <div class="col-lg-8">
+                <!-- 1️⃣ Địa chỉ giao hàng -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <strong><i class="fas fa-map-marker-alt me-2"></i> Địa chỉ giao hàng</strong>
+                        <button class="btn btn-light btn-sm" id="btn-add-address">
+                            <i class="fas fa-plus me-1"></i> Thêm địa chỉ
+                        </button>
+                    </div>
+                    <div class="card-body" id="address-list">
+                        <div class="text-muted">Đang tải địa chỉ...</div>
+                    </div>
+                </div>
+
+                <!-- 2️⃣ Chi nhánh xử lý -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-store me-2"></i> Chi nhánh xử lý đơn hàng</strong>
+                    </div>
+                    <div class="card-body">
+                        <select id="branch-select" class="form-select">
+                            <option value="">-- Chọn chi nhánh --</option>
+                        </select>
+                        <div id="branch-warning" class="text-danger mt-2" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- 3️⃣ Đơn vị vận chuyển -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-truck me-2"></i> Đơn vị vận chuyển</strong>
+                    </div>
+                    <div class="card-body">
+                        <select id="carrier-select" class="form-select mb-2">
+                            <option value="">-- Chọn đơn vị vận chuyển --</option>
+                        </select>
+                        <div class="text-muted">
+                            Phí vận chuyển: <strong id="shipping-fee">0₫</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4️⃣ Mã giảm giá -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-ticket-alt me-2"></i> Mã giảm giá</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="coupon-code" placeholder="Nhập mã giảm giá">
+                            <button class="btn btn-success" id="apply-coupon-btn">Áp dụng</button>
+                        </div>
+                        <div id="coupon-msg" class="mt-2 text-success small"></div>
+                    </div>
+                </div>
+
+                <!-- 5️⃣ Phương thức thanh toán -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-credit-card me-2"></i> Phương thức thanh toán</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" value="PICKUP" id="pm-pickup">
+                            <label class="form-check-label" for="pm-pickup">
+                                Nhận tại quán
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" value="COD" id="pm-cod" checked>
+                            <label class="form-check-label" for="pm-cod">
+                                Thanh toán khi nhận hàng
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" value="BANK" id="pm-bank">
+                            <label class="form-check-label" for="pm-bank">
+                                Chuyển khoản
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🧾 Cột phải -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm sticky-top" style="top: 90px;">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-shopping-cart me-2"></i> Tóm tắt đơn hàng</strong>
+                    </div>
+                    <div class="card-body">
+                        <div id="checkout-item-list" class="mb-3"></div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>Tạm tính</span>
+                            <strong id="subtotal">0₫</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Giảm giá</span>
+                            <strong id="discount">0₫</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Phí vận chuyển</span>
+                            <strong id="ship-fee-summary">0₫</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fs-5 mb-3">
+                            <span><strong>Tổng cộng</strong></span>
+                            <strong id="grand-total">0₫</strong>
+                        </div>
+                        <button class="btn btn-lg btn-success w-100" id="btn-confirm-order">
+                            <i class="fas fa-check me-2"></i> Xác nhận đặt hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🏡 Modal Thêm Địa Chỉ -->
+    <div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-map-marker-alt me-2"></i> Thêm địa chỉ mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label>Người nhận</label>
+                        <input type="text" class="form-control" id="new-recipient">
+                    </div>
+                    <div class="mb-2">
+                        <label>Số điện thoại</label>
+                        <input type="text" class="form-control" id="new-phone">
+                    </div>
+                    <div class="mb-2">
+                        <label>Địa chỉ</label>
+                        <input type="text" class="form-control" id="new-line1">
+                    </div>
+                    <div class="mb-2">
+                        <label>Phường/Xã</label>
+                        <input type="text" class="form-control" id="new-ward">
+                    </div>
+                    <div class="mb-2">
+                        <label>Quận/Huyện</label>
+                        <input type="text" class="form-control" id="new-district">
+                    </div>
+                    <div class="mb-2">
+                        <label>Tỉnh/Thành phố</label>
+                        <input type="text" class="form-control" id="new-city">
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="new-default">
+                        <label class="form-check-label" for="new-default">Đặt làm địa chỉ mặc định</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success" id="btn-save-address">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script type="module" th:src="@{/js/checkout.js}"></script>
+</th:block>
+</body>
+</html>

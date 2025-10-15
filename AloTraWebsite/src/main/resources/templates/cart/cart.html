@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+	th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs}, additionalCss=~{::additionalCss})}">
+
+<head>
+<th:block th:fragment="additionalCss">
+	<style>
+/* === ĐÁ & NGỌT === */
+.ice-btn.active, .sugar-btn.active {
+	background-color: #198754 !important;
+	color: #fff !important;
+}
+.ice-btn, .sugar-btn {
+	min-width: 90px;
+}
+
+/* === MODAL ĐỔI SIZE === */
+#sizeModal .modal-body button {
+	border: 1px solid #198754;
+	min-width: 80px;
+	padding: 10px;
+	transition: 0.2s;
+}
+#sizeModal .modal-body button.active {
+	background-color: #198754;
+	color: #fff;
+}
+#sizeModal .modal-body button:hover {
+	background-color: #198754;
+	color: #fff;
+}
+
+/* === MODAL TOPPING === */
+#toppingModal .form-check {
+	min-width: 180px;
+}
+#selected-toppings .badge {
+	font-size: 0.9rem;
+	background-color: #198754;
+	color: white;
+	padding: 0.5em 0.7em;
+	border-radius: 16px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+#selected-toppings .badge i {
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+
+/* === THANH CÔNG CỤ GIỎ HÀNG === */
+.cart-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1.2rem;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+/* === DANH SÁCH GIỎ HÀNG GIỚI HẠN 5 SẢN PHẨM === */
+#cart-container {
+	max-height: 600px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column-reverse;  /* 👈 sản phẩm mới nhất lên đầu */
+	gap: 0.75rem;
+	padding-right: 6px;
+	scroll-behavior: smooth;
+}
+
+/* Thanh cuộn đẹp */
+#cart-container::-webkit-scrollbar {
+	width: 6px;
+}
+#cart-container::-webkit-scrollbar-thumb {
+	background-color: #ccc;
+	border-radius: 4px;
+}
+#cart-container::-webkit-scrollbar-thumb:hover {
+	background-color: #888;
+}
+
+/* === CART ICON BADGE === */
+#cart-count {
+	position: absolute;
+	top: -6px;
+	right: -10px;
+	font-size: 0.75rem;
+	padding: 3px 6px;
+	border-radius: 999px;
+	background: red;
+	color: #fff;
+}
+
+/* === TOAST TÙY CHỈNH === */
+.cart-toast {
+    position: fixed;
+    right: 120px;
+    bottom: 110px;
+    background: #198754;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+    pointer-events: none;
+    z-index: 9999;
+}
+.cart-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 🛒 hiệu ứng rung nhẹ cho giỏ hàng */
+@keyframes cart-bounce {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.25); }
+    60%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+	</style>
+</th:block>
+</head>
+
+<body>
+<th:block th:fragment="content">
+	<div class="container my-5">
+		<!-- 🧭 Thanh công cụ -->
+		<div class="cart-toolbar">
+			<h3 class="mb-0">🛒 Giỏ hàng của bạn</h3>
+			<div class="d-flex flex-wrap gap-2 align-items-center">
+				<div class="form-check me-2 d-flex align-items-center">
+					<input type="checkbox" id="select-all" class="form-check-input me-1">
+					<label for="select-all" class="form-check-label">Chọn tất cả</label>
+				</div>
+			</div>
+		</div>
+
+		<!-- 🛍️ Danh sách sản phẩm giỏ hàng -->
+		<div id="cart-container"></div>
+
+		<!-- Tổng cộng và nút hành động -->
+		<div class="row mt-4">
+			<!-- 🧮 Tổng cộng -->
+			<div class="col-12 d-flex justify-content-end mb-2">
+				<h4 class="fw-bold text-success mb-0">
+					Tổng cộng: <span id="total">0₫</span>
+				</h4>
+			</div>
+
+			<!-- 🧭 Nút hành động -->
+			<div class="col-12 d-flex justify-content-end align-items-center flex-wrap gap-3">
+				<button class="btn btn-danger btn-delete-selected" disabled>
+					<i class="fas fa-trash"></i> Xóa mục đã chọn
+				</button>
+				<a href="#" class="btn btn-success btn-lg" id="checkout-btn">
+    <i class="fas fa-credit-card me-2"></i> Thanh toán
+</a>
+
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal đổi size -->
+	<div class="modal fade" id="sizeModal" tabindex="-1" aria-labelledby="sizeModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content border-0 shadow">
+				<div class="modal-header bg-success text-white">
+					<h5 class="modal-title" id="sizeModalLabel">Chọn Size</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div id="size-options" class="d-flex flex-wrap gap-2 justify-content-start"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button type="button" class="btn btn-success" id="confirm-size">Xác nhận</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal topping -->
+	<div class="modal fade" id="toppingModal" tabindex="-1" aria-labelledby="toppingModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content border-0 shadow">
+				<div class="modal-header bg-success text-white">
+					<h5 class="modal-title" id="toppingModalLabel">Chọn topping</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div id="topping-options" class="d-flex flex-wrap gap-3"></div>
+					<hr>
+					<div id="selected-toppings" class="d-flex flex-wrap gap-2"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button type="button" class="btn btn-success" id="confirm-topping">Xác nhận</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ✅ TOAST TÙY CHỈNH -->
+	<div id="cart-toast" class="cart-toast">Sản phẩm đã được xóa khỏi giỏ hàng 🛒</div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+	<script type="module" th:src="@{/js/cart.js}"></script>
+</th:block>
+</body>
+</html>
