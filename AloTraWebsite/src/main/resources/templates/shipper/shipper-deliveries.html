@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/shipper_layout :: layout(${pageTitle}, ~{::pageContent}, ~{::additionalJs})}">
+<head></head>
+<body>
+
+<!-- 📦 Nội dung chính -->
+<div class="page-content" th:fragment="pageContent">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">🚚 Danh sách đơn giao</h4>
+    <div class="d-flex gap-2">
+      <input id="shipperSearch" class="form-control form-control-sm" placeholder="🔎 Tìm theo mã đơn...">
+      <button id="shipperReload" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i></button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Bảng danh sách -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light fw-bold">Đơn được giao</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="shipperTable">
+              <thead class="table-light">
+                <tr>
+                  <th>Mã đơn</th>
+                  <th>Địa chỉ</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
+                  <th class="text-center">Xem</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryTableBody">
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">Đang tải...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer small text-muted">
+          Nhấn vào biểu tượng 👁 để xem chi tiết
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel chi tiết -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm" id="detailCard" style="display:none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="fw-bold">
+            <i class="fas fa-box-open me-2"></i>Đơn <span id="detailCode"></span>
+          </div>
+          <span id="detailStatus" class="badge"></span>
+        </div>
+
+        <div class="card-body" id="detailLoading">
+          <div class="text-center text-muted py-3">
+            <div class="spinner-border spinner-border-sm me-2"></div>Đang tải chi tiết...
+          </div>
+        </div>
+
+        <div class="card-body" id="detailContent" style="display:none;">
+          <div class="row mb-2">
+            <div class="col-md-6">
+              <div><strong>Ngày đặt:</strong> <span id="detailDate"></span></div>
+              <div><strong>Phương thức:</strong> <span id="detailPayment"></span></div>
+            </div>
+            <div class="col-md-6">
+              <div><strong>Địa chỉ:</strong> <span id="detailAddress"></span></div>
+            </div>
+          </div>
+
+          <!-- Sản phẩm -->
+          <h6 class="fw-bold mt-2">Sản phẩm</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+              <tr>
+                <th>Tên SP</th>
+                <th>Size</th>
+                <th>SL</th>
+                <th>Giá</th>
+                <th>Thành tiền</th>
+              </tr>
+              </thead>
+              <tbody id="detailItems"></tbody>
+            </table>
+          </div>
+
+          <!-- Tổng hợp -->
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0">
+              <tbody>
+              <tr><td>Tạm tính</td><td class="text-end"><span id="detailSubtotal"></span></td></tr>
+              <tr><td>Giảm giá</td><td class="text-end text-danger">- <span id="detailDiscount"></span></td></tr>
+              <tr><td>Phí vận chuyển</td><td class="text-end"><span id="detailShipping"></span></td></tr>
+              <tr class="table-light fw-bold"><td>Tổng cộng</td><td class="text-end text-success"><span id="detailTotal"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Timeline -->
+          <h6 class="fw-bold mt-4 mb-2">Lịch sử trạng thái</h6>
+          <ul class="timeline list-unstyled" id="detailHistory"></ul>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+          <div class="d-flex gap-2">
+            <button id="btnAccept" class="btn btn-primary d-none">
+              <i class="fas fa-hand-paper me-1"></i> Nhận đơn
+            </button>
+            <button id="btnDelivered" class="btn btn-success d-none">
+              <i class="fas fa-check me-1"></i> Giao thành công
+            </button>
+          </div>
+          <button id="btnCloseDetail" class="btn btn-outline-secondary">Đóng</button>
+        </div>
+      </div>
+
+      <!-- Khung rỗng khi chưa chọn đơn -->
+      <div class="card border-0 bg-light" id="emptyDetailCard">
+        <div class="card-body text-center text-muted">
+          <i class="fas fa-info-circle me-1"></i> Hãy chọn một đơn ở bảng bên trái để xem chi tiết
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:fragment="additionalJs">
+  <script type="module" src="/alotra-website/js/shipper-deliveries.js"></script>
+  <style>
+    .timeline-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+    .order-row:hover{background:#f8f9fa}
+  </style>
+</th:block>
+
+</body>
+</html>

@@ -50,4 +50,4 @@ public class Branch {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ManagerId")
     private User manager;
-}
+}	
