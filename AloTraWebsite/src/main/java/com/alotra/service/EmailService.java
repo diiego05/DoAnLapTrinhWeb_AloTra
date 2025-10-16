@@ -168,6 +168,42 @@ public class EmailService {
         return String.format("%,.0f ₫", amount);
     }
 
+    // === 4️⃣ GỬI MAIL THANH TOÁN THÀNH CÔNG ===
+    public void sendPaymentSuccessEmail(Long userId, Order order) {
+        String to = getUserEmailById(userId);
+        String subject = "[AloTra] Thanh toán thành công cho đơn hàng #" + order.getCode();
+        String content = """
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color:#28a745;">🎉 Thanh toán thành công!</h2>
+                <p>Đơn hàng <strong>#%s</strong> của bạn đã được thanh toán thành công qua VNPay.</p>
+                <p>Tổng số tiền: <strong style="color:#d9534f;">%s</strong></p>
+                <p>Chúng tôi sẽ xử lý đơn hàng và giao cho bạn sớm nhất có thể.</p>
+                <p style="margin-top: 24px;">Trân trọng,<br><strong>Đội ngũ AloTra</strong></p>
+                <hr style="margin-top:20px;">
+                <p style="font-size:13px; color:#888;">Email này được gửi tự động, vui lòng không trả lời.</p>
+            </div>
+        """.formatted(order.getCode(), formatCurrency(order.getTotal()));
+        sendHtmlMail(to, subject, content, "AloTra Payment");
+    }
+
+    // === 5️⃣ GỬI MAIL THANH TOÁN THẤT BẠI ===
+    public void sendPaymentFailedEmail(Long userId, Order order) {
+        String to = getUserEmailById(userId);
+        String subject = "[AloTra] Thanh toán thất bại cho đơn hàng #" + order.getCode();
+        String content = """
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color:#d9534f;">❌ Thanh toán thất bại!</h2>
+                <p>Đơn hàng <strong>#%s</strong> của bạn chưa được thanh toán thành công.</p>
+                <p>Vui lòng thử lại hoặc chọn phương thức thanh toán khác.</p>
+                <p>Tổng số tiền cần thanh toán: <strong style="color:#d9534f;">%s</strong></p>
+                <p style="margin-top: 24px;">Trân trọng,<br><strong>Đội ngũ AloTra</strong></p>
+                <hr style="margin-top:20px;">
+                <p style="font-size:13px; color:#888;">Email này được gửi tự động, vui lòng không trả lời.</p>
+            </div>
+        """.formatted(order.getCode(), formatCurrency(order.getTotal()));
+        sendHtmlMail(to, subject, content, "AloTra Payment");
+    }
+
     // 📌 Tùy hệ thống — có thể dùng UserService hoặc lấy trực tiếp từ Order
     private String getUserEmailById(Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);

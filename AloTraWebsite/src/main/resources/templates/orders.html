@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch sử đơn hàng</title>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <h3 class="fw-bold mb-4"><i class="fas fa-box me-2"></i>Lịch sử đơn hàng</h3>
+
+        <!-- 🧭 Bộ lọc trạng thái -->
+        <div class="mb-4 text-center">
+            <div class="btn-group flex-wrap" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-status="">Tất cả</button>
+                <button type="button" class="btn btn-outline-warning" data-status="PENDING">Chờ xác nhận</button>
+                <button type="button" class="btn btn-outline-secondary" data-status="CONFIRMED">Đã xác nhận</button>
+                <button type="button" class="btn btn-outline-info" data-status="AWAITING_PAYMENT">Chờ thanh toán</button>
+                <button type="button" class="btn btn-outline-primary" data-status="PAID">Đã thanh toán</button>
+                <button type="button" class="btn btn-outline-info" data-status="SHIPPING">Đang giao</button>
+                <button type="button" class="btn btn-outline-success" data-status="COMPLETED">Hoàn thành</button>
+                <button type="button" class="btn btn-outline-danger" data-status="CANCELED">Đã hủy</button>
+            </div>
+        </div>
+
+        <!-- 🧾 Danh sách đơn -->
+        <div id="ordersList" class="d-flex flex-column gap-3">
+            <div class="text-center text-muted py-5">Đang tải dữ liệu...</div>
+        </div>
+    </div>
+
+    <!-- 📦 Modal Chi tiết đơn hàng -->
+    <!-- 📦 Modal Chi tiết đơn hàng -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-box-open me-2"></i>Chi tiết đơn hàng <span id="modalOrderCode"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderModalLoading" class="text-center py-3 text-muted">Đang tải dữ liệu...</div>
+                <div id="orderModalContent" style="display:none;">
+
+                    <!-- 🛍️ Sản phẩm -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-2">Sản phẩm</h6>
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>Tên SP</th>
+                                <th>Size</th>
+                                <th>SL</th>
+                                <th>Giá</th>
+                                <th>Thành tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody id="modalOrderItems"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- 📅 Thông tin đơn -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div><strong>Ngày đặt:</strong> <span id="modalOrderDate"></span></div>
+                            <span class="badge" id="modalOrderStatus"></span>
+                        </div>
+                        <div><strong>Phương thức thanh toán:</strong> <span id="modalOrderPayment"></span></div>
+                        <div class="mt-2">
+                            <strong>Địa chỉ giao hàng:</strong> <span id="modalOrderAddress"></span>
+                        </div>
+                    </div>
+
+                    <!-- 💰 Tổng hợp chi phí -->
+                    <div class="mb-3">
+                        <table class="table table-sm w-auto mb-0">
+                            <tbody>
+                            <tr>
+                                <td class="text-muted">Tạm tính</td>
+                                <td class="text-end"><span id="modalSubtotal">0 ₫</span></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Giảm giá</td>
+                                <td class="text-end text-danger">- <span id="modalDiscount">0 ₫</span></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Phí vận chuyển</td>
+                                <td class="text-end"><span id="modalShipping">0 ₫</span></td>
+                            </tr>
+                            <tr class="table-light">
+                                <td class="fw-bold">Tổng cộng</td>
+                                <td class="text-end fw-bold text-success"><span id="modalOrderTotal">0 ₫</span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 🕒 Lịch sử -->
+                    <div>
+                        <h6 class="fw-bold">Lịch sử trạng thái</h6>
+                        <ul class="timeline list-unstyled" id="modalOrderHistory"></ul>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button id="btnCancelOrder" class="btn btn-danger d-none">
+                    <i class="fas fa-times me-1"></i> Hủy đơn hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script type="module" src="/alotra-website/js/order-history.js"></script>
+</th:block>
+</body>
+</html>

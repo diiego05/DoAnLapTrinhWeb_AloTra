@@ -21,4 +21,7 @@ public interface ShipperRepository extends JpaRepository<Shipper, Long> {
            "OR LOWER(s.ward) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(s.district) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Shipper> searchShippers(String status, String keyword);
+    List<Shipper> findByCarrierIdAndIsDeletedFalse(Long carrierId);
+    Optional<Shipper> findByUser_Id(Long userId);
+
 }

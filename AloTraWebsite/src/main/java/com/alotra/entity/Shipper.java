@@ -38,7 +38,8 @@ public class Shipper {
     private String adminNote;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    @Column(name = "IsDeleted")
+    private Boolean isDeleted = false;
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();

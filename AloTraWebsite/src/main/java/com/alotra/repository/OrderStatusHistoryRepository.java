@@ -8,5 +8,6 @@ import com.alotra.entity.OrderStatusHistory;
 
 public interface OrderStatusHistoryRepository extends JpaRepository<OrderStatusHistory, Long> {
     List<OrderStatusHistory> findByOrderIdOrderByChangedAtAsc(Long orderId);
+
 }
 

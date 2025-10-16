@@ -52,6 +52,14 @@
                         </div>
                     </ul>
                 </li>
+<!-- 📦 Đơn hàng -->
+<li class="nav-item position-static me-3" id="order-item">
+    <a class="nav-link d-flex align-items-center" th:href="@{/orders}" title="Xem đơn hàng của tôi">
+        <i class="fas fa-box"></i>
+        <span id="orderCount" class="badge bg-danger rounded-pill"
+              style="font-size: 11px; position: relative; top: -8px; right: 6px; display: none;">0</span>
+    </a>
+</li>
 
                 <!-- 👤 Người dùng -->
                 <li class="nav-item" id="nav-login">
@@ -128,7 +136,12 @@
                     loginItem.classList.add("d-none");
                     userItem.classList.remove("d-none");
                     userName.textContent = user.fullName || "User";
-                    await Promise.all([loadNotifications(), loadWishlist(), updateCartFloatingCount()]);
+                    await Promise.all([
+    loadNotifications(),
+    loadWishlist(),
+    loadOrders(),
+    updateCartFloatingCount()
+]);
                 } else {
                     localStorage.removeItem("jwtToken");
                     loginItem.classList.remove("d-none");
@@ -344,6 +357,21 @@
             });
         }
 
+// ======================= 📦 ĐƠN HÀNG =======================
+async function loadOrders() {
+    const orderCountEl = document.getElementById("orderCount");
+    try {
+        const res = await apiFetch(`/api/orders`);
+        if (!res?.ok) throw new Error();
+        const orders = await res.json();
+        orderCountEl.textContent = orders.length || "";
+        orderCountEl.style.display = orders.length > 0 ? "inline-block" : "none";
+    } catch {
+        orderCountEl.style.display = "none";
+    }
+}
+
+
         // Gắn các hàm ra global
         window.loadNotifications = loadNotifications;
         window.loadWishlist = loadWishlist;
@@ -398,6 +426,9 @@
             pointer-events: none;
             z-index: 9999;
         }
+
+
+
         .cart-toast.show { opacity: 1; transform: translateY(0); }
 
         /* Bounce */
@@ -409,5 +440,7 @@
         }
         .bounce { animation: bounce 0.4s ease; }
     </style>
+
+
 </th:block>
 </html>

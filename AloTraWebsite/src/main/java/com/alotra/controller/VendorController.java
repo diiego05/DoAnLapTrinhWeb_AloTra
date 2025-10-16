@@ -15,6 +15,10 @@ public class VendorController {
         // Logic cho dashboard của vendor
         return "vendor/dashboard"; // Trỏ đến file /templates/vendor/dashboard.html
     }
-
+    @GetMapping("/orders")
+    public String showOrderManagement(Model model) {
+        model.addAttribute("pageTitle", "Kênh Người Bán - Quản lý đơn hàng");
+        return "vendor/vendor-orders"; // /templates/vendor/vendor-orders.html
+    }
     // Thêm các trang khác của vendor ở đây (ví dụ: /vendor/products, /vendor/orders)
 }

@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/admin-layout :: ~{}}">
-<head>
-    <title>Trang Giao Hàng - Bảng điều khiển</title>
-</head>
+      th:replace="~{layouts/shipper_layout :: layout(
+                    pageTitle='Tổng quan',
+                    pageContent=~{::pageContent},
+                    additionalJs=~{::additionalJs}
+                  )}">
+
 <body>
-    <div class="page-content">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Danh sách đơn hàng được giao</h5>
-            </div>
-            <div class="card-body">
-                <p>Chào mừng shipper.</p>
-                <p>Các đơn hàng được phân công cho bạn sẽ hiển thị ở đây.</p>
-            </div>
-        </div>
+    <!-- PAGE CONTENT -->
+    <div class="dashboard-content" th:fragment="pageContent">
+        <h1>Chào mừng đến với trang quản trị AloTra!</h1>
     </div>
+
+    <!-- ADDITIONAL JS -->
+    <th:block th:fragment="additionalJs">
+        <!-- Nếu bạn có JS riêng cho trang dashboard, thêm vào đây -->
+        <!-- Ví dụ:
+        <script th:src="@{/js/admin/dashboard.js}"></script>
+        -->
+    </th:block>
 </body>
 </html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(pageTitle, pageContent, additionalJs)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' - AloTra Vendor'"></title>
+
+    <!-- Bootstrap & FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div class="bg-white border-end" id="sidebar-wrapper">
+        <div class="sidebar-heading border-bottom text-center py-3">
+            <a th:href="@{/vendor/dashboard}" class="text-decoration-none d-flex justify-content-center align-items-center">
+                <img th:src="@{/images/logo.jpg}" alt="AloTra Logo" style="height: 50px;">
+            </a>
+        </div>
+        <div class="list-group list-group-flush">
+            <a th:href="@{/vendor/dashboard}" class="list-group-item list-group-item-action"
+               th:classappend="${currentPage == 'dashboard'} ? 'active-custom' : ''">
+                <i class="fas fa-chart-line me-2"></i> Tổng quan
+            </a>
+
+            <a th:href="@{/vendor/products}" class="list-group-item list-group-item-action"
+               th:classappend="${currentPage == 'products'} ? 'active-custom' : ''">
+                <i class="fas fa-box me-2"></i> Quản lý sản phẩm
+            </a>
+
+            <a th:href="@{/vendor/orders}" class="list-group-item list-group-item-action"
+               th:classappend="${currentPage == 'orders'} ? 'active-custom' : ''">
+                <i class="fas fa-receipt me-2"></i> Quản lý đơn hàng
+            </a>
+
+            <a th:href="@{/vendor/revenue}" class="list-group-item list-group-item-action"
+               th:classappend="${currentPage == 'revenue'} ? 'active-custom' : ''">
+                <i class="fas fa-sack-dollar me-2"></i> Quản lý doanh thu
+            </a>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-light" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+
+                    <!-- 🏪 Nút quay về trang người dùng -->
+                    <a href="/alotra-website/" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-1"></i> Trang mua hàng
+                    </a>
+
+                    <!-- 🔔 Thông báo -->
+                    <div class="dropdown me-2">
+                        <a href="#" class="btn btn-light position-relative" id="vendorNotifDropdown"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell fs-5"></i>
+                            <span id="vendorNotifCount"
+                                  class="badge bg-danger rounded-pill position-absolute top-0 end-0 translate-middle"
+                                  style="display: none;">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="vendorNotifDropdown"
+                            style="width: 320px;">
+                            <li class="dropdown-header text-center fw-bold text-success">Thông báo</li>
+                            <li><hr class="dropdown-divider"></li>
+                            <div id="vendorNotifList" class="px-2" style="max-height: 300px; overflow-y: auto;">
+                                <p class="text-center text-muted small mb-0">Không có thông báo</p>
+                            </div>
+                        </ul>
+                    </div>
+
+                    <!-- 👤 Vendor -->
+                    <div class="dropdown d-none" id="vendorUserDropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
+                           id="dropdownVendorUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img id="vendorAvatar" src="/alotra-website/images/avatar-default.jpg"
+                                 alt="Vendor Avatar" width="32" height="32" class="rounded-circle me-2">
+                            <div>
+                                <div class="fw-bold" id="vendorName">...</div>
+                                <div class="small text-muted" id="vendorRole">Vendor</div>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownVendorUser">
+
+                            <li><a class="dropdown-item" id="logoutBtn" href="#">
+                                <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                            </a></li>
+                        </ul>
+                    </div>
+
+                    <a th:href="@{/login}" id="loginBtn" class="btn btn-primary d-none">Đăng nhập</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Nội dung trang -->
+        <div class="container-fluid p-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/vendor/dashboard}">Trang chủ</a></li>
+                    <li class="breadcrumb-item" th:if="${parentPageTitle}">
+                        <a th:href="@{${parentPageUrl}}" th:text="${parentPageTitle}"></a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page" th:text="${pageTitle}"></li>
+                </ol>
+            </nav>
+            <div class="page-content" th:replace="${pageContent}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Sidebar Toggle -->
+<script>
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const wrapper = document.getElementById('wrapper');
+    sidebarToggle.addEventListener('click', () => wrapper.classList.toggle('toggled'));
+</script>
+
+<!-- 🔐 JWT + Thông báo Vendor -->
+<script type="module">
+import { getJwtToken, apiFetch } from '/alotra-website/js/auth-helper.js';
+
+const token = getJwtToken();
+const loginBtn = document.getElementById("loginBtn");
+const userDropdown = document.getElementById("vendorUserDropdown");
+const nameEl = document.getElementById("vendorName");
+const avatarEl = document.getElementById("vendorAvatar");
+
+if (!token) {
+    loginBtn.classList.remove("d-none");
+    userDropdown.classList.add("d-none");
+    window.location.href = "/alotra-website/login";
+} else {
+    const res = await apiFetch("/api/users/me");
+    if (res && res.ok) {
+        const user = await res.json();
+        loginBtn.classList.add("d-none");
+        userDropdown.classList.remove("d-none");
+        nameEl.textContent = user.fullName;
+        if (user.avatarUrl) avatarEl.src = user.avatarUrl;
+        loadVendorNotifications();
+        setInterval(loadVendorNotifications, 30000);
+    } else {
+        localStorage.removeItem("jwtToken");
+        window.location.href = "/alotra-website/login";
+    }
+}
+
+// 🛎️ Load thông báo
+async function loadVendorNotifications() {
+    const notifCountEl = document.getElementById("vendorNotifCount");
+    const notifListEl = document.getElementById("vendorNotifList");
+
+    try {
+        const res = await apiFetch("/api/notifications");
+        if (!res || !res.ok) throw new Error();
+        const data = await res.json();
+
+        const unreadCount = data.filter(n => !n.isRead).length;
+        notifCountEl.textContent = unreadCount > 0 ? unreadCount : "";
+        notifCountEl.style.display = unreadCount > 0 ? "flex" : "none";
+
+        if (data.length === 0) {
+            notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không có thông báo</p>`;
+            return;
+        }
+
+        notifListEl.innerHTML = data.map(n => `
+            <div class="dropdown-item notif-item ${!n.isRead ? 'fw-bold' : ''}"
+                 data-id="${n.id}" style="cursor:pointer;">
+                <div>${n.title}</div>
+                <small class="text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</small>
+            </div>
+        `).join('');
+
+        notifListEl.querySelectorAll(".notif-item").forEach(el => {
+            el.addEventListener("click", async () => {
+                el.classList.remove('fw-bold'); // 👈 Gỡ in đậm ngay khi click
+                const id = el.dataset.id;
+                await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" }); // ✅ Đánh dấu đọc
+                await loadVendorNotifications(); // 🔄 Đồng bộ lại số lượng
+                showVendorNotificationDetail(id);
+            });
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi tải thông báo vendor:", err);
+    }
+}
+
+// 📩 Modal thông báo
+async function showVendorNotificationDetail(id) {
+    try {
+        const res = await apiFetch(`/api/notifications/${id}`);
+        if (!res || !res.ok) throw new Error();
+        const notif = await res.json();
+
+        const oldModal = document.getElementById("vendorNotifModal");
+        if (oldModal) oldModal.remove();
+
+        const modalHtml = `
+        <div class="modal fade" id="vendorNotifModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">${notif.title || "Thông báo"}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>${notif.message || "Không có nội dung chi tiết."}</p>
+                <small class="text-muted">${new Date(notif.createdAt).toLocaleString('vi-VN')}</small>
+              </div>
+              <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-danger" id="deleteVendorNotifBtn">
+                    <i class="fas fa-trash me-1"></i> Xóa thông báo
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById("vendorNotifModal"));
+        modal.show();
+
+        document.getElementById("deleteVendorNotifBtn").addEventListener("click", async () => {
+            if (confirm("Bạn có chắc muốn xóa thông báo này không?")) {
+                await apiFetch(`/api/notifications/${id}`, { method: "DELETE" });
+                modal.hide();
+                await loadVendorNotifications();
+            }
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi hiển thị chi tiết thông báo:", err);
+    }
+}
+
+// 📴 Logout
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("jwtToken");
+    window.location.href = "/alotra-website/login";
+});
+</script>
+
+<th:block th:if="${additionalJs != null}" th:replace="${additionalJs}"></th:block>
+</body>
+</html>

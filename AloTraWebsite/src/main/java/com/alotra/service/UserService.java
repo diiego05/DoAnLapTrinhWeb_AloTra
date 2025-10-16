@@ -4,9 +4,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.alotra.entity.Address; // << Thêm import
 import com.alotra.entity.Role;
+import com.alotra.entity.Shipper;
 import com.alotra.entity.User;
 import com.alotra.repository.AddressRepository; // << Thêm import
 import com.alotra.repository.RoleRepository;
+import com.alotra.repository.ShipperRepository;
 import com.alotra.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,8 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private CloudinaryService cloudinaryService;
+    @Autowired
+    private ShipperRepository shipperRepository;
 
     public List<User> searchAndFilter(String keyword, Long roleId, String status) {
         return userRepository.searchAndFilter(keyword, roleId,
@@ -120,6 +124,12 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user với email: " + email));
         return user.getId();
+    }
+    public Long getCurrentShipperId() {
+        Long userId = getCurrentUserId();
+        Shipper shipper = shipperRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Tài khoản này không phải shipper"));
+        return shipper.getId();
     }
 
 }

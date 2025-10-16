@@ -92,4 +92,10 @@ public class HomeController {
         model.addAttribute("pageTitle", "Thanh Toán Đơn Hàng");
         return "order/checkout";  // ✅ trỏ đến file templates/order/checkout.html
     }
+
+    @GetMapping("/orders")
+    public String orderHistoryPage(Model model) {
+        model.addAttribute("pageTitle", "Lịch Sử Đơn Hàng");
+        return "orders";  // ✅ trỏ đến file templates/order/orders.html
+    }
 }

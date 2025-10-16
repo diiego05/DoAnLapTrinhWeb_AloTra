@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/vendor_layout :: layout(pageTitle='Quản lý đơn hàng', pageContent=~{::content}, additionalJs=~{::additionalJs})}">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý đơn hàng</title>
+</head>
+<body>
+<th:block th:fragment="content">
+
+    <div class="container-fluid">
+        <h3 class="fw-bold mb-4"><i class="fas fa-receipt me-2"></i>Quản lý đơn hàng</h3>
+
+        <!-- 🧭 Bộ lọc trạng thái -->
+        <div class="mb-4 text-center">
+            <div class="btn-group flex-wrap" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-status="">Tất cả</button>
+                <button type="button" class="btn btn-outline-warning" data-status="PENDING">Chờ xác nhận</button>
+                <button type="button" class="btn btn-outline-secondary" data-status="CONFIRMED">Đã xác nhận</button>
+                <button type="button" class="btn btn-outline-info" data-status="SHIPPING">Đang giao</button>
+                <button type="button" class="btn btn-outline-success" data-status="COMPLETED">Hoàn thành</button>
+                <button type="button" class="btn btn-outline-danger" data-status="CANCELED">Đã hủy</button>
+            </div>
+        </div>
+
+        <!-- 📦 Danh sách đơn hàng -->
+        <div id="vendorOrdersList" class="d-flex flex-column gap-3">
+            <div class="text-center text-muted py-5">Đang tải dữ liệu...</div>
+        </div>
+    </div>
+
+   <!-- 📜 Modal chi tiết đơn hàng -->
+    <div class="modal fade" id="vendorOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-box-open me-2"></i>Đơn hàng <span id="vendorModalOrderCode"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="vendorModalLoading" class="text-center py-3 text-muted">Đang tải...</div>
+                    <div id="vendorModalContent" style="display:none;">
+
+                        <!-- 🕓 Thông tin chung -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Ngày đặt:</strong> <span id="vendorModalOrderDate"></span></p>
+                                <p><strong>Phương thức:</strong> <span id="vendorModalPayment"></span></p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <p><strong>Trạng thái:</strong> <span class="badge fs-6" id="vendorModalOrderStatus"></span></p>
+                                <p><strong>Địa chỉ:</strong> <span id="vendorModalAddress"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- 💰 Tổng hợp -->
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr><td>Tạm tính</td><td class="text-end"><span id="vendorModalSubtotal"></span></td></tr>
+                                    <tr><td>Giảm giá</td><td class="text-end text-danger">- <span id="vendorModalDiscount"></span></td></tr>
+                                    <tr><td>Phí vận chuyển</td><td class="text-end"><span id="vendorModalShipping"></span></td></tr>
+                                    <tr class="table-light fw-bold"><td>Tổng cộng</td><td class="text-end text-success"><span id="vendorModalTotal"></span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 🛍️ Sản phẩm -->
+                        <h6 class="fw-bold mb-2">Danh sách sản phẩm</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tên SP</th>
+                                        <th>Size</th>
+                                        <th>SL</th>
+                                        <th>Giá</th>
+                                        <th>Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendorModalOrderItems"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- 🕓 Timeline -->
+                        <h6 class="fw-bold mt-4 mb-2">Lịch sử trạng thái</h6>
+                        <ul class="timeline list-unstyled" id="vendorModalOrderHistory"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button id="btnVendorCancelOrder" class="btn btn-danger d-none">
+                            <i class="fas fa-times me-1"></i>Hủy đơn
+                        </button>
+                        <button id="btnVendorConfirmOrder" class="btn btn-success d-none">
+                            <i class="fas fa-check me-1"></i>Duyệt đơn
+                        </button>
+                        <button id="btnVendorShipOrder" class="btn btn-primary d-none">
+                            <i class="fas fa-truck me-1"></i>Giao hàng
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <script type="module" src="/alotra-website/js/vendor-orders.js"></script>
+</th:block>
+</body>
+</html>

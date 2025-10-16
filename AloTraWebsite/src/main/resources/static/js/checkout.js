@@ -269,6 +269,7 @@ async function applyCoupon() {
 }
 
 // ✅ Xác nhận đặt hàng
+// ✅ Xác nhận đặt hàng
 async function confirmOrder() {
     const btn = document.getElementById("btn-confirm-order");
     btn.disabled = true;
@@ -294,6 +295,7 @@ async function confirmOrder() {
             return;
         }
 
+        // 📦 Gửi request tạo đơn hàng
         const body = {
             cartItemIds: cartItems.map(it => it.cartItemId),
             branchId: selectedBranchId,
@@ -304,9 +306,21 @@ async function confirmOrder() {
         };
 
         const res = await api("/api/orders", "POST", body);
-        alert(`✅ Đặt hàng thành công! Mã đơn: ${res.code}`);
-        localStorage.removeItem("checkoutItems");
-        window.location.href = contextPath + "/orders/" + res.orderId;
+
+        // ⚡ Nếu là VNPay → chuyển hướng thanh toán
+        if (paymentMethod === "BANK") {
+            const paymentRes = await fetch(`${contextPath}/api/payment/vnpay/create?orderId=${res.orderId}`, {
+                method: "POST"
+            });
+            if (!paymentRes.ok) throw new Error("Không thể tạo link thanh toán VNPay");
+            const paymentUrl = await paymentRes.text();
+            localStorage.removeItem("checkoutItems");
+            window.location.href = paymentUrl; // 🔁 chuyển hướng sang VNPay
+        } else {
+            alert(`✅ Đặt hàng thành công! Mã đơn: ${res.code}`);
+            localStorage.removeItem("checkoutItems");
+            window.location.href = contextPath + "/orders";
+        }
     } catch (e) {
         console.error(e);
         alert("❌ Không thể đặt hàng. Vui lòng thử lại.");
@@ -315,3 +329,4 @@ async function confirmOrder() {
         btn.disabled = false;
     }
 }
+

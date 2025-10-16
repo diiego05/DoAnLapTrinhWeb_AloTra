@@ -9,6 +9,9 @@ import com.alotra.repository.BranchInventoryRepository;
 import com.alotra.repository.BranchRepository;
 import com.alotra.repository.CartItemRepository;
 import com.alotra.repository.ProductVariantRepository;
+
+import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -131,4 +134,15 @@ public class BranchService {
 				.existsByBranchIdAndVariantIdAndStatus(branch.getId(), variantId, INVENTORY_STATUS // ✅ dùng AVAILABLE
 				))).collect(Collectors.toList());
 	}
+
+	@Transactional(readOnly = true)
+	public boolean isVendorOfBranch(Long vendorId, Long branchId) {
+	    Branch branch = branchRepository.findById(branchId)
+	            .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
+	    if (branch.getManager() == null) {
+	        throw new RuntimeException("Chi nhánh này chưa có người quản lý");
+	    }
+	    return branch.getManager().getId().equals(vendorId);
+	}
+
 }
