@@ -36,6 +36,15 @@ public class AddressApiController {
     }
 
     /**
+     * ✏️ THÊM MỚI: Chỉnh sửa địa chỉ
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<AddressDTO> update(@PathVariable Long id, @RequestBody AddressDTO dto) {
+        Long uid = userService.getCurrentUserId();
+        return ResponseEntity.ok(addressService.updateAddress(uid, id, dto));
+    }
+
+    /**
      * 🌟 Đặt một địa chỉ làm mặc định
      */
     @PutMapping("/{id}/default")

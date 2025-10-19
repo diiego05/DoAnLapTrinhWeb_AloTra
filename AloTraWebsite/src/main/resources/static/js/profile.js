@@ -1,5 +1,119 @@
 "use strict";
 
+
+// === HÀM HIỂN THỊ CONFIRM DIALOG (ĐÃ NHÚNG CSS) ===
+function showConfirm(message, submessage = '') {
+    return new Promise((resolve) => {
+        // Tạo overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 99998;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+        `;
+
+        // Tạo dialog
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 99999;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            min-width: 420px;
+            max-width: 500px;
+            opacity: 0;
+            transition: all 0.3s ease-out;
+        `;
+
+        dialog.innerHTML = `
+            <div style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+                        color: white;
+                        padding: 20px 24px;
+                        border-radius: 16px 16px 0 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;">
+                <div style="font-size: 32px; animation: pulse 1s infinite;">⚠️</div>
+                <h5 style="margin: 0; font-weight: 600;">Xác nhận</h5>
+            </div>
+            <div style="padding: 24px; text-align: center;">
+                <p style="font-size: 16px; color: #333; margin-bottom: 8px; font-weight: 500;">${message}</p>
+                ${submessage ? `<p style="font-size: 14px; color: #6c757d; margin: 0;">${submessage}</p>` : ''}
+            </div>
+            <div style="padding: 16px 24px 24px; display: flex; gap: 12px; justify-content: center;">
+                <button class="btn btn-secondary" id="confirmCancel" style="min-width: 120px; font-weight: 600; padding: 10px 20px; border-radius: 8px;">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button class="btn btn-danger" id="confirmOk" style="min-width: 120px; font-weight: 600; padding: 10px 20px; border-radius: 8px;">
+                    <i class="fas fa-check me-1"></i>Xác nhận
+                </button>
+            </div>
+        `;
+
+        // Thêm keyframe animation cho icon
+        if (!document.getElementById('confirm-pulse-animation')) {
+            const style = document.createElement('style');
+            style.id = 'confirm-pulse-animation';
+            style.textContent = `
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.1); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+
+        // Trigger animation
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            dialog.style.opacity = '1';
+            dialog.style.transform = 'translate(-50%, -50%) scale(1)';
+        }, 10);
+
+        const handleClose = (result) => {
+            overlay.style.opacity = '0';
+            dialog.style.opacity = '0';
+            dialog.style.transform = 'translate(-50%, -50%) scale(0.9)';
+
+            setTimeout(() => {
+                overlay.remove();
+                dialog.remove();
+            }, 200);
+
+            resolve(result);
+        };
+
+        dialog.querySelector('#confirmOk').onclick = () => handleClose(true);
+        dialog.querySelector('#confirmCancel').onclick = () => handleClose(false);
+        overlay.onclick = () => handleClose(false);
+
+        // Thêm ESC để đóng
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                handleClose(false);
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+    });
+}
+
+// === BIẾN TOKEN GLOBAL ===
+let globalToken = null;
+
 document.addEventListener("DOMContentLoaded", async function() {
     if (!window.location.pathname.includes("/profile")) return;
 
@@ -12,10 +126,90 @@ document.addEventListener("DOMContentLoaded", async function() {
         return;
     }
 
+    // Lưu token vào biến global
+    globalToken = token;
+
     const avatarPreview = document.getElementById("avatarPreview");
     const avatarInput = document.getElementById("avatarInput");
     const addressModal = new bootstrap.Modal(document.getElementById("addressModal"));
     const addressBody = document.getElementById("addressTableBody");
+
+    // === HÀM HIỂN THỊ TOAST THÔNG BÁO ===
+    window.showToast = function(message, type = 'success') {
+        let toastContainer = document.getElementById('toastContainer');
+
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 99999 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            align-items: center !important;
+            pointer-events: none !important;
+        `;
+
+        const toastId = 'toast-' + Date.now();
+        const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+        const title = type === 'success' ? 'Thành công' : type === 'error' ? 'Lỗi' : 'Cảnh báo';
+
+        let headerBg = '';
+        if (type === 'success') {
+            headerBg = 'background: linear-gradient(135deg, #28a745 0%, #20c997 100%);';
+        } else if (type === 'error') {
+            headerBg = 'background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);';
+        } else {
+            headerBg = 'background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);';
+        }
+
+        const toastHTML = `
+            <div id="${toastId}" class="toast show" role="alert" aria-live="assertive" aria-atomic="true"
+                 style="min-width: 400px;
+                        border-radius: 12px;
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                        pointer-events: auto;
+                        animation: slideIn 0.3s ease-out;">
+                <div class="toast-header" style="${headerBg}
+                                                  color: white;
+                                                  font-weight: 600;
+                                                  padding: 14px 18px;
+                                                  border: none;
+                                                  border-radius: 12px 12px 0 0;">
+                    <strong class="me-auto">${icon} ${title}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"
+                            style="filter: brightness(0) invert(1); opacity: 0.8;"></button>
+                </div>
+                <div class="toast-body" style="padding: 14px 18px;
+                                              font-size: 15px;
+                                              background-color: white;
+                                              border-radius: 0 0 12px 12px;">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 3000
+        });
+
+        toast.show();
+
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    };
 
     // === XEM TRƯỚC ẢNH ===
     avatarInput?.addEventListener("change", e => {
@@ -71,22 +265,23 @@ document.addEventListener("DOMContentLoaded", async function() {
             });
 
             if (res.ok) {
-                alert("✅ Cập nhật thông tin cá nhân thành công!");
+                showToast("Cập nhật thông tin cá nhân thành công!", "success");
                 await loadProfile();
-                if (window.loadNotifications) await window.loadNotifications(); // 🔔 Cập nhật chuông
+                if (window.loadNotifications) await window.loadNotifications();
             } else {
-                alert("❌ Cập nhật thất bại!");
+                showToast("Cập nhật thất bại!", "error");
             }
         } catch (err) {
             console.error("❌ Lỗi khi cập nhật:", err);
+            showToast("Có lỗi xảy ra khi cập nhật!", "error");
         }
     });
 
     // === LOAD DANH SÁCH ĐỊA CHỈ ===
-    async function loadAddresses() {
+    window.loadAddresses = async function() {
         try {
             const res = await fetch("/alotra-website/api/profile/addresses", {
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: { "Authorization": `Bearer ${globalToken}` }
             });
             if (!res.ok) throw new Error("Lỗi tải địa chỉ");
             const list = await res.json();
@@ -112,77 +307,159 @@ document.addEventListener("DOMContentLoaded", async function() {
         } catch (err) {
             console.error("❌ Lỗi khi tải danh sách địa chỉ:", err);
         }
-    }
+    };
     await loadAddresses();
 
     // === THÊM / SỬA ĐỊA CHỈ ===
     document.getElementById("btnShowAddModal").addEventListener("click", () => {
         document.getElementById("addressId").value = "";
         document.querySelectorAll("#recip, #addrPhone, #line1, #ward, #district, #city").forEach(i => i.value = "");
-        document.getElementById("isDefault").checked = false;
+        const defaultCheckbox = document.getElementById("isDefault");
+        if (defaultCheckbox) defaultCheckbox.checked = false;
         addressModal.show();
     });
 
+    // === LƯU ĐỊA CHỈ (THÊM / SỬA) ===
     document.getElementById("btnSaveAddress").addEventListener("click", async () => {
-        const address = {
-            id: document.getElementById("addressId").value || null,
-            recipient: document.getElementById("recip").value,
-            phone: document.getElementById("addrPhone").value,
-            line1: document.getElementById("line1").value,
-            ward: document.getElementById("ward").value,
-            district: document.getElementById("district").value,
-            city: document.getElementById("city").value,
-            isDefault: document.getElementById("isDefault").checked
-        };
+        try {
+            const addressId = document.getElementById("addressId").value;
+            const address = {
+                recipient: document.getElementById("recip").value,
+                phone: document.getElementById("addrPhone").value,
+                line1: document.getElementById("line1").value,
+                ward: document.getElementById("ward").value,
+                district: document.getElementById("district").value,
+                city: document.getElementById("city").value,
+                isDefault: document.getElementById("isDefault")?.checked || false
+            };
 
-        await fetch("/alotra-website/api/profile/addresses", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify(address)
-        });
+            if (!address.recipient || !address.phone || !address.line1) {
+                showToast("Vui lòng nhập đầy đủ thông tin người nhận, số điện thoại và địa chỉ chi tiết!", "warning");
+                return;
+            }
 
-        addressModal.hide();
-        await loadAddresses();
-        if (window.loadNotifications) await window.loadNotifications(); // 🔔 Cập nhật chuông
+            let res;
+            if (addressId) {
+                res = await fetch(`/alotra-website/api/addresses/${addressId}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(address)
+                });
+            } else {
+                res = await fetch("/alotra-website/api/addresses", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(address)
+                });
+            }
+
+            if (res.ok) {
+                showToast(`${addressId ? 'Cập nhật' : 'Thêm'} địa chỉ thành công!`, "success");
+                addressModal.hide();
+                await loadAddresses();
+                if (window.loadNotifications) await window.loadNotifications();
+            } else {
+                const error = await res.text();
+                showToast(`Lỗi: ${error}`, "error");
+            }
+        } catch (err) {
+            console.error("❌ Lỗi khi lưu địa chỉ:", err);
+            showToast("Có lỗi xảy ra khi lưu địa chỉ. Vui lòng thử lại!", "error");
+        }
     });
 
-    // === XÓA / MẶC ĐỊNH / SỬA ===
-    window.deleteAddress = async function(id) {
-        if (!confirm("Bạn có chắc muốn xóa địa chỉ này không?")) return;
-        await fetch(`/alotra-website/api/profile/addresses/${id}`, {
-            method: "DELETE", headers: { "Authorization": `Bearer ${token}` }
-        });
-        await loadAddresses();
-        if (window.loadNotifications) await window.loadNotifications();
-    };
-
-    window.setDefault = async function(id) {
-        await fetch(`/alotra-website/api/profile/addresses/${id}/default`, {
-            method: "PUT", headers: { "Authorization": `Bearer ${token}` }
-        });
-        await loadAddresses();
-        if (window.loadNotifications) await window.loadNotifications();
-    };
-
+    // === SỬA ĐỊA CHỈ ===
     window.editAddress = async function(id) {
-        const res = await fetch("/alotra-website/api/profile/addresses", {
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        const list = await res.json();
-        const addr = list.find(a => a.id === id);
-        if (!addr) return;
+        try {
+            const res = await fetch("/alotra-website/api/profile/addresses", {
+                headers: { "Authorization": `Bearer ${globalToken}` }
+            });
+            const list = await res.json();
+            const addr = list.find(a => a.id === id);
 
-        document.getElementById("addressId").value = addr.id;
-        document.getElementById("recip").value = addr.recipient;
-        document.getElementById("addrPhone").value = addr.phone;
-        document.getElementById("line1").value = addr.line1;
-        document.getElementById("ward").value = addr.ward;
-        document.getElementById("district").value = addr.district;
-        document.getElementById("city").value = addr.city;
-        document.getElementById("isDefault").checked = addr.isDefault;
-        addressModal.show();
+            if (!addr) {
+                showToast("Không tìm thấy địa chỉ!", "error");
+                return;
+            }
+
+            document.getElementById("addressId").value = addr.id;
+            document.getElementById("recip").value = addr.recipient;
+            document.getElementById("addrPhone").value = addr.phone;
+            document.getElementById("line1").value = addr.line1;
+            document.getElementById("ward").value = addr.ward || "";
+            document.getElementById("district").value = addr.district || "";
+            document.getElementById("city").value = addr.city || "";
+
+            const defaultCheckbox = document.getElementById("isDefault");
+            if (defaultCheckbox) {
+                defaultCheckbox.checked = addr.isDefault;
+            }
+
+            addressModal.show();
+        } catch (err) {
+            console.error("❌ Lỗi khi load địa chỉ:", err);
+            showToast("Có lỗi xảy ra khi tải địa chỉ!", "error");
+        }
     };
 });
+
+// === XÓA ĐỊA CHỈ (GLOBAL FUNCTION) ===
+window.deleteAddress = async function(id) {
+    console.log("🗑️ Delete address called with ID:", id);
+
+    const confirmed = await showConfirm(
+        "Bạn có chắc muốn xóa địa chỉ này không?",
+        "Hành động này không thể hoàn tác"
+    );
+
+    console.log("✅ User confirmed:", confirmed);
+
+    if (!confirmed) return;
+
+    try {
+        const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+        const res = await fetch(`/alotra-website/api/profile/addresses/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            window.showToast("Xóa địa chỉ thành công!", "success");
+            await window.loadAddresses();
+            if (window.loadNotifications) await window.loadNotifications();
+        } else {
+            window.showToast("Xóa địa chỉ thất bại!", "error");
+        }
+    } catch (err) {
+        console.error("❌ Lỗi khi xóa địa chỉ:", err);
+        window.showToast("Có lỗi xảy ra khi xóa địa chỉ!", "error");
+    }
+};
+
+// === ĐẶT MẶC ĐỊNH (GLOBAL FUNCTION) ===
+window.setDefault = async function(id) {
+    try {
+        const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+        const res = await fetch(`/alotra-website/api/profile/addresses/${id}/default`, {
+            method: "PUT",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            window.showToast("Đặt địa chỉ mặc định thành công!", "success");
+            await window.loadAddresses();
+            if (window.loadNotifications) await window.loadNotifications();
+        } else {
+            window.showToast("Đặt địa chỉ mặc định thất bại!", "error");
+        }
+    } catch (err) {
+        console.error("❌ Lỗi khi đặt mặc định:", err);
+        window.showToast("Có lỗi xảy ra!", "error");
+    }
+};

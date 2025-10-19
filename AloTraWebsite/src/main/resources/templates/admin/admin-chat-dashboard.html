@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Chat Dashboard - AloTra</title>
+<style>
+/* ===== Reset & Base ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;color:#111}
+
+/* ===== Layout tổng ===== */
+.dashboard{
+  display:grid;
+  grid-template-columns:300px 1fr;
+  height:100dvh;                 /* ổn định hơn 100vh */
+  overflow:hidden;               /* chỉ phần con cuộn */
+}
+
+/* ===== Sidebar ===== */
+.sidebar{background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.sidebar-header{padding:20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+.sidebar-header h2{font-size:18px;margin-bottom:10px}
+.search-box{width:100%;padding:8px 12px;border:none;border-radius:20px;font-size:13px;background:rgba(255,255,255,.2);color:#fff}
+.search-box::placeholder{color:rgba(255,255,255,.7)}
+.rooms-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px}
+.room-item{padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.2s;border-left:3px solid transparent;background:#f9f9f9}
+.room-item:hover{background:#f0f0f0}
+.room-item.active{background:#e3f2fd;border-left-color:#667eea}
+.room-item-name{font-weight:600;color:#333;font-size:14px}
+.room-item-email{font-size:12px;color:#999;margin-top:3px}
+.room-item-status{font-size:12px;color:#4caf50;margin-top:3px}
+.unread-badge{display:inline-block;background:#f44336;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-top:5px}
+
+/* ===== Main chat ===== */
+.main-content{
+  display:flex;flex-direction:column;background:#fff;min-width:0;
+  height:100%;            /* giữ đủ cao */
+  min-height:0;           /* CHÌA KHÓA: cho phép vùng con cuộn, không đẩy mất input */
+}
+.chat-header{padding:15px 20px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;background:#f9f9f9;gap:10px;flex-wrap:wrap;z-index:1;position:relative}
+.chat-header-info h3{font-size:18px;margin-bottom:5px}
+.chat-header-info p{font-size:13px;color:#999}
+.chat-actions{display:none !important}          /* ẩn các nút hành động */
+
+/* ===== Messages (chỉ phần này cuộn) ===== */
+.messages{
+  flex:1 1 auto;min-height:0;min-width:0;
+  overflow-y:auto;padding:20px;background:#f5f5f5;
+  padding-bottom:16px; /* chừa khoảng cho input */
+  list-style:none; counter-reset:none;
+}
+/* Diệt mọi marker/ký tự lạ như 'Q' nếu browser render marker */
+.messages *::marker{content:none !important;}
+.messages q{display:none !important;}
+
+/* ===== Bố cục tin nhắn (fix không bị kéo ra giữa) ===== */
+.message{
+  display:flex;align-items:flex-end;width:100%;min-width:0;
+  gap:10px;margin-bottom:16px;animation:slideIn .25s ease-out
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none}}
+.message.sent{justify-content:flex-end}
+.message.received{justify-content:flex-start}
+
+/* avatar luôn là hình tròn, không còn chữ 'Q' trơ trọi */
+.message-avatar{
+  display: none !important;
+}
+.message.sent > .message-avatar{display:none}  /* tin mình gửi không có avatar */
+
+/* wrapper văn bản KHÔNG chiếm 100% nữa → bong bóng bám sát avatar/mép phải */
+.message > div{
+  display:flex;flex-direction:column;min-width:0;max-width:100%;
+}
+.message.received > div{flex:0 1 calc(100% - 46px)}   /* chừa chỗ cho avatar (36 + gap 10) */
+.message.sent     > div{flex:0 1 100%}
+
+/* bong bóng */
+.message-content{
+  display:inline-block;
+  max-width:78%;                    /* 3/4–4/5 chiều ngang */
+  min-width:52px;padding:10px 14px;border-radius:14px;line-height:1.45;
+  white-space:normal;overflow-wrap:anywhere;word-break:normal;hyphens:auto
+}
+.message.sent .message-content{
+  margin-left:auto;background:#667eea;color:#fff;border-bottom-right-radius:0
+}
+.message.received .message-content{
+  margin-right:auto;background:#fff;color:#333;border:1px solid #ddd;border-bottom-left-radius:0
+}
+
+/* nhãn & giờ không kéo giãn hàng */
+.message-header{display:block;
+  font-size:12px;
+  color:#666;
+  margin-bottom:6px;
+  line-height:1.2;
+  width:max-content;}
+  .message.received .message-header{
+  align-self:flex-start;
+  text-align:left;
+  margin-left:4px;    /* sát mép bong bóng bên trái */
+}
+
+/* Tin gửi: tên ở trên, căn phải */
+.message.sent .message-header{
+  align-self:flex-end;
+  text-align:right;
+  margin-right:6px;   /* sát mép bong bóng bên phải */
+}
+.message-time{
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: #999;
+  width: max-content;      /* tránh chiếm hết hàng */
+}
+.message.received .message-time{
+  align-self: flex-start;
+  text-align: left;
+  margin-left: 6px;
+}
+.message.sent .message-time{
+  align-self: flex-end;
+  text-align: right;
+  margin-right: 6px;
+}
+/* ===== Input luôn hiện dưới cùng (sticky) ===== */
+.input-area{
+  padding:15px;border-top:1px solid #ddd;background:#fff;display:flex;gap:10px;
+  position:sticky; bottom:0;     /* dính đáy cột phải */
+  z-index:1; flex:0 0 auto;
+}
+.message-input{flex:1;padding:12px;border:1px solid #ddd;border-radius:25px;font-size:14px;font-family:inherit;resize:none;max-height:100px;min-height:40px}
+.message-input:focus{outline:none;border-color:#667eea}
+.send-btn{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;padding:12px 24px;border-radius:25px;cursor:pointer;font-weight:600;transition:.2s}
+.send-btn:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(102,126,234,.4)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== Scrollbar tuỳ chọn ===== */
+.rooms-list::-webkit-scrollbar,.messages::-webkit-scrollbar{width:8px}
+.rooms-list::-webkit-scrollbar-thumb,.messages::-webkit-scrollbar-thumb{background:#cfcfcf;border-radius:8px}
+.rooms-list{scrollbar-width:thin;scrollbar-color:#cfcfcf transparent}
+.messages{scrollbar-width:thin;scrollbar-color:#cfcfcf transparent}
+
+/* ===== Responsive ===== */
+@media (max-width:920px){.dashboard{grid-template-columns:260px 1fr}}
+@media (max-width:720px){.dashboard{grid-template-columns:1fr}}
+</style>
+
+
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>💬 Chat</h2>
+                <input type="text" class="search-box" id="searchBox" placeholder="Tìm kiếm...">
+            </div>
+            <div class="rooms-list" id="roomsList">
+                <div class="placeholder">Đang tải...</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="chat-header" id="chatHeader" style="display: none;">
+                <div class="chat-header-info">
+                    <h3 id="roomUserName"></h3>
+                    <p id="roomUserEmail"></p>
+                </div>
+                <div class="chat-actions">
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages" id="messagesContainer">
+                <div class="empty-state">
+                    <p>Chọn phòng chat để bắt đầu</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="input-area" id="inputArea" style="display: none;">
+                <textarea
+                    class="message-input"
+                    id="messageInput"
+                    placeholder="Nhập tin nhắn..."
+                    rows="1"
+                ></textarea>
+                <button class="send-btn" id="sendBtn">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+
+    <script>
+        const API_URL = 'http://localhost:8080/alotra-website/api/chat';
+        const USER_API_URL = 'http://localhost:8080/alotra-website/api/users';
+        const WS_URL = 'http://localhost:8080/alotra-website/ws/chat';
+
+        let stompClient = null;
+        let currentRoomId = null;
+        let allRooms = [];
+        let adminId = null;
+
+        // ✅ GET CURRENT ADMIN USER ID
+        async function getCurrentAdminId() {
+            try {
+                console.log('🔍 Fetching current admin user...');
+                const response = await fetch(`${USER_API_URL}/me`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    adminId = user.id;
+                    console.log('✅ Admin ID:', adminId, 'Name:', user.fullName);
+                    return adminId;
+                } else {
+                    console.log('⚠️ Failed to get user:', response.status);
+                    return null;
+                }
+            } catch (e) {
+                console.error('❌ Error getting user:', e.message);
+                return null;
+            }
+        }
+
+        // Load Rooms
+        async function loadRooms() {
+            try {
+                console.log('📦 Loading rooms...');
+                const response = await fetch(`${API_URL}/rooms`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                allRooms = await response.json();
+                console.log('✅ Loaded ' + allRooms.length + ' rooms');
+                displayRooms(allRooms);
+            } catch (error) {
+                console.error('❌ Error loading rooms:', error);
+            }
+        }
+
+        // Display Rooms
+        function displayRooms(rooms) {
+            const list = document.getElementById('roomsList');
+            list.innerHTML = '';
+
+            if (rooms.length === 0) {
+                list.innerHTML = '<div class="placeholder">Không có phòng chat</div>';
+                return;
+            }
+
+            rooms.forEach(room => {
+                const roomEl = document.createElement('div');
+                roomEl.className = 'room-item' + (room.id === currentRoomId ? ' active' : '');
+                roomEl.onclick = () => selectRoom(room);
+
+                const unreadHTML = room.unreadCount > 0
+                    ? `<div class="unread-badge">${room.unreadCount} chưa đọc</div>`
+                    : '';
+
+                roomEl.innerHTML = `
+                    <div class="room-item-name">${room.userName}</div>
+                    <div class="room-item-email">${room.userEmail}</div>
+                    <div class="room-item-status">${room.status}</div>
+                    ${unreadHTML}
+                `;
+
+                list.appendChild(roomEl);
+            });
+        }
+
+        // Select Room
+        async function selectRoom(room) {
+            currentRoomId = room.id;
+
+            console.log('👁️ Selected room:', currentRoomId);
+
+            // Show UI elements
+            document.getElementById('chatHeader').style.display = 'flex';
+            document.getElementById('inputArea').style.display = 'flex';
+
+            // Update header
+            document.getElementById('roomUserName').textContent = room.userName;
+            document.getElementById('roomUserEmail').textContent = room.userEmail;
+
+            // Load messages
+            try {
+                const response = await fetch(`${API_URL}/rooms/${currentRoomId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const roomData = await response.json();
+
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+
+                if (roomData.messages && roomData.messages.length > 0) {
+                    roomData.messages.forEach(msg => {
+                        displayMessage(msg);
+                    });
+                } else {
+                    container.innerHTML = '<div class="placeholder">Không có tin nhắn</div>';
+                }
+
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error('❌ Error loading room details:', error);
+            }
+
+            // Highlight active room
+            displayRooms(allRooms);
+            const roomIndex = allRooms.findIndex(r => r.id === room.id);
+            if (roomIndex >= 0) {
+                document.querySelectorAll('.room-item')[roomIndex].classList.add('active');
+            }
+        }
+
+        // Display Message
+        function displayMessage(msg) {
+            const container = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            const isSent = msg.senderId === adminId;
+
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+
+            const time = new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const senderLabel = isSent ? 'Bạn (Admin)' : msg.senderName;
+
+            messageDiv.innerHTML = `
+                ${!isSent ? `<div class="message-avatar">${msg.senderName.charAt(0).toUpperCase()}</div>` : ''}
+                <div>
+                    <div class="message-header">${senderLabel}</div>
+                    <div class="message-content">${escapeHtml(msg.content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Send Message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+
+            if (!content || !currentRoomId || !adminId) {
+                console.log('⚠️ Cannot send - content:', !!content, 'room:', !!currentRoomId, 'adminId:', !!adminId);
+                return;
+            }
+
+            const message = {
+                roomId: currentRoomId,
+                senderId: adminId,
+                content: content,
+                senderType: 'ADMIN'
+            };
+
+            console.log('📤 Sending message:', message);
+
+            if (stompClient && stompClient.connected) {
+                stompClient.send('/app/chat/send', {}, JSON.stringify(message));
+                input.value = '';
+                input.style.height = 'auto';
+                console.log('✅ Message sent');
+            } else {
+                console.error('❌ WebSocket not connected');
+                alert('Chưa kết nối WebSocket. Thử lại...');
+            }
+        }
+
+        // Mark All as Read
+        async function markAllAsRead() {
+            if (!currentRoomId) return;
+            try {
+                await fetch(`${API_URL}/rooms/${currentRoomId}/mark-all-read`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                alert('✅ Đã đánh dấu tất cả tin nhắn là đã đọc');
+            } catch (error) {
+                console.error('❌ Error:', error);
+            }
+        }
+
+        // Close Room
+        async function closeRoom() {
+            if (!currentRoomId) return;
+            if (!confirm('Bạn có chắc muốn đóng phòng chat này?')) return;
+
+            try {
+                await fetch(`${API_URL}/rooms/${currentRoomId}/close`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                currentRoomId = null;
+                document.getElementById('chatHeader').style.display = 'none';
+                document.getElementById('inputArea').style.display = 'none';
+                document.getElementById('messagesContainer').innerHTML = '<div class="empty-state"><p>Chọn phòng chat để bắt đầu</p></div>';
+                await loadRooms();
+            } catch (error) {
+                console.error('❌ Error:', error);
+            }
+        }
+
+        // Go Back
+        function goBack() {
+            currentRoomId = null;
+            document.getElementById('chatHeader').style.display = 'none';
+            document.getElementById('inputArea').style.display = 'none';
+            document.getElementById('messagesContainer').innerHTML = '<div class="empty-state"><p>Chọn phòng chat để bắt đầu</p></div>';
+            displayRooms(allRooms);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Connect WebSocket
+        function connectWebSocket() {
+            console.log('🔗 Connecting WebSocket...');
+            const socket = new SockJS(WS_URL);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, function() {
+                console.log('✅ Admin WebSocket Connected');
+
+                // Subscribe to all room messages
+                allRooms.forEach(room => {
+                    stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
+                        const msg = JSON.parse(message.body);
+                        console.log('📥 Message received:', msg);
+
+                        if (msg.id && currentRoomId === msg.roomId) {
+                            displayMessage(msg);
+                            document.getElementById('messagesContainer').scrollTop =
+                                document.getElementById('messagesContainer').scrollHeight;
+                        }
+
+                        // Reload rooms to update unread count
+                        loadRooms();
+                    });
+                });
+            }, function(error) {
+                console.error('❌ WebSocket connection error:', error);
+            });
+        }
+
+        // Search Rooms
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allRooms.filter(room =>
+                room.userName.toLowerCase().includes(query) ||
+                room.userEmail.toLowerCase().includes(query)
+            );
+            displayRooms(filtered);
+        });
+
+        // Event Listeners
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', (e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+        });
+
+        // Initialize
+        window.addEventListener('load', async () => {
+            console.log('🚀 Initializing admin chat dashboard...');
+            await getCurrentAdminId();
+            await loadRooms();
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

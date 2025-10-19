@@ -363,7 +363,7 @@ document.getElementById('confirm-topping').onclick = async () => {
 document.getElementById("checkout-btn").addEventListener("click", () => {
     const checkedItems = document.querySelectorAll('.select-item:checked');
     if (checkedItems.length === 0) {
-        alert("⚠️ Vui lòng chọn ít nhất 1 sản phẩm để thanh toán");
+        showCustomAlert("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán");
         return;
     }
 
@@ -378,4 +378,10 @@ document.getElementById("checkout-btn").addEventListener("click", () => {
 
 // ====================== 🚀 KHỞI TẠO ======================
 loadCart();
+function showCustomAlert(message, title = "Alotra Thông Báo") {
+    document.getElementById('customAlertTitle').textContent = title;
+    document.getElementById('customAlertMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('customAlertModal'));
+    modal.show();
+}
 updateCartIconCount();

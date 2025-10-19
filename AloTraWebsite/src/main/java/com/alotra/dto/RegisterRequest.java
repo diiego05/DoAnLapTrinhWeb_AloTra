@@ -1,5 +1,7 @@
 package com.alotra.dto;
 
+import com.alotra.validator.StrongPassword;
+
 import jakarta.validation.constraints.*;
 
 public class RegisterRequest {
@@ -10,6 +12,7 @@ public class RegisterRequest {
     @NotBlank
     private String phone;
     @NotBlank
+    @StrongPassword
     private String password;
     public String getFullName(){return fullName;}
     public void setFullName(String fullName){this.fullName=fullName;}
