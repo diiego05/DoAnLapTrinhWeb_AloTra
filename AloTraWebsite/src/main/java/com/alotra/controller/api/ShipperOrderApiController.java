@@ -28,13 +28,13 @@ public class ShipperOrderApiController {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final UserService userService;
 
-    // ======================= 📦 Lấy danh sách đơn được phân công =======================
+    // ======================= 📦 Lấy tất cả đơn hàng được phân công cho shipper =======================
     @GetMapping
     public List<OrderDTO> getAssignedOrders() {
         Long shipperId = userService.getCurrentShipperId();
 
         List<Long> orderIds = shippingAssignmentRepository
-                .findByShipperIdAndStatusIn(shipperId, List.of("PENDING", "ACCEPTED"))
+                .findByShipperId(shipperId)
                 .stream()
                 .map(ShippingAssignment::getOrderId)
                 .toList();
@@ -61,15 +61,16 @@ public class ShipperOrderApiController {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        if (!OrderStatus.CONFIRMED.name().equals(order.getStatus())) {
-            return ResponseEntity.badRequest().body("Đơn hàng không thể nhận");
+        // Chỉ cho phép nhận đơn khi trạng thái là WAITING_FOR_PICKUP
+        if (!OrderStatus.WAITING_FOR_PICKUP.name().equals(order.getStatus())) {
+            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái chờ nhận");
         }
 
-        // ✅ Shipper hiện tại nhận đơn
         ShippingAssignment assignment = shippingAssignmentRepository
                 .findByOrderIdAndShipperId(id, shipperId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phân công"));
 
+        // ✅ Shipper hiện tại nhận đơn
         assignment.setStatus("ACCEPTED");
         assignment.setAssignedAt(LocalDateTime.now());
         shippingAssignmentRepository.save(assignment);
@@ -82,7 +83,7 @@ public class ShipperOrderApiController {
             }
         });
 
-        // 🚚 Cập nhật trạng thái đơn hàng
+        // 🚚 Cập nhật trạng thái đơn hàng sang SHIPPING
         order.setStatus(OrderStatus.SHIPPING.name());
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
@@ -100,7 +101,7 @@ public class ShipperOrderApiController {
         return ResponseEntity.ok().build();
     }
 
-    // ======================= 🚀 Giao hàng thành công =======================
+    // ======================= 🚀 Shipper giao hàng thành công =======================
     @Transactional
     @PutMapping("/{id}/delivered")
     public ResponseEntity<?> markDelivered(@PathVariable Long id) {
@@ -110,10 +111,9 @@ public class ShipperOrderApiController {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
         if (!OrderStatus.SHIPPING.name().equals(order.getStatus())) {
-            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái giao hàng");
+            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái đang giao");
         }
 
-        // ✅ Xác nhận assignment của shipper
         ShippingAssignment assignment = shippingAssignmentRepository
                 .findByOrderIdAndShipperId(id, shipperId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phân công"));
@@ -122,12 +122,12 @@ public class ShipperOrderApiController {
         assignment.setDeliveredAt(LocalDateTime.now());
         shippingAssignmentRepository.save(assignment);
 
-        // 🟢 Cập nhật trạng thái đơn
+        // 🟢 Cập nhật trạng thái đơn hàng sang COMPLETED
         order.setStatus(OrderStatus.COMPLETED.name());
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        // 📝 Ghi lịch sử trạng thái (đúng trạng thái COMPLETED)
+        // 📝 Ghi lịch sử trạng thái
         orderStatusHistoryRepository.save(
                 OrderStatusHistory.builder()
                         .order(order)

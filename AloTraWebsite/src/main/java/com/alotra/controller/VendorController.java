@@ -30,14 +30,11 @@ public class VendorController {
         return "vendor/vendor-orders";
     }
 
-<<<<<<< HEAD
     @GetMapping("/products")
     public String showProductManagementPage(Model model) {
         model.addAttribute("pageTitle", "Kênh Người Bán - Quản lý sản phẩm");
         model.addAttribute("currentPage", "products");
         return "vendor/vendor-products";
     }
-=======
->>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
 
 }

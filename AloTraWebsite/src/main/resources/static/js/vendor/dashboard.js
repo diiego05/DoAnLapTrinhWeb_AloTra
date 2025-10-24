@@ -73,7 +73,6 @@ async function loadSummary() {
         console.error("❌ Lỗi khi tải Summary:", err);
     }
 }
-
 // =============================
 // 📈 2. Biểu đồ doanh thu
 // =============================
@@ -83,17 +82,22 @@ async function loadRevenueChart() {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu biểu đồ doanh thu");
         const data = await res.json();
 
-        console.log("📊 Revenue Data:", data);
+        const canvas = document.getElementById("revenueChart");
+        const ctx = canvas.getContext("2d");
 
-        if (data.length === 0) {
-            console.warn("⚠️ Không có dữ liệu doanh thu.");
+        if (!data || data.length === 0) {
+            if (revenueChartInstance) revenueChartInstance.destroy();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#999";
+            ctx.textAlign = "center";
+            ctx.fillText("⚠️ Không có dữ liệu doanh thu", canvas.width / 2, canvas.height / 2);
             return;
         }
 
-        const labels = data.map(p => p.date || p.createdAt);
-        const values = data.map(p => p.total);
-
-        const ctx = document.getElementById("revenueChart").getContext("2d");
+        // ✅ Sửa ở đây
+        const labels = data.map(p => p.date);
+        const values = data.map(p => p.revenue);
 
         if (revenueChartInstance) revenueChartInstance.destroy();
 
@@ -126,6 +130,7 @@ async function loadRevenueChart() {
     }
 }
 
+
 // =============================
 // 📊 3. Biểu đồ trạng thái đơn hàng
 // =============================
@@ -135,17 +140,22 @@ async function loadOrderStatusChart() {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu trạng thái đơn hàng");
         const data = await res.json();
 
-        console.log("📊 Order Status Data:", data);
+        const canvas = document.getElementById("orderStatusChart");
+        const ctx = canvas.getContext("2d");
 
-        if (data.length === 0) {
-            console.warn("⚠️ Không có dữ liệu trạng thái đơn hàng.");
+        // ✅ Nếu không có dữ liệu
+        if (!data || data.length === 0) {
+            if (orderStatusChartInstance) orderStatusChartInstance.destroy();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#999";
+            ctx.textAlign = "center";
+            ctx.fillText("⚠️ Không có dữ liệu trạng thái đơn", canvas.width / 2, canvas.height / 2);
             return;
         }
 
         const labels = data.map(item => item.status);
         const counts = data.map(item => item.count);
-
-        const ctx = document.getElementById("orderStatusChart").getContext("2d");
 
         if (orderStatusChartInstance) orderStatusChartInstance.destroy();
 
@@ -155,13 +165,7 @@ async function loadOrderStatusChart() {
                 labels,
                 datasets: [{
                     data: counts,
-                    backgroundColor: [
-                        "#28a745",
-                        "#ffc107",
-                        "#0dcaf0",
-                        "#dc3545",
-                        "#6c757d"
-                    ]
+                    backgroundColor: ["#28a745", "#ffc107", "#0dcaf0", "#dc3545", "#6c757d"]
                 }]
             },
             options: {

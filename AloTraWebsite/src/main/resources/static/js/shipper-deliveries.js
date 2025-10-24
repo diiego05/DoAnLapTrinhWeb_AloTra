@@ -1,11 +1,18 @@
 "use strict";
 import { apiFetch } from "/alotra-website/js/auth-helper.js";
 
+// ===================== DOM ELEMENTS =====================
 const tbody = document.getElementById("deliveryTableBody");
 const searchInput = document.getElementById("shipperSearch");
 const reloadBtn = document.getElementById("shipperReload");
+const statusFilter = document.getElementById("statusFilter");
 
-// Panel chi tiết
+// Pagination
+const prevPageBtn = document.getElementById("prevPage");
+const nextPageBtn = document.getElementById("nextPage");
+const paginationInfo = document.getElementById("paginationInfo");
+
+// Detail panel
 const detailCard = document.getElementById("detailCard");
 const emptyDetailCard = document.getElementById("emptyDetailCard");
 const detailLoading = document.getElementById("detailLoading");
@@ -15,7 +22,7 @@ const btnAccept = document.getElementById("btnAccept");
 const btnDelivered = document.getElementById("btnDelivered");
 const btnCloseDetail = document.getElementById("btnCloseDetail");
 
-// Field detail
+// Field mapping
 const el = {
   code: document.getElementById("detailCode"),
   status: document.getElementById("detailStatus"),
@@ -30,16 +37,21 @@ const el = {
   history: document.getElementById("detailHistory"),
 };
 
+// ===================== GLOBAL STATE =====================
 let allOrders = [];
+let filteredOrders = [];
 let selectedId = null;
+let currentPage = 1;
+const pageSize = 5;
 
-// ========= Helpers =========
+// ===================== HELPERS =====================
 const fmtVND = v => (Number(v) || 0).toLocaleString("vi-VN") + " ₫";
 
 function statusColor(s) {
   switch (s) {
     case "PENDING": return "secondary";
     case "CONFIRMED": return "warning";
+    case "WAITING_FOR_PICKUP": return "warning";
     case "SHIPPING": return "info";
     case "COMPLETED": return "success";
     case "CANCELED": return "danger";
@@ -53,7 +65,8 @@ function statusColor(s) {
 function statusText(s) {
   switch (s) {
     case "PENDING": return "Chờ xác nhận";
-    case "CONFIRMED": return "Chờ shipper nhận đơn";
+    case "CONFIRMED": return "Đã xác nhận";
+    case "WAITING_FOR_PICKUP": return "Chờ shipper nhận đơn";
     case "SHIPPING": return "Đang giao hàng";
     case "COMPLETED": return "Hoàn thành";
     case "CANCELED": return "Đã hủy";
@@ -64,7 +77,7 @@ function statusText(s) {
   }
 }
 
-// ========= List =========
+// ===================== LOAD LIST =====================
 async function loadList() {
   tbody.innerHTML = `
     <tr><td colspan="5" class="text-center text-muted py-4">
@@ -75,7 +88,6 @@ async function loadList() {
     const res = await apiFetch("/api/shipper/orders");
     if (!res.ok) throw 0;
     allOrders = await res.json();
-
     applyFilter();
   } catch {
     tbody.innerHTML = `
@@ -83,36 +95,57 @@ async function loadList() {
   }
 }
 
+// ===================== FILTER & PAGINATION =====================
 function applyFilter() {
   const q = (searchInput.value || "").trim().toLowerCase();
-  const list = allOrders.filter(o => !q || (o.code || "").toLowerCase().includes(q));
+  const status = statusFilter ? statusFilter.value : "";
 
-  if (list.length === 0) {
-    tbody.innerHTML = `
-      <tr><td colspan="5" class="text-center text-muted py-4">Không có đơn hàng</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(o => `
-    <tr class="order-row">
-      <td class="fw-bold">#${o.code}</td>
-      <td>${o.deliveryAddress ?? "—"}</td>
-      <td><span class="badge bg-${statusColor(o.status)}">${statusText(o.status)}</span></td>
-      <td>${new Date(o.createdAt).toLocaleString("vi-VN")}</td>
-      <td class="text-center">
-        <button class="btn btn-sm btn-outline-primary" data-view="${o.id}">
-          <i class="fas fa-eye"></i>
-        </button>
-      </td>
-    </tr>
-  `).join("");
-
-  tbody.querySelectorAll("[data-view]").forEach(btn => {
-    btn.addEventListener("click", () => openDetail(btn.getAttribute("data-view")));
+  filteredOrders = allOrders.filter(o => {
+    const matchSearch = !q || (o.code || "").toLowerCase().includes(q);
+    const matchStatus = !status || o.status === status;
+    return matchSearch && matchStatus;
   });
+
+  renderTable();
 }
 
-// ========= Detail =========
+function renderTable() {
+  const total = filteredOrders.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  currentPage = Math.min(currentPage, totalPages);
+
+  const start = (currentPage - 1) * pageSize;
+  const pageOrders = filteredOrders.slice(start, start + pageSize);
+
+  if (pageOrders.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="5" class="text-center text-muted py-4">Không có đơn hàng</td></tr>`;
+  } else {
+    tbody.innerHTML = pageOrders.map(o => `
+      <tr class="order-row">
+        <td class="fw-bold">#${o.code}</td>
+        <td>${o.deliveryAddress ?? "—"}</td>
+        <td><span class="badge bg-${statusColor(o.status)}">${statusText(o.status)}</span></td>
+        <td>${new Date(o.createdAt).toLocaleString("vi-VN")}</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-primary" data-view="${o.id}">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `).join("");
+
+    tbody.querySelectorAll("[data-view]").forEach(btn => {
+      btn.addEventListener("click", () => openDetail(btn.getAttribute("data-view")));
+    });
+  }
+
+  paginationInfo.textContent = `Trang ${currentPage}/${totalPages} — Tổng ${total} đơn`;
+  prevPageBtn.disabled = currentPage === 1;
+  nextPageBtn.disabled = currentPage === totalPages;
+}
+
+// ===================== DETAIL =====================
 async function openDetail(orderId) {
   selectedId = Number(orderId);
   emptyDetailCard.style.display = "none";
@@ -124,7 +157,6 @@ async function openDetail(orderId) {
     const res = await apiFetch(`/api/orders/${orderId}`);
     if (!res.ok) throw 0;
     const order = await res.json();
-
     bindDetail(order);
     detailLoading.style.display = "none";
     detailContent.style.display = "block";
@@ -169,11 +201,11 @@ function bindDetail(order) {
       `).join("")
     : `<li class="text-muted">Không có lịch sử</li>`;
 
-  // Buttons theo trạng thái
+  // Hiển thị nút hành động phù hợp
   btnAccept.classList.add("d-none");
   btnDelivered.classList.add("d-none");
 
-  if (order.status === "CONFIRMED") {
+  if (order.status === "WAITING_FOR_PICKUP") {
     btnAccept.classList.remove("d-none");
     btnAccept.onclick = () => updateStatus(order.id, "accept");
   } else if (order.status === "SHIPPING") {
@@ -182,7 +214,7 @@ function bindDetail(order) {
   }
 }
 
-// ========= Actions =========
+// ===================== ACTION =====================
 async function updateStatus(orderId, action) {
   const endpoint =
     action === "accept" ? `/api/shipper/orders/${orderId}/accept` :
@@ -199,7 +231,6 @@ async function updateStatus(orderId, action) {
   btnDelivered.disabled = false;
 
   if (res.ok) {
-    // Refresh list & detail
     await loadList();
     await openDetail(orderId);
   } else {
@@ -207,17 +238,27 @@ async function updateStatus(orderId, action) {
   }
 }
 
-// ========= Events =========
-searchInput.addEventListener("input", applyFilter);
-reloadBtn.addEventListener("click", () => {
-  searchInput.value = "";
-  loadList();
-});
+// ===================== EVENTS =====================
+searchInput.addEventListener("input", () => { currentPage = 1; applyFilter(); });
+if (statusFilter) statusFilter.addEventListener("change", () => { currentPage = 1; applyFilter(); });
+reloadBtn.addEventListener("click", () => { searchInput.value = ""; if (statusFilter) statusFilter.value = ""; loadList(); });
+
 btnCloseDetail.addEventListener("click", () => {
   selectedId = null;
   detailCard.style.display = "none";
   emptyDetailCard.style.display = "block";
 });
 
-// ========= Init =========
+prevPageBtn.addEventListener("click", () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderTable();
+  }
+});
+nextPageBtn.addEventListener("click", () => {
+  currentPage++;
+  renderTable();
+});
+
+// ===================== INIT =====================
 loadList();

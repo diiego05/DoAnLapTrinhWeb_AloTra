@@ -19,7 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
     Optional<User> findByIdCardNumber(String idCardNumber);
     long countByEmailContaining(String emailPattern);
-<<<<<<< HEAD
 
     @Query("""
             SELECT COUNT(DISTINCT u.id)
@@ -28,6 +27,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
             WHERE o.branchId = :branchId
         """)
         long countDistinctByBranch(@Param("branchId") Long branchId);
-=======
->>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
 }
