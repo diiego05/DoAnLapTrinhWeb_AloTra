@@ -202,8 +202,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     wishlistBtn.addEventListener("click", async () => {
         if (!token) {
+<<<<<<< HEAD
             showLoginModal();
             return;
+=======
+			showLoginModal();
+			        return;
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
         }
 
         try {
@@ -224,7 +229,122 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Lỗi khi cập nhật danh mục yêu thích!");
         }
     });
+	function showLoginModal() {
+	    // Tạo overlay
+		const contextPath = document.body.dataset.contextPath || '/alotra-website';
+	    const overlay = document.createElement('div');
+	    overlay.id = 'login-modal-overlay';
+	    overlay.style.cssText = `
+	        position: fixed;
+	        top: 0;
+	        left: 0;
+	        width: 100%;
+	        height: 100%;
+	        background: rgba(0, 0, 0, 0.6);
+	        backdrop-filter: blur(4px);
+	        z-index: 9998;
+	        display: flex;
+	        align-items: center;
+	        justify-content: center;
+	        animation: fadeIn 0.2s ease;
+	    `;
 
+	    // Tạo modal
+	    const modal = document.createElement('div');
+	    modal.style.cssText = `
+	        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	        border-radius: 20px;
+	        padding: 40px 50px;
+	        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	        max-width: 450px;
+	        width: 90%;
+	        text-align: center;
+	        animation: slideUp 0.3s ease;
+	        position: relative;
+	    `;
+
+	    modal.innerHTML = `
+	        <div style="color: white;">
+	            <div style="font-size: 48px; margin-bottom: 20px;">
+	                <i class="fas fa-heart-circle-exclamation"></i>
+	            </div>
+	            <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 15px; letter-spacing: 0.5px;">
+	                Yêu cầu đăng nhập
+	            </h3>
+	            <p style="font-size: 16px; opacity: 0.95; margin-bottom: 30px; line-height: 1.6;">
+	                Vui lòng đăng nhập để sử dụng tính năng yêu thích!
+	            </p>
+	            <button id="login-modal-ok-btn" style="
+	                background: white;
+	                color: #667eea;
+	                border: none;
+	                padding: 14px 50px;
+	                border-radius: 30px;
+	                font-size: 16px;
+	                font-weight: 700;
+	                cursor: pointer;
+	                transition: all 0.3s ease;
+	                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+	                text-transform: uppercase;
+	                letter-spacing: 1px;
+	            ">
+	                Đăng nhập
+	            </button>
+	        </div>
+	    `;
+
+	    overlay.appendChild(modal);
+	    document.body.appendChild(overlay);
+
+	    // Thêm animation CSS
+	    const style = document.createElement('style');
+	    style.textContent = `
+	        @keyframes fadeIn {
+	            from { opacity: 0; }
+	            to { opacity: 1; }
+	        }
+	        @keyframes slideUp {
+	            from {
+	                opacity: 0;
+	                transform: translateY(30px) scale(0.95);
+	            }
+	            to {
+	                opacity: 1;
+	                transform: translateY(0) scale(1);
+	            }
+	        }
+	        #login-modal-ok-btn:hover {
+	            transform: translateY(-2px) scale(1.05);
+	            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+	        }
+	        #login-modal-ok-btn:active {
+	            transform: translateY(0) scale(0.98);
+	        }
+	    `;
+	    document.head.appendChild(style);
+
+	    // Xử lý nút OK
+	    const okBtn = document.getElementById('login-modal-ok-btn');
+	    okBtn.addEventListener('click', () => {
+	        window.location.href = `${contextPath}/login`;
+	    });
+
+	    // Đóng khi click overlay
+	    overlay.addEventListener('click', (e) => {
+	        if (e.target === overlay) {
+	            overlay.style.animation = 'fadeOut 0.2s ease';
+	            setTimeout(() => overlay.remove(), 200);
+	        }
+	    });
+
+	    // Thêm animation fadeOut
+	    style.textContent += `
+	        @keyframes fadeOut {
+	            from { opacity: 1; }
+	            to { opacity: 0; }
+	        }
+	    `;
+	}
     checkWishlist();
 
     /* ======================== 📝 REVIEW PHÂN TRANG ======================== */

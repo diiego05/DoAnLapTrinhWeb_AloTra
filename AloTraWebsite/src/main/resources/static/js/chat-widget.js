@@ -440,13 +440,27 @@ const ChatWidget = {
   async loadPromotions() {
     try {
       const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+<<<<<<< HEAD
       const res = await fetch('http://localhost:8080/alotra-website/api/admin/promotions/campaigns', {
         headers: { 'Authorization': `Bearer ${token}` }
+=======
+
+      // ✅ SỬA URL: Gọi API lấy campaigns ACTIVE
+      const res = await fetch('http://localhost:8080/alotra-website/api/admin/promotions/campaigns', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
       });
 
       if (!res.ok) throw new Error('Không thể tải khuyến mãi');
 
       const promotions = await res.json();
+<<<<<<< HEAD
+=======
+
+      // ✅ LỌC KHUYẾN MÃI ĐANG ACTIVE
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
       const activePromotions = promotions.filter(p => p.status === 'ACTIVE');
 
       if (activePromotions.length === 0) {
@@ -472,10 +486,15 @@ const ChatWidget = {
     }
   },
 
+<<<<<<< HEAD
+=======
+  // ✅ HIỂN THỊ KHUYẾN MÃI
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
   displayPromotions(promotions) {
     const container = document.getElementById('chatMessagesContainer');
 
     const promoCards = promotions.map(promo => {
+<<<<<<< HEAD
       const startDate = new Date(promo.startAt).toLocaleDateString('vi-VN');
       const endDate = new Date(promo.endAt).toLocaleDateString('vi-VN');
 
@@ -496,13 +515,26 @@ const ChatWidget = {
         <div class="promo-card"
              style="cursor:pointer"
              onclick="window.location.href='http://localhost:8080/alotra-website/promotions/${promo.id}'">
+=======
+      const startDate = new Date(promo.startDate).toLocaleDateString('vi-VN');
+      const endDate = new Date(promo.endDate).toLocaleDateString('vi-VN');
+
+      return `
+        <div class="promo-card">
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
           <div class="promo-header">
             <strong>🎁 ${promo.name}</strong>
           </div>
           <div class="promo-body">
             <p>${promo.description || 'Giảm giá đặc biệt'}</p>
+<<<<<<< HEAD
             <p><i class="fas fa-tag"></i> Ưu đãi: <strong>${discountText}</strong></p>
             <p><i class="fas fa-calendar"></i> ${startDate} - ${endDate}</p>
+=======
+            <p><i class="fas fa-percentage"></i> Giảm: <strong>${promo.discountValue}${promo.discountType === 'PERCENTAGE' ? '%' : ' ₫'}</strong></p>
+            <p><i class="fas fa-calendar"></i> ${startDate} - ${endDate}</p>
+            ${promo.minOrderValue ? `<p><i class="fas fa-shopping-cart"></i> Đơn tối thiểu: ${promo.minOrderValue.toLocaleString('vi-VN')} ₫</p>` : ''}
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
           </div>
         </div>
       `;
@@ -522,9 +554,13 @@ const ChatWidget = {
 
     container.insertAdjacentHTML('beforeend', promoMessage);
     this.scrollToBottom(true);
+<<<<<<< HEAD
   }
 
 ,
+=======
+  },
+>>>>>>> 993ad7d594830db625080aef2c3d6c114852b0f3
 
   displayOrders(orders) {
     const container = document.getElementById('chatMessagesContainer');
