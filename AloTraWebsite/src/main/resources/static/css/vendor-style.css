@@ -1,0 +1,235 @@
+/* ======================== */
+/* 🌿 CẤU HÌNH CHUNG        */
+/* ======================== */
+body {
+    background-color: #f5f6fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+/* ======================== */
+/* 🧭 SIDEBAR               */
+/* ======================== */
+#sidebar-wrapper {
+    width: 250px;
+    min-height: 100vh;
+    background: #ffffff;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: fixed;
+    z-index: 1000;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: center;
+}
+
+#sidebar-wrapper img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+#sidebar-wrapper .list-group-item {
+    border: none;
+    padding: 14px 20px;
+    font-weight: 500;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#sidebar-wrapper .list-group-item i {
+    width: 22px;
+    text-align: center;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background: #f1f1f1;
+    color: #28a745;
+}
+
+#sidebar-wrapper .active-custom {
+    background: linear-gradient(to right, #28a745, #52c41a);
+    color: white;
+    font-weight: 600;
+}
+
+#sidebar-wrapper .active-custom i {
+    color: white;
+}
+
+/* Khi thu gọn sidebar */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -250px;
+}
+
+/* ======================== */
+/* 🧭 NAVBAR HEADER         */
+/* ======================== */
+#page-content-wrapper {
+    margin-left: 250px;
+    width: 100%;
+    transition: margin-left 0.3s ease;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    margin-left: 0;
+}
+
+.navbar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.navbar .btn-light {
+    border: none;
+}
+
+.navbar .btn-light:hover {
+    background: #e9ecef;
+}
+
+#vendorNotifDropdown {
+    color: #333;
+}
+
+#vendorNotifDropdown:hover {
+    color: #28a745;
+}
+
+/* ======================== */
+/* 🛎️ NOTIFICATION DROPDOWN */
+/* ======================== */
+#vendorNotifList .notif-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+#vendorNotifList .notif-item:hover {
+    background-color: #f1fdf6;
+}
+
+/* Badge thông báo */
+#vendorNotifCount {
+    font-size: 0.7rem;
+    padding: 4px 6px;
+}
+
+/* ======================== */
+/* 🧾 BREADCRUMB            */
+/* ======================== */
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-item a {
+    color: #28a745;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* ======================== */
+/* 📊 PAGE CONTENT          */
+/* ======================== */
+.page-content {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.list-group-item {
+    font-size: 0.95rem;
+}
+
+/* ======================== */
+/* 🪄 VENDOR AVATAR         */
+/* ======================== */
+#vendorUserDropdown img {
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+    transition: transform 0.2s ease-in-out;
+}
+
+#vendorUserDropdown img:hover {
+    transform: scale(1.05);
+}
+
+/* ======================== */
+/* 📱 RESPONSIVE            */
+/* ======================== */
+@media (max-width: 992px) {
+    #sidebar-wrapper {
+        margin-left: -250px;
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #page-content-wrapper {
+        margin-left: 0;
+    }
+}
+
+/* ======================== */
+/* 🌟 HIỆU ỨNG & TIỆN ÍCH   */
+/* ======================== */
+.btn-primary {
+    background: linear-gradient(90deg, #28a745, #52c41a);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #218838, #45b414);
+}
+
+.badge.bg-danger {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+}
+
+.rounded-circle {
+    object-fit: cover;
+}
+
+/* ======================== */
+/* 🖱️ SCROLLBAR TUỲ CHỈNH */
+/* ======================== */
+#sidebar-wrapper::-webkit-scrollbar,
+#vendorNotifList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#sidebar-wrapper::-webkit-scrollbar-thumb,
+#vendorNotifList::-webkit-scrollbar-thumb {
+    background-color: #a8d5a2; /* xanh nhạt */
+    border-radius: 10px;
+}
+
+#sidebar-wrapper::-webkit-scrollbar-thumb:hover,
+#vendorNotifList::-webkit-scrollbar-thumb:hover {
+    background-color: #28a745;
+}

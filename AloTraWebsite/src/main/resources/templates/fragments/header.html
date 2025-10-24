@@ -153,10 +153,132 @@
             userItem.classList.add("d-none");
         }
 
-        logoutBtn?.addEventListener("click", () => {
-            localStorage.removeItem("jwtToken");
-            window.location.href = `${contextPath}/login`;
+    logoutBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let confirmed = false;
+    if (typeof window.showLogoutConfirm === 'function') {
+        confirmed = await window.showLogoutConfirm();
+    } else {
+        confirmed = await showLogoutConfirmLocal();
+    }
+
+    if (!confirmed) return;
+
+    // ✅ XÓA CHAT UI
+    try {
+        if (window.ChatWidget) {
+            window.ChatWidget.clearChatUI();
+            console.log('✅ Chat UI cleared');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+    }
+
+    // Xóa tất cả localStorage
+    localStorage.removeItem("jwtToken");
+    sessionStorage.removeItem("jwtToken");
+    localStorage.removeItem('chatRoomId');
+    localStorage.removeItem('guestUserId');
+    localStorage.removeItem('currentChatRoomId');
+
+    // ✅ Delay nhỏ trước khi redirect
+    setTimeout(() => {
+        window.location.href = `${contextPath}/login`;
+    }, 100);
+});
+
+// Hàm confirm local cho header.html (backup)
+function showLogoutConfirmLocal() {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            z-index: 99998 !important;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+        `;
+
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) scale(0.9) !important;
+            z-index: 99999 !important;
+            background: white !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+            min-width: 450px;
+            max-width: 550px;
+            opacity: 0;
+            transition: all 0.3s ease-out;
+        `;
+
+        dialog.innerHTML = `
+            <button style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; font-size: 28px; color: #ccc; cursor: pointer; padding: 0; line-height: 1; width: 32px; height: 32px;" class="logout-close-btn">×</button>
+            <div style="padding: 50px 24px 30px; text-align: center;">
+                <h4 style="color: #0066cc; font-weight: 700; font-size: 26px; margin-bottom: 24px; letter-spacing: 1px;">THÔNG BÁO</h4>
+                <p style="font-size: 16px; color: #333; margin: 0; line-height: 1.6;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+            </div>
+            <div style="padding: 0 30px 40px; display: flex; gap: 20px; justify-content: center;">
+                <button class="btn logout-cancel-btn" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #0099ff; color: white; border: none; transition: all 0.2s;">
+                    Hủy bỏ
+                </button>
+                <button class="btn logout-confirm-btn" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #0099ff; color: white; border: none; transition: all 0.2s;">
+                    Đồng ý
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+
+        const buttons = dialog.querySelectorAll('.btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = '#0077cc';
+                btn.style.transform = 'translateY(-2px)';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 153, 255, 0.3)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = '#0099ff';
+                btn.style.transform = 'translateY(0)';
+                btn.style.boxShadow = 'none';
+            });
         });
+
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+            dialog.style.opacity = '1';
+            dialog.style.transform = 'translate(-50%, -50%) scale(1) !important';
+        }, 10);
+
+        const handleClose = (result) => {
+            overlay.style.opacity = '0';
+            dialog.style.opacity = '0';
+            dialog.style.transform = 'translate(-50%, -50%) scale(0.9) !important';
+
+            setTimeout(() => {
+                overlay.remove();
+                dialog.remove();
+            }, 200);
+
+            resolve(result);
+        };
+
+        dialog.querySelector('.logout-confirm-btn').onclick = () => handleClose(true);
+        dialog.querySelector('.logout-cancel-btn').onclick = () => handleClose(false);
+        dialog.querySelector('.logout-close-btn').onclick = () => handleClose(false);
+        overlay.onclick = () => handleClose(false);
+    });
+}
 
         // ======================= 📂 SUBMENU =======================
         document.querySelectorAll('.dropdown-submenu .dropdown-toggle').forEach(function (element) {

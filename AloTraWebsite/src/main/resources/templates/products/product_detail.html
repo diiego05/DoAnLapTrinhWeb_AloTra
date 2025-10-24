@@ -77,12 +77,36 @@
         </div>
 
         <!-- 📝 MÔ TẢ -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <h4>Mô tả sản phẩm</h4>
-                <p th:text="${product.description}">Nội dung mô tả sản phẩm...</p>
+<div class="row mt-5">
+    <div class="col-12">
+        <h4>Mô tả sản phẩm</h4>
+        <p th:text="${product.description}">Nội dung mô tả sản phẩm...</p>
+    </div>
+</div>
+
+<!-- 📝 ĐÁNH GIÁ SẢN PHẨM -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h4>Đánh giá sản phẩm</h4>
+            <div class="d-flex align-items-center">
+                <h3 class="mb-0 me-2 text-warning" id="avgRating">0.0</h3>
+                <div class="text-muted" id="totalReviews">(0 đánh giá)</div>
             </div>
         </div>
+
+        <!-- 📋 DANH SÁCH REVIEW -->
+        <div id="reviewList">
+            <div class="text-center text-muted py-3">Đang tải đánh giá...</div>
+        </div>
+
+        <!-- 📄 PHÂN TRANG -->
+        <nav aria-label="Review pagination" class="mt-4">
+            <ul id="reviewPagination" class="pagination justify-content-center"></ul>
+        </nav>
+    </div>
+</div>
+
     </div>
 </th:block>
 

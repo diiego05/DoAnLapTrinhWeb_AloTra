@@ -14,5 +14,10 @@ public interface BranchInventoryRepository extends JpaRepository<BranchInventory
     @Query("DELETE FROM BranchInventory bi WHERE bi.variantId = :variantId")
     void deleteByVariantId(Long variantId);
 
-    boolean existsByBranchIdAndVariantIdAndStatus(Long branchId, Long variantId, String status); // ✅ thêm dòng này
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM BranchInventory bi WHERE bi.variantId = :variantId AND bi.branchId = :branchId")
+    void deleteByVariantIdAndBranchId(Long variantId, Long branchId);  // 🆕 xóa inventory theo branch cụ thể
+
+    boolean existsByBranchIdAndVariantIdAndStatus(Long branchId, Long variantId, String status);
 }

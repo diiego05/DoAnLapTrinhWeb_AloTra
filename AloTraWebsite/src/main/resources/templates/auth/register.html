@@ -97,112 +97,270 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const contextPath = document.body.dataset.contextPath || '';
+   <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const contextPath = document.body.dataset.contextPath || '';
 
-            // Form và input
-            const registerForm = document.getElementById('register-form');
-            const otpForm = document.getElementById('otp-form');
-            const registerFormContainer = document.getElementById('register-form-container');
-            const otpFormContainer = document.getElementById('otp-form-container');
+        // Form và input
+        const registerForm = document.getElementById('register-form');
+        const otpForm = document.getElementById('otp-form');
+        const registerFormContainer = document.getElementById('register-form-container');
+        const otpFormContainer = document.getElementById('otp-form-container');
 
-            const fullNameInput = document.getElementById('fullName');
-            const emailInput = document.getElementById('email');
-            const phoneInput = document.getElementById('phone');
-            const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirmPassword');
-            const otpInput = document.getElementById('otp');
+        const fullNameInput = document.getElementById('fullName');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const otpInput = document.getElementById('otp');
 
-            const registerError = document.getElementById('register-error');
-            const otpError = document.getElementById('otp-error');
-            const otpEmailDisplay = document.getElementById('otp-email');
+        const registerError = document.getElementById('register-error');
+        const otpError = document.getElementById('otp-error');
+        const otpEmailDisplay = document.getElementById('otp-email');
 
-            // === HIỆN / ẨN MẬT KHẨU ===
-            document.querySelectorAll('.toggle-password').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const targetId = this.getAttribute('data-target');
-                    const input = document.getElementById(targetId);
-                    const icon = this.querySelector('i');
-                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-                    input.setAttribute('type', type);
-                    icon.classList.toggle('fa-eye');
-                    icon.classList.toggle('fa-eye-slash');
-                });
-            });
-
-            // === XỬ LÝ FORM ĐĂNG KÝ ===
-            registerForm.addEventListener('submit', async function (event) {
-                event.preventDefault();
-                registerError.classList.add('d-none');
-
-                if (passwordInput.value !== confirmPasswordInput.value) {
-                    registerError.textContent = 'Mật khẩu xác nhận không khớp!';
-                    registerError.classList.remove('d-none');
-                    return;
-                }
-
-                const data = {
-                    fullName: fullNameInput.value,
-                    email: emailInput.value,
-                    phone: phoneInput.value,
-                    password: passwordInput.value
-                };
-
-                try {
-                    const response = await fetch(`${contextPath}api/auth/register`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-
-                    if (response.ok) {
-                        otpEmailDisplay.textContent = emailInput.value;
-                        registerFormContainer.classList.add('d-none');
-                        otpFormContainer.classList.remove('d-none');
-                    } else {
-                        const errorText = await response.text();
-                        registerError.textContent = errorText || 'Đăng ký thất bại.';
-                        registerError.classList.remove('d-none');
-                    }
-                } catch (error) {
-                    registerError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
-                    registerError.classList.remove('d-none');
-                }
-            });
-
-            // === XỬ LÝ FORM OTP ===
-            otpForm.addEventListener('submit', async function (event) {
-                event.preventDefault();
-                otpError.classList.add('d-none');
-
-                const data = {
-                    email: emailInput.value,
-                    otp: otpInput.value
-                };
-
-                try {
-                    const response = await fetch(`${contextPath}api/auth/verify-otp`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-
-                    if (response.ok) {
-                        alert('Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.');
-                        window.location.href = `${contextPath}login`;
-                    } else {
-                        const errorText = await response.text();
-                        otpError.textContent = errorText || 'Mã OTP không hợp lệ.';
-                        otpError.classList.remove('d-none');
-                    }
-                } catch (error) {
-                    otpError.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
-                    otpError.classList.remove('d-none');
-                }
+        // === HIỆN / ẨN MẬT KHẨU ===
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
             });
         });
-    </script>
+
+        // ✅ KIỂM TRA ĐỘ MẠNH MẬT KHẨU REAL-TIME
+        passwordInput.addEventListener('input', function() {
+            const password = passwordInput.value;
+
+            const checks = {
+                'req-length': password.length >= 8,
+                'req-upper': /[A-Z]/.test(password),
+                'req-lower': /[a-z]/.test(password),
+                'req-digit': /\d/.test(password),
+                'req-special': /[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(password)
+            };
+
+            // Cập nhật hiển thị
+            Object.entries(checks).forEach(([id, isValid]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const text = el.textContent.substring(1); // Loại bỏ icon cũ
+                    el.textContent = (isValid ? '✅' : '❌') + text;
+                    el.style.color = isValid ? '#28a745' : '#dc3545';
+                }
+            });
+
+            // Check xác nhận mật khẩu
+            checkPasswordMatch();
+        });
+
+        // ✅ KIỂM TRA XÁC NHẬN MẬT KHẨU
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const statusEl = document.getElementById('password-match-status');
+            if (!statusEl) return;
+
+            if (confirmPasswordInput.value === '') {
+                statusEl.textContent = '';
+                return;
+            }
+
+            if (passwordInput.value === confirmPasswordInput.value) {
+                statusEl.innerHTML = '<span style="color: #28a745;">✅ Mật khẩu khớp</span>';
+            } else {
+                statusEl.innerHTML = '<span style="color: #dc3545;">❌ Mật khẩu không khớp</span>';
+            }
+        }
+
+        // === XỬ LÝ FORM ĐĂNG KÝ ===
+        registerForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            registerError.classList.add('d-none');
+
+            // ✅ KIỂM TRA ĐỘ MẠNH MẬT KHẨU TRƯỚC KHI GỬI
+            const password = passwordInput.value;
+            const checks = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                digit: /\d/.test(password),
+                special: /[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(password)
+            };
+
+            const allValid = Object.values(checks).every(v => v);
+            if (!allValid) {
+                registerError.textContent = '❌ Mật khẩu không đủ mạnh. Vui lòng kiểm tra các yêu cầu ở trên.';
+                registerError.classList.remove('d-none');
+                return;
+            }
+
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                registerError.textContent = '❌ Mật khẩu xác nhận không khớp!';
+                registerError.classList.remove('d-none');
+                return;
+            }
+
+            const data = {
+                fullName: fullNameInput.value,
+                email: emailInput.value,
+                phone: phoneInput.value,
+                password: passwordInput.value
+            };
+
+            try {
+                const response = await fetch(`${contextPath}api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    otpEmailDisplay.textContent = emailInput.value;
+                    registerFormContainer.classList.add('d-none');
+                    otpFormContainer.classList.remove('d-none');
+                } else {
+                    const errorResponse = await response.json().catch(() => ({}));
+                    registerError.textContent = errorResponse.error || 'Đăng ký thất bại.';
+                    registerError.classList.remove('d-none');
+                }
+            } catch (error) {
+                registerError.textContent = '❌ Lỗi kết nối. Vui lòng thử lại.';
+                registerError.classList.remove('d-none');
+            }
+        });
+
+        // === XỬ LÝ FORM OTP ===
+        otpForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            otpError.classList.add('d-none');
+
+            const data = {
+                email: emailInput.value,
+                otp: otpInput.value
+            };
+
+            try {
+                const response = await fetch(`${contextPath}api/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                	showSuccessModal();
+
+                } else {
+                    const errorResponse = await response.json().catch(() => ({}));
+                    otpError.textContent = errorResponse.error || '❌ Mã OTP không hợp lệ.';
+                    otpError.classList.remove('d-none');
+                }
+            } catch (error) {
+                otpError.textContent = '❌ Lỗi kết nối. Vui lòng thử lại.';
+                otpError.classList.remove('d-none');
+            }
+        });
+    });
+    function showSuccessModal() {
+    	const contextPath = (document.body.dataset.contextPath || '/alotra-website').replace(/\/$/, '');
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: #2d2d2d;
+            color: white;
+            border-radius: 16px;
+            padding: 35px 45px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        `;
+
+        modal.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <i class="fas fa-circle-check" style="font-size: 60px; color: #28a745;"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; margin: 0 0 15px 0;">
+                AloTra xin chúc mừng!
+            </h3>
+            <p style="font-size: 15px; margin: 0 0 25px 0; line-height: 1.6; opacity: 0.9;">
+                Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.
+            </p>
+            <button id="success-modal-ok-btn" style="
+                background: #5c9eff;
+                color: white;
+                border: 2px solid #4a8ce7;
+                padding: 10px 40px;
+                border-radius: 25px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            ">
+                OK
+            </button>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Thêm animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Xử lý click nút OK
+        const okBtn = document.getElementById('success-modal-ok-btn');
+        okBtn.addEventListener('click', () => {
+            window.location.href = `${contextPath}/login`;
+        });
+
+        // Hover effect
+        okBtn.addEventListener('mouseenter', () => {
+            okBtn.style.background = '#4a8ce7';
+            okBtn.style.transform = 'scale(1.05)';
+        });
+        okBtn.addEventListener('mouseleave', () => {
+            okBtn.style.background = '#5c9eff';
+            okBtn.style.transform = 'scale(1)';
+        });
+
+        // Không cho đóng khi click overlay (bắt buộc phải bấm OK)
+    }
+</script>
 </th:block>
 
 </body>

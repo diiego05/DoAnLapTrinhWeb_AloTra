@@ -1,0 +1,101 @@
+/* ========================
+   🎨 DASHBOARD STYLES
+======================== */
+
+/* Tổng thể trang */
+.dashboard-content {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+}
+
+/* Thẻ thống kê */
+.dashboard-content .card {
+    border: none;
+    border-radius: 0.75rem;
+    transition: all 0.25s ease-in-out;
+}
+
+.dashboard-content .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Icon trong thẻ thống kê */
+.dashboard-content .card i {
+    transition: transform 0.25s ease-in-out;
+}
+
+.dashboard-content .card:hover i {
+    transform: scale(1.1);
+}
+
+/* Tổng quan số liệu */
+#totalCustomers,
+#totalOrders,
+#totalRevenue {
+    font-size: 1.75rem;
+}
+
+/* Biểu đồ */
+#revenueChart,
+#orderStatusChart {
+    width: 100%;
+}
+
+/* Top sản phẩm & khách hàng */
+#topProducts li,
+#topCustomers li {
+    padding: 0.75rem 1rem;
+}
+
+#topProducts li i,
+#topCustomers li i {
+    color: #28a745;
+}
+
+#topProducts li:hover,
+#topCustomers li:hover {
+    background-color: #f1fdf3;
+}
+
+/* Bảng đơn hàng mới nhất */
+.table-hover tbody tr:hover {
+    background-color: #f8fdf9;
+}
+
+.table thead th {
+    background-color: #28a745;
+    color: #fff;
+    font-weight: 600;
+}
+
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
+/* Trạng thái đơn hàng */
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.75em;
+    border-radius: 0.5rem;
+    text-transform: capitalize;
+}
+
+/* Loading Overlay */
+#vendorDashboardSpinner {
+    backdrop-filter: blur(3px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #totalCustomers,
+    #totalOrders,
+    #totalRevenue {
+        font-size: 1.4rem;
+    }
+    .dashboard-content .card i {
+        font-size: 1.5rem;
+    }
+}

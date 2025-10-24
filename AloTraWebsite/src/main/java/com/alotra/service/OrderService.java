@@ -529,6 +529,8 @@ public class OrderService {
                             .stream()
                             .map((OrderItem item) -> OrderItemDTO.builder()
                                     .id(item.getId())
+                                    .productId(item.getProductId())       // ✅
+                                    .variantId(item.getVariantId())
                                     .productName(item.getProductName())
                                     .sizeName(item.getSizeName())
                                     .quantity(item.getQuantity())
@@ -568,6 +570,8 @@ public class OrderService {
                     BigDecimal topping = item.getToppingTotal() != null ? item.getToppingTotal() : BigDecimal.ZERO;
                     return OrderItemDTO.builder()
                             .id(item.getId())
+                            .productId(item.getProductId())       // ✅
+                            .variantId(item.getVariantId())
                             .productName(item.getProductName())
                             .sizeName(item.getSizeName())
                             .quantity(item.getQuantity())
@@ -633,6 +637,8 @@ public class OrderService {
                     // 🛍️ 2.2. Map sang DTO sản phẩm
                     return OrderItemDTO.builder()
                             .id(item.getId())
+                            .productId(item.getProductId())       // ✅
+                            .variantId(item.getVariantId())
                             .productName(item.getProductName())
                             .sizeName(item.getSizeName())
                             .quantity(item.getQuantity())
@@ -696,6 +702,8 @@ public class OrderService {
                             .stream()
                             .map(item -> OrderItemDTO.builder()
                                     .id(item.getId())
+                                    .productId(item.getProductId())       // ✅
+                                    .variantId(item.getVariantId())
                                     .productName(item.getProductName())
                                     .sizeName(item.getSizeName())
                                     .quantity(item.getQuantity())
@@ -837,6 +845,9 @@ public class OrderService {
                 .stream()
                 .map(item -> OrderItemDTO.builder()
                         .id(item.getId())
+                        .productId(item.getProductId())       // ✅
+                        .variantId(item.getVariantId())
+
                         .productName(item.getProductName())
                         .sizeName(item.getSizeName())
                         .quantity(item.getQuantity())

@@ -561,4 +561,11 @@ public class AdminController {
         return "admin/promotions/campaign-target";
     }
 
+    @GetMapping("/chat")
+    public String showChatDashboard(Model model) {
+        model.addAttribute("pageTitle", "Quản lý Chat");
+        model.addAttribute("currentPage", "chat");
+        return "admin/admin-chat-dashboard";
+    }
+
 }

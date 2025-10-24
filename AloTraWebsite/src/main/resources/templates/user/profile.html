@@ -1,6 +1,117 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
 	th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+<head>
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.btn-close:hover {
+    opacity: 1 !important;
+}
+
+/* Custom Confirm Dialog */
+.custom-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 99998;
+    display: none;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.custom-confirm-overlay.show {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.custom-confirm-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 99999;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    min-width: 420px;
+    max-width: 500px;
+    animation: slideIn 0.3s ease-out;
+}
+
+.custom-confirm-header {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    color: white;
+    padding: 20px 24px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.custom-confirm-icon {
+    font-size: 32px;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.custom-confirm-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.custom-confirm-message {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.custom-confirm-submessage {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.custom-confirm-footer {
+    padding: 16px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.custom-confirm-footer .btn {
+    min-width: 120px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.custom-confirm-footer .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+</style>
+</head>
 
 <body>
 	<th:block th:fragment="content">
@@ -19,23 +130,24 @@
 							<img id="avatarPreview"
 								src="/alotra-website/images/avatar-default.jpg"
 								class="rounded-circle shadow-sm mb-2" width="120" height="120"
-								alt="Avatar"> <input type="file" id="avatarInput"
+								alt="Avatar">
+							<input type="file" id="avatarInput"
 								accept="image/*" class="form-control form-control-sm mt-2">
 						</div>
 
 						<div class="col-md-9">
 							<div class="row g-3">
 								<div class="col-md-6">
-									<label class="form-label">Họ và tên</label> <input type="text"
-										id="name" class="form-control">
+									<label class="form-label">Họ và tên</label>
+									<input type="text" id="name" class="form-control">
 								</div>
 								<div class="col-md-6">
-									<label class="form-label">Số điện thoại</label> <input
-										type="text" id="phone" class="form-control">
+									<label class="form-label">Số điện thoại</label>
+									<input type="text" id="phone" class="form-control">
 								</div>
 								<div class="col-md-6">
-									<label class="form-label">Giới tính</label> <select id="gender"
-										class="form-select">
+									<label class="form-label">Giới tính</label>
+									<select id="gender" class="form-select">
 										<option value="">--Chọn--</option>
 										<option value="Nam">Nam</option>
 										<option value="Nữ">Nữ</option>
@@ -43,12 +155,12 @@
 									</select>
 								</div>
 								<div class="col-md-6">
-									<label class="form-label">Ngày sinh</label> <input type="date"
-										id="dob" class="form-control">
+									<label class="form-label">Ngày sinh</label>
+									<input type="date" id="dob" class="form-control">
 								</div>
 								<div class="col-md-6">
-									<label class="form-label">Căn cước công dân</label> <input
-										type="text" id="idCardNumber" class="form-control">
+									<label class="form-label">Căn cước công dân</label>
+									<input type="text" id="idCardNumber" class="form-control">
 								</div>
 							</div>
 						</div>
@@ -91,8 +203,7 @@
 		</div>
 
 		<!-- =============== MODAL THÊM / SỬA ĐỊA CHỈ =============== -->
-		<div class="modal fade" id="addressModal" tabindex="-1"
-			aria-hidden="true">
+		<div class="modal fade" id="addressModal" tabindex="-1" aria-hidden="true">
 			<div class="modal-dialog modal-dialog-centered">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -105,28 +216,28 @@
 							<input id="recip" class="form-control" placeholder="Người nhận">
 						</div>
 						<div class="mb-2">
-							<input id="addrPhone" class="form-control"
-								placeholder="Số điện thoại">
+							<input id="addrPhone" class="form-control" placeholder="Số điện thoại">
 						</div>
 						<div class="mb-2">
-							<input id="line1" class="form-control"
-								placeholder="Địa chỉ chi tiết (số nhà, tên đường)">
+							<input id="line1" class="form-control" placeholder="Địa chỉ chi tiết (số nhà, tên đường)">
 						</div>
 						<div class="row g-2 mb-2">
 							<div class="col-md-4">
 								<input id="ward" class="form-control" placeholder="Phường/Xã">
 							</div>
 							<div class="col-md-4">
-								<input id="district" class="form-control"
-									placeholder="Quận/Huyện">
+								<input id="district" class="form-control" placeholder="Quận/Huyện">
 							</div>
 							<div class="col-md-4">
-								<input id="city" class="form-control"
-									placeholder="Tỉnh/Thành phố">
+								<input id="city" class="form-control" placeholder="Tỉnh/Thành phố">
 							</div>
 						</div>
-
-
+						<div class="mb-2 form-check">
+							<input type="checkbox" class="form-check-input" id="isDefault">
+							<label class="form-check-label" for="isDefault">
+								Đặt làm địa chỉ mặc định
+							</label>
+						</div>
 					</div>
 					<div class="modal-footer">
 						<button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -138,7 +249,6 @@
 
 	</th:block>
 
-	<!-- JS riêng cho trang này -->
 	<th:block th:fragment="additionalJs">
 		<script src="/alotra-website/js/profile.js"></script>
 	</th:block>

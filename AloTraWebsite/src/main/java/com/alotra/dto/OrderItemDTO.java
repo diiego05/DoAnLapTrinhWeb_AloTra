@@ -8,7 +8,9 @@ import java.util.List;
 @Data
 @Builder
 public class OrderItemDTO {
-    private Long id;              // 🟢 phải có
+    private Long id;
+    private Long productId;
+    private Long variantId;// 🟢 phải có
     private String productName;
     private String sizeName;
     private Integer quantity;

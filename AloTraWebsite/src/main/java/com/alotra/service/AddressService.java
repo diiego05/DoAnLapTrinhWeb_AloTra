@@ -54,7 +54,29 @@ public class AddressService {
 
         return AddressDTO.from(addressRepository.save(address));
     }
+    @Transactional
+    public AddressDTO updateAddress(Long userId, Long addressId, AddressDTO dto) {
+        Address address = addressRepository.findByIdAndUser_Id(addressId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy địa chỉ"));
 
+        // Cập nhật thông tin
+        address.setRecipient(dto.recipient());
+        address.setPhone(dto.phone());
+        address.setLine1(dto.line1());
+        address.setWard(dto.ward());
+        address.setDistrict(dto.district());
+        address.setCity(dto.city());
+
+        // Nếu set là mặc định, xóa mặc định cũ
+        if (dto.isDefault() && !address.isDefault()) {
+            addressRepository.clearDefaultForUser(userId);
+            address.setDefault(true);
+        } else if (!dto.isDefault() && address.isDefault()) {
+            address.setDefault(false);
+        }
+
+        return AddressDTO.from(addressRepository.save(address));
+    }
     /**
      * 🌟 Đặt địa chỉ mặc định cho user.
      * Nếu địa chỉ không thuộc user -> không thực hiện.

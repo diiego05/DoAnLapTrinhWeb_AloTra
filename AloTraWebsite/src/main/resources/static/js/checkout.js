@@ -269,7 +269,6 @@ async function applyCoupon() {
 }
 
 // ✅ Xác nhận đặt hàng
-// ✅ Xác nhận đặt hàng
 async function confirmOrder() {
     const btn = document.getElementById("btn-confirm-order");
     btn.disabled = true;
@@ -317,9 +316,8 @@ async function confirmOrder() {
             localStorage.removeItem("checkoutItems");
             window.location.href = paymentUrl; // 🔁 chuyển hướng sang VNPay
         } else {
-            alert(`✅ Đặt hàng thành công! Mã đơn: ${res.code}`);
-            localStorage.removeItem("checkoutItems");
-            window.location.href = contextPath + "/orders";
+            // ✅ THAY ALERT BẰNG MODAL ĐẸP
+            showSuccessModal(res.code);
         }
     } catch (e) {
         console.error(e);
@@ -328,5 +326,79 @@ async function confirmOrder() {
         hideLoading();
         btn.disabled = false;
     }
+}
+
+// ✅ THÊM FUNCTION MỚI - HIỂN THỊ MODAL THÀNH CÔNG
+function showSuccessModal(orderCode) {
+    const modalHTML = `
+        <div class="success-modal-overlay" id="successModalOverlay">
+            <div class="success-modal">
+                <div class="success-modal-header">
+                    <div class="success-modal-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2 class="success-modal-title">Đặt hàng thành công!</h2>
+                    <p class="success-modal-subtitle">Cảm ơn bạn đã tin tưởng AloTra</p>
+                </div>
+                <div class="success-modal-body">
+                    <div class="order-code-box">
+                        <div class="order-code-label">Mã đơn hàng của bạn</div>
+                        <div class="order-code-value">${orderCode}</div>
+                    </div>
+                    <p class="success-modal-message">
+                        <i class="fas fa-info-circle"></i>
+                        Đơn hàng của bạn đang được xử lý. Chúng tôi sẽ gửi thông báo khi đơn hàng được xác nhận.
+                    </p>
+                </div>
+                <div class="success-modal-footer">
+                    <button class="success-modal-btn success-modal-btn-secondary" id="btnGoHome">
+                        <i class="fas fa-home"></i> Về trang chủ
+                    </button>
+                    <button class="success-modal-btn success-modal-btn-primary" id="btnGoOrders">
+                        <i class="fas fa-receipt"></i> Xem đơn hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // ✅ GẮN SỰ KIỆN CHO CÁC NÚT SAU KHI MODAL ĐƯỢC THÊM VÀO DOM
+    document.getElementById('btnGoHome').addEventListener('click', function() {
+        localStorage.removeItem("checkoutItems");
+        window.location.href = contextPath + "/";
+    });
+
+    document.getElementById('btnGoOrders').addEventListener('click', function() {
+        localStorage.removeItem("checkoutItems");
+        window.location.href = contextPath + "/orders";
+    });
+
+    // ✅ THÊM: Click overlay để đóng modal
+    document.getElementById('successModalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            localStorage.removeItem("checkoutItems");
+            window.location.href = contextPath + "/orders";
+        }
+    });
+}
+// ✅ THÊM FUNCTION - ĐÓNG MODAL VÀ VỀ TRANG CHỦ
+function closeSuccessModal() {
+    const overlay = document.getElementById('successModalOverlay');
+    if (overlay) {
+        overlay.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            overlay.remove();
+            localStorage.removeItem("checkoutItems");
+            window.location.href = contextPath + "/";
+        }, 300);
+    }
+}
+
+// ✅ THÊM FUNCTION - CHUYỂN ĐẾN TRANG ĐƠN HÀNG
+function goToOrders() {
+    localStorage.removeItem("checkoutItems");
+    window.location.href = contextPath + "/orders";
 }
 

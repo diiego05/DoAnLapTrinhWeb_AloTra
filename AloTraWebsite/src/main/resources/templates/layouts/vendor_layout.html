@@ -28,17 +28,14 @@
                th:classappend="${currentPage == 'dashboard'} ? 'active-custom' : ''">
                 <i class="fas fa-chart-line me-2"></i> Tổng quan
             </a>
-
             <a th:href="@{/vendor/products}" class="list-group-item list-group-item-action"
                th:classappend="${currentPage == 'products'} ? 'active-custom' : ''">
                 <i class="fas fa-box me-2"></i> Quản lý sản phẩm
             </a>
-
             <a th:href="@{/vendor/orders}" class="list-group-item list-group-item-action"
                th:classappend="${currentPage == 'orders'} ? 'active-custom' : ''">
                 <i class="fas fa-receipt me-2"></i> Quản lý đơn hàng
             </a>
-
             <a th:href="@{/vendor/revenue}" class="list-group-item list-group-item-action"
                th:classappend="${currentPage == 'revenue'} ? 'active-custom' : ''">
                 <i class="fas fa-sack-dollar me-2"></i> Quản lý doanh thu
@@ -68,8 +65,7 @@
                                   class="badge bg-danger rounded-pill position-absolute top-0 end-0 translate-middle"
                                   style="display: none;">0</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="vendorNotifDropdown"
-                            style="width: 320px;">
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="vendorNotifDropdown" style="width: 320px;">
                             <li class="dropdown-header text-center fw-bold text-success">Thông báo</li>
                             <li><hr class="dropdown-divider"></li>
                             <div id="vendorNotifList" class="px-2" style="max-height: 300px; overflow-y: auto;">
@@ -90,10 +86,11 @@
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownVendorUser">
-
-                            <li><a class="dropdown-item" id="logoutBtn" href="#">
-                                <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" id="logoutBtn" href="#">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                                </a>
+                            </li>
                         </ul>
                     </div>
 
@@ -123,12 +120,12 @@
 
 <!-- Sidebar Toggle -->
 <script>
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const wrapper = document.getElementById('wrapper');
-    sidebarToggle.addEventListener('click', () => wrapper.classList.toggle('toggled'));
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+        document.getElementById('wrapper').classList.toggle('toggled');
+    });
 </script>
 
-<!-- 🔐 JWT + Thông báo Vendor -->
+<!-- 🔔 Thông báo Vendor giống header -->
 <script type="module">
 import { getJwtToken, apiFetch } from '/alotra-website/js/auth-helper.js';
 
@@ -150,27 +147,27 @@ if (!token) {
         userDropdown.classList.remove("d-none");
         nameEl.textContent = user.fullName;
         if (user.avatarUrl) avatarEl.src = user.avatarUrl;
-        loadVendorNotifications();
-        setInterval(loadVendorNotifications, 30000);
+        loadNotificationsVendor();
+        setInterval(loadNotificationsVendor, 30000);
     } else {
         localStorage.removeItem("jwtToken");
         window.location.href = "/alotra-website/login";
     }
 }
 
-// 🛎️ Load thông báo
-async function loadVendorNotifications() {
+// 🛎️ Load thông báo Vendor
+async function loadNotificationsVendor() {
     const notifCountEl = document.getElementById("vendorNotifCount");
     const notifListEl = document.getElementById("vendorNotifList");
 
     try {
-        const res = await apiFetch("/api/notifications");
-        if (!res || !res.ok) throw new Error();
+        const res = await apiFetch(`/api/notifications`);
+        if (!res?.ok) throw new Error();
         const data = await res.json();
 
-        const unreadCount = data.filter(n => !n.isRead).length;
-        notifCountEl.textContent = unreadCount > 0 ? unreadCount : "";
-        notifCountEl.style.display = unreadCount > 0 ? "flex" : "none";
+        const unreadCount = data.filter(n => !n.read).length;
+        notifCountEl.textContent = unreadCount || "";
+        notifCountEl.style.display = unreadCount > 0 ? "inline-block" : "none";
 
         if (data.length === 0) {
             notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không có thông báo</p>`;
@@ -178,32 +175,40 @@ async function loadVendorNotifications() {
         }
 
         notifListEl.innerHTML = data.map(n => `
-            <div class="dropdown-item notif-item ${!n.isRead ? 'fw-bold' : ''}"
-                 data-id="${n.id}" style="cursor:pointer;">
-                <div>${n.title}</div>
-                <small class="text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</small>
+            <div class="dropdown-item notif-item d-flex justify-content-between align-items-start ${!n.read ? 'fw-bold' : ''}"
+                 data-id="${n.id}" style="cursor:pointer;"
+                 title="${new Date(n.createdAt).toLocaleString('vi-VN')}">
+                <div class="me-2 flex-grow-1">
+                    ${n.title}
+                    <div class="small text-muted">${new Date(n.createdAt).toLocaleString('vi-VN')}</div>
+                </div>
+                ${!n.read ? '<span class="badge rounded-pill bg-primary align-self-center ms-1" style="width:10px;height:10px;">&nbsp;</span>' : ''}
             </div>
         `).join('');
 
         notifListEl.querySelectorAll(".notif-item").forEach(el => {
             el.addEventListener("click", async () => {
-                el.classList.remove('fw-bold'); // 👈 Gỡ in đậm ngay khi click
+                el.classList.remove('fw-bold');
+                const dot = el.querySelector(".badge");
+                if (dot) dot.remove();
                 const id = el.dataset.id;
-                await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" }); // ✅ Đánh dấu đọc
-                await loadVendorNotifications(); // 🔄 Đồng bộ lại số lượng
-                showVendorNotificationDetail(id);
+                await apiFetch(`/api/notifications/${id}/read`, { method: "PUT" });
+                await loadNotificationsVendor();
+                showNotificationDetailVendor(id);
             });
         });
+
     } catch (err) {
-        console.error("❌ Lỗi khi tải thông báo vendor:", err);
+        notifListEl.innerHTML = `<p class="text-center text-muted small mb-0">Không thể tải thông báo</p>`;
+        console.error(err);
     }
 }
 
-// 📩 Modal thông báo
-async function showVendorNotificationDetail(id) {
+// 📩 Modal chi tiết thông báo
+async function showNotificationDetailVendor(id) {
     try {
         const res = await apiFetch(`/api/notifications/${id}`);
-        if (!res || !res.ok) throw new Error();
+        if (!res?.ok) throw new Error();
         const notif = await res.json();
 
         const oldModal = document.getElementById("vendorNotifModal");
@@ -215,7 +220,7 @@ async function showVendorNotificationDetail(id) {
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">${notif.title || "Thông báo"}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
               </div>
               <div class="modal-body">
                 <p>${notif.message || "Không có nội dung chi tiết."}</p>
@@ -238,11 +243,11 @@ async function showVendorNotificationDetail(id) {
             if (confirm("Bạn có chắc muốn xóa thông báo này không?")) {
                 await apiFetch(`/api/notifications/${id}`, { method: "DELETE" });
                 modal.hide();
-                await loadVendorNotifications();
+                await loadNotificationsVendor();
             }
         });
-    } catch (err) {
-        console.error("❌ Lỗi khi hiển thị chi tiết thông báo:", err);
+    } catch {
+        alert("Không thể tải chi tiết thông báo!");
     }
 }
 

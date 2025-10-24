@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import java.util.HashSet;
 import java.util.Set;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,13 @@ public class Product {
 
     @Column(name = "Status") // Trường status đã được thêm lại
     private String status;
+
+    @Column(name = "RatingAvg", precision = 18, scale = 2, nullable = false)
+    private BigDecimal ratingAvg = BigDecimal.ZERO;
+
+
+    @Column(name = "RatingCount", nullable = false)
+    private Integer ratingCount = 0;
 
     // Mối quan hệ: Nhiều sản phẩm thuộc về một danh mục
     @ManyToOne(fetch = FetchType.LAZY)

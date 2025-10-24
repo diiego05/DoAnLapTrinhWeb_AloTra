@@ -7,6 +7,7 @@ import com.alotra.entity.User;
 import com.alotra.repository.UserRepository;
 import com.alotra.security.JwtService;
 import com.alotra.service.AuthService;
+import com.alotra.validator.StrongPassword;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -140,6 +141,7 @@ public class AuthController {
     public static class ResetPasswordRequest {
         private String email;
         private String otp;
+        @StrongPassword
         private String newPassword;
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
