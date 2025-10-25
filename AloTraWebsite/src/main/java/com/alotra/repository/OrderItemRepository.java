@@ -54,4 +54,22 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
                 @Param("from") LocalDateTime from,
                 @Param("to") LocalDateTime to
         );
+
+    @Query(value = """
+    	    SELECT p.Id, p.Name, SUM(oi.Quantity) AS totalQty, SUM(oi.LineTotal) AS totalRevenue
+    	    FROM OrderItems oi
+    	    JOIN Orders o ON o.Id = oi.OrderId
+    	    JOIN Products p ON p.Id = oi.ProductId
+    	    WHERE o.BranchId = :branchId
+    	      AND o.Status = 'COMPLETED'
+    	      AND o.CreatedAt BETWEEN :from AND :to
+    	    GROUP BY p.Id, p.Name
+    	    ORDER BY totalQty DESC
+    	""", nativeQuery = true)
+    	List<Object[]> findTopProductsByBranchAndDateRange(
+    	        @Param("branchId") Long branchId,
+    	        @Param("from") LocalDateTime from,
+    	        @Param("to") LocalDateTime to
+    	);
+
 }

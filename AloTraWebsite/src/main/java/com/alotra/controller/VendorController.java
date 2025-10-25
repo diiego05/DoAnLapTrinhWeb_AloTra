@@ -37,4 +37,12 @@ public class VendorController {
         return "vendor/vendor-products";
     }
 
+    @GetMapping("/revenue")
+    public String showRevenueManagementPage(Model model) {
+        model.addAttribute("pageTitle", "Kênh Người Bán - Quản lý doanh thu");
+        model.addAttribute("currentPage", "revenue");
+        return "vendor/vendor-revenue";
+        // 👉 Tương ứng: /templates/vendor/vendor-revenue.html
+    }
+
 }

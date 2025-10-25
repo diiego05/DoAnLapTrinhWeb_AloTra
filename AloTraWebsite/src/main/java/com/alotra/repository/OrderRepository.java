@@ -475,6 +475,43 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     	);
 
 
+    @Query(value = """
+    	    SELECT u.Id, u.FullName, COUNT(o.Id) AS totalOrders, SUM(o.Total) AS totalSpent
+    	    FROM Orders o
+    	    JOIN Users u ON u.Id = o.UserId
+    	    WHERE o.BranchId = :branchId
+    	      AND o.Status = 'COMPLETED'
+    	      AND o.CreatedAt BETWEEN :from AND :to
+    	    GROUP BY u.Id, u.FullName
+    	    ORDER BY totalSpent DESC
+    	""", nativeQuery = true)
+    	List<Object[]> findTopCustomersByBranchAndDateRange(
+    	        @Param("branchId") Long branchId,
+    	        @Param("from") LocalDateTime from,
+    	        @Param("to") LocalDateTime to
+    	);
+
+
+
+
+
+    	@Query("""
+    		    SELECT CAST(o.createdAt AS date) AS date,
+    		           COUNT(o.id) AS totalOrders,
+    		           SUM(o.total) AS totalRevenue
+    		    FROM Order o
+    		    WHERE o.branchId = :branchId
+    		      AND o.status = 'COMPLETED'
+    		      AND o.createdAt BETWEEN :from AND :to
+    		    GROUP BY CAST(o.createdAt AS date)
+    		    ORDER BY date
+    		""")
+    		List<Object[]> findRevenueStatisticsByBranchAndDateRange(
+    		        @Param("branchId") Long branchId,
+    		        @Param("from") LocalDateTime from,
+    		        @Param("to") LocalDateTime to
+    		);
+
 
 }
 
