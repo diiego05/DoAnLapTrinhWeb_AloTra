@@ -1,9 +1,7 @@
-// com/alotra/controller/api/OrderApiController.java
 package com.alotra.controller.api;
 
 import com.alotra.dto.OrderDTO;
 import com.alotra.dto.OrderDetailDTO;
-import com.alotra.dto.cart.CartItemResponse;
 import com.alotra.dto.cart.CartResponse;
 import com.alotra.dto.checkout.CheckoutRequestDTO;
 import com.alotra.dto.checkout.OrderResponseDTO;
@@ -27,14 +25,18 @@ public class OrderApiController {
     private final CartService cartService;
     private final UserService userService;
 
-    // 🧾 1️⃣ Checkout từ cart
+    /**
+     * 🧾 1️⃣ Checkout từ cart
+     */
     @PostMapping
     public ResponseEntity<OrderResponseDTO> checkout(@RequestBody CheckoutRequestDTO req) {
         Long userId = userService.getCurrentUserId();
         return ResponseEntity.ok(orderService.checkout(userId, req));
     }
 
-    // 🛍 2️⃣ Lấy toàn bộ item trong giỏ hàng hiện tại
+    /**
+     * 🛍 2️⃣ Lấy toàn bộ item trong giỏ hàng hiện tại
+     */
     @GetMapping("/cart-items")
     public ResponseEntity<CartResponse> getCartItems() {
         Long userId = userService.getCurrentUserId();
@@ -42,7 +44,9 @@ public class OrderApiController {
         return ResponseEntity.ok(cart);
     }
 
-    // 🧾 3️⃣ Lấy chi tiết item theo danh sách ID (để xác nhận checkout)
+    /**
+     * 🧾 3️⃣ Lấy chi tiết item theo danh sách ID (để xác nhận checkout)
+     */
     @PostMapping("/cart-items/by-ids")
     public ResponseEntity<List<CartService.CartItemDetail>> getCartItemsByIds(@RequestBody List<Long> cartItemIds) {
         Long userId = userService.getCurrentUserId();
@@ -50,6 +54,10 @@ public class OrderApiController {
         return ResponseEntity.ok(details);
     }
 
+    /**
+     * 🧾 4️⃣ Lấy danh sách đơn hàng (có thể lọc theo status)
+     * ✅ Sau khi tách bảng Payments, mỗi OrderDTO sẽ có trường payment (thanh toán mới nhất)
+     */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getOrdersByStatus(@RequestParam(required = false) String status) {
         Long userId = userService.getCurrentUserId();
@@ -57,8 +65,9 @@ public class OrderApiController {
         return ResponseEntity.ok(orders);
     }
 
-    // 🧾 5️⃣ Lấy chi tiết đơn hàng
-    // Ví dụ: GET /api/orders/123
+    /**
+     * 🧾 5️⃣ Lấy chi tiết đơn hàng (bao gồm thông tin thanh toán)
+     */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailDTO> getOrderDetail(@PathVariable Long orderId) {
         Long userId = userService.getCurrentUserId();
@@ -66,24 +75,22 @@ public class OrderApiController {
         return ResponseEntity.ok(orderDetail);
     }
 
- // 🧾 6️⃣ Lấy danh sách item của một đơn hàng cụ thể
+    /**
+     * 🧾 6️⃣ Lấy danh sách item của một đơn hàng cụ thể
+     */
     @GetMapping("/{orderId}/items")
     public ResponseEntity<?> getOrderItems(@PathVariable Long orderId) {
         Long userId = userService.getCurrentUserId();
         return ResponseEntity.ok(orderService.getOrderItems(userId, orderId));
     }
 
-
-
-
-
-    // 🧾 5️⃣ Hủy đơn hàng nếu trạng thái hiện tại là PENDING
-    // 👉 PUT /api/orders/{orderId}/cancel
+    /**
+     * ❌ 7️⃣ Hủy đơn hàng nếu trạng thái hiện tại là PENDING
+     */
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
         Long userId = userService.getCurrentUserId();
         orderService.cancelOrder(userId, orderId);
         return ResponseEntity.ok().build();
     }
-
 }

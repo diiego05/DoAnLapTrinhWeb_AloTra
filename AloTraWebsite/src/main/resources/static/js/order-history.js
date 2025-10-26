@@ -17,16 +17,15 @@ const UPLOAD_PRESET='ml_default';
 const toNum=v=>Number.isNaN(Number(v))?0:Number(v);
 const fmtVND=v=>toNum(v).toLocaleString('vi-VN')+' ₫';
 
+/* ✅ Trạng thái đơn hàng */
 function mapStatusColor(s){
   switch(s){
     case'PENDING':return'warning';
     case'CONFIRMED':return'secondary';
-    case'AWAITING_PAYMENT':return'info';
-    case'PAID':return'primary';
-    case'SHIPPING':return'info';
+    case'WAITING_FOR_PICKUP':return'info';
+    case'SHIPPING':return'primary';
     case'COMPLETED':return'success';
     case'CANCELED':return'danger';
-    case'FAILED':return'dark';
     default:return'secondary';
   }
 }
@@ -34,15 +33,37 @@ function mapStatusText(s){
   switch(s){
     case'PENDING':return'Chờ xác nhận';
     case'CONFIRMED':return'Đã xác nhận';
-    case'AWAITING_PAYMENT':return'Chờ thanh toán';
-    case'PAID':return'Đã thanh toán';
+    case'WAITING_FOR_PICKUP':return'Chờ lấy hàng';
     case'SHIPPING':return'Đang giao';
     case'COMPLETED':return'Hoàn thành';
     case'CANCELED':return'Đã hủy';
-    case'FAILED':return'Thất bại';
     default:return s;
   }
 }
+/* ✅ Trạng thái thanh toán (đồng bộ với enum PaymentStatus trong Java) */
+function mapPaymentStatusColor(s){
+  switch(s){
+    case 'PENDING': return 'warning';     // ⏳ Chờ thanh toán
+    case 'SUCCESS': return 'success';     // ✅ Đã thanh toán
+    case 'FAILED': return 'danger';       // ❌ Thất bại
+    case 'REFUNDED': return 'secondary';  // 💸 Hoàn tiền
+    case 'CANCELED': return 'dark';       // 🚫 Hủy
+    default: return 'secondary';
+  }
+}
+
+function mapPaymentStatusText(s){
+  switch(s){
+    case 'PENDING': return 'Chờ thanh toán';
+    case 'SUCCESS': return 'Đã thanh toán';
+    case 'FAILED': return 'Thanh toán thất bại';
+    case 'REFUNDED': return 'Đã hoàn tiền';
+    case 'CANCELED': return 'Đã hủy giao dịch';
+    default: return s || 'Không xác định';
+  }
+}
+
+/* ✅ Phương thức thanh toán */
 function mapPaymentMethodText(m){
   if(!m)return'—';
   switch(m){
@@ -80,8 +101,16 @@ async function loadOrders(){
     ordersList.innerHTML=`<div class="text-center text-danger py-5">Lỗi tải đơn hàng</div>`;
   }
 }
+/* ======================= HIỂN THỊ CARD ĐƠN ======================= */
+function canShowPayButton(o){
+  return o.status === 'PENDING' && o.paymentMethod === 'BANK';
+}
+
 
 function renderOrderCard(o){
+  const paymentStatus = o.payment?.status || o.paymentStatus || null;
+  const isRetry = o.payment && o.payment.status === 'PENDING'; // để đổi text nút
+
   return `
   <div class="card shadow-sm border-0 order-card">
     <div class="card-body">
@@ -95,18 +124,27 @@ function renderOrderCard(o){
 
       <div class="mb-2"><strong>Tổng tiền:</strong> <span class="text-success fw-bold">${fmtVND(o.total)}</span></div>
       <div><strong>Phương thức:</strong> ${mapPaymentMethodText(o.paymentMethod)}</div>
+      <div><strong>Thanh toán:</strong>
+        <span class="badge bg-${mapPaymentStatusColor(paymentStatus)}">
+          ${mapPaymentStatusText(paymentStatus)}
+        </span>
+      </div>
 
       <div class="mt-3 border-top pt-2">
-        ${o.items?.length?o.items.map(it=>`
+        ${o.items?.length ? o.items.map(it=>`
           <div class="d-flex justify-content-between small mb-1">
             <div>${it.productName} (${it.sizeName||'-'}) x ${it.quantity}</div>
             <div>${fmtVND(it.lineTotal)}</div>
           </div>
-        `).join(''):'<div class="text-muted small fst-italic">Không có sản phẩm</div>'}
+        `).join('') : '<div class="text-muted small fst-italic">Không có sản phẩm</div>'}
       </div>
 
-      <div class="mt-3 d-flex justify-content-end gap-2">
-        ${(o.status==='PENDING'||o.status==='AWAITING_PAYMENT')?`
+      <div class="mt-3 d-flex justify-content-end gap-2 flex-wrap">
+        ${canShowPayButton(o)?`
+          <button class="btn btn-sm btn-warning" onclick="redirectToPayment(${o.id})">
+            <i class="fas fa-credit-card"></i> ${isRetry ? 'Thanh toán lại' : 'Thanh toán'}
+          </button>`:''}
+        ${(o.status==='PENDING')?`
           <button class="btn btn-sm btn-danger" onclick="cancelOrder(${o.id})">
             <i class="fas fa-times"></i> Hủy
           </button>`:''}
@@ -118,45 +156,87 @@ function renderOrderCard(o){
   </div>`;
 }
 
-/* ======================= CHI TIẾT ĐƠN ======================= */
-window.showOrderDetail=async function(orderId){
-  const modal=new bootstrap.Modal(document.getElementById("orderDetailModal"));
-  const loadingEl=document.getElementById("orderModalLoading");
-  const contentEl=document.getElementById("orderModalContent");
+/* ======================= THANH TOÁN ======================= */
+/* ======================= THANH TOÁN ======================= */
+window.redirectToPayment = async function (orderId) {
+  try {
+    // Gọi API tạo link thanh toán VNPay cho đơn hàng này
+    const res = await fetch(`/alotra-website/api/payment/vnpay/create?orderId=${orderId}`, {
+      method: "POST"
+    });
 
-  modal.show();
-  loadingEl.style.display="block";
-  contentEl.style.display="none";
+    if (!res.ok) throw new Error("Không thể tạo link thanh toán VNPay");
 
-  try{
-    const res=await apiFetch(`/api/orders/${orderId}`);
-    if(!res.ok)throw new Error(`order ${res.status}`);
-    const order=await res.json();
-
-    document.getElementById("modalOrderCode").textContent=`#${order.code}`;
-    document.getElementById("modalOrderDate").textContent=new Date(order.createdAt).toLocaleString('vi-VN');
-    document.getElementById("modalOrderStatus").textContent=mapStatusText(order.status);
-    document.getElementById("modalOrderStatus").className=`badge bg-${mapStatusColor(order.status)}`;
-    document.getElementById("modalOrderPayment").textContent=mapPaymentMethodText(order.paymentMethod);
-    document.getElementById("modalOrderAddress").textContent=order.deliveryAddress||'—';
-    document.getElementById("modalSubtotal").textContent=fmtVND(order.subtotal);
-    document.getElementById("modalDiscount").textContent=fmtVND(order.discount);
-    document.getElementById("modalShipping").textContent=fmtVND(order.shippingFee);
-    document.getElementById("modalOrderTotal").textContent=fmtVND(order.total);
-
-    const items=order.items||[];
-    document.getElementById("modalOrderItems").innerHTML=items.length
-      ?(await Promise.all(items.map(renderOrderItemRow(order.status)))).join('')
-      :`<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>`;
-
-    loadingEl.style.display="none";
-    contentEl.style.display="block";
-  }catch(e){
-    console.error('❌ Lỗi showOrderDetail:',e);
-    loadingEl.textContent="⚠️ Lỗi tải dữ liệu đơn hàng!";
+    const paymentUrl = await res.text();
+    window.location.href = paymentUrl;  // ➝ chuyển hướng trực tiếp đến trang VNPay
+  } catch (e) {
+    console.error("❌ Lỗi khi tạo thanh toán VNPay:", e);
+    alert("❌ Không thể tạo thanh toán VNPay. Vui lòng thử lại sau.");
   }
 };
 
+/* ======================= CHI TIẾT ĐƠN ======================= */
+window.showOrderDetail = async function (orderId) {
+  const modal = new bootstrap.Modal(document.getElementById("orderDetailModal"));
+  const loadingEl = document.getElementById("orderModalLoading");
+  const contentEl = document.getElementById("orderModalContent");
+
+  modal.show();
+  loadingEl.style.display = "block";
+  contentEl.style.display = "none";
+
+  try {
+    const res = await apiFetch(`/api/orders/${orderId}`);
+    if (!res.ok) throw new Error(`order ${res.status}`);
+    const order = await res.json();
+
+    document.getElementById("modalOrderCode").textContent = `#${order.code}`;
+    document.getElementById("modalOrderDate").textContent = new Date(order.createdAt).toLocaleString('vi-VN');
+    document.getElementById("modalOrderStatus").textContent = mapStatusText(order.status);
+    document.getElementById("modalOrderStatus").className = `badge bg-${mapStatusColor(order.status)}`;
+    document.getElementById("modalOrderPayment").textContent = mapPaymentMethodText(order.paymentMethod);
+
+	const paymentStatus = order.payment?.status || null;
+	document.getElementById("modalPaymentStatus").textContent = mapPaymentStatusText(paymentStatus);
+	document.getElementById("modalPaymentStatus").className = `badge bg-${mapPaymentStatusColor(paymentStatus)}`;
+
+    document.getElementById("modalOrderAddress").textContent = order.deliveryAddress || '—';
+    document.getElementById("modalSubtotal").textContent = fmtVND(order.subtotal);
+    document.getElementById("modalDiscount").textContent = fmtVND(order.discount);
+    document.getElementById("modalShipping").textContent = fmtVND(order.shippingFee);
+    document.getElementById("modalOrderTotal").textContent = fmtVND(order.total);
+
+    const items = order.items || [];
+    document.getElementById("modalOrderItems").innerHTML = items.length
+      ? (await Promise.all(items.map(renderOrderItemRow(order.status)))).join('')
+      : `<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>`;
+
+    const historyEl = document.getElementById("modalOrderHistory");
+    const history = order.statusHistory || [];
+    if (history.length === 0) {
+      historyEl.innerHTML = `<li class="text-muted">Không có lịch sử trạng thái</li>`;
+    } else {
+      historyEl.innerHTML = history.map(h => `
+        <li class="mb-2 d-flex align-items-start">
+          <div class="timeline-dot bg-${mapStatusColor(h.status)} me-2"></div>
+          <div>
+            <div class="fw-bold">${mapStatusText(h.status)}</div>
+            <div class="text-muted small">${new Date(h.changedAt).toLocaleString("vi-VN")}</div>
+            ${h.note ? `<div class="small fst-italic">${h.note}</div>` : ""}
+          </div>
+        </li>
+      `).join("");
+    }
+
+    loadingEl.style.display = "none";
+    contentEl.style.display = "block";
+  } catch (e) {
+    console.error('❌ Lỗi showOrderDetail:', e);
+    loadingEl.textContent = "⚠️ Lỗi tải dữ liệu đơn hàng!";
+  }
+};
+
+/* ======================= ĐÁNH GIÁ ======================= */
 function pickProductId(it){
   return(it.productId??it.product?.id??it.product?.productId??it.productVariant?.productId??it.variant?.productId??null);
 }

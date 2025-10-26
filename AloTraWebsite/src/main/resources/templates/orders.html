@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Lịch sử đơn hàng</title>
+
+
 </head>
 <body>
 <th:block th:fragment="content">
@@ -16,9 +18,8 @@
                 <button type="button" class="btn btn-outline-primary active" data-status="">Tất cả</button>
                 <button type="button" class="btn btn-outline-warning" data-status="PENDING">Chờ xác nhận</button>
                 <button type="button" class="btn btn-outline-secondary" data-status="CONFIRMED">Đã xác nhận</button>
-                <button type="button" class="btn btn-outline-info" data-status="AWAITING_PAYMENT">Chờ thanh toán</button>
-                <button type="button" class="btn btn-outline-primary" data-status="PAID">Đã thanh toán</button>
-                <button type="button" class="btn btn-outline-info" data-status="SHIPPING">Đang giao</button>
+                <button type="button" class="btn btn-outline-info" data-status="WAITING_FOR_PICKUP">Chờ lấy hàng</button>
+                <button type="button" class="btn btn-outline-primary" data-status="SHIPPING">Đang giao</button>
                 <button type="button" class="btn btn-outline-success" data-status="COMPLETED">Hoàn thành</button>
                 <button type="button" class="btn btn-outline-danger" data-status="CANCELED">Đã hủy</button>
             </div>
@@ -67,7 +68,8 @@
                                 <div><strong>Ngày đặt:</strong> <span id="modalOrderDate"></span></div>
                                 <span class="badge" id="modalOrderStatus"></span>
                             </div>
-                            <div><strong>Phương thức thanh toán:</strong> <span id="modalOrderPayment"></span></div>
+                            <div class="mb-2"><strong>Phương thức thanh toán:</strong> <span id="modalOrderPayment"></span></div>
+                            <div class="mb-2"><strong>Trạng thái thanh toán:</strong> <span id="modalPaymentStatus" class="badge"></span></div>
                             <div class="mt-2">
                                 <strong>Địa chỉ giao hàng:</strong> <span id="modalOrderAddress"></span>
                             </div>
@@ -159,13 +161,9 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-
-                    <!-- ✏️ Sửa đánh giá -->
                     <button id="btnEditReview" class="btn btn-outline-primary d-none">
                         <i class="fas fa-pen"></i> Sửa đánh giá
                     </button>
-
-                    <!-- 📨 Gửi đánh giá -->
                     <button id="btnSubmitReview" class="btn btn-primary">
                         <i class="fas fa-paper-plane me-1"></i> Gửi đánh giá
                     </button>

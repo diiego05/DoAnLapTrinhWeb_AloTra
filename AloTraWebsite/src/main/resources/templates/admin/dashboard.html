@@ -6,18 +6,121 @@
                     additionalJs=~{::additionalJs}
                   )}">
 
-<body>
-    <!-- PAGE CONTENT -->
-    <div class="dashboard-content" th:fragment="pageContent">
-        <h1>Chào mừng đến với trang quản trị AloTra!</h1>
-    </div>
+<head>
+    <link th:href="@{/css/admin-dashboard.css}" rel="stylesheet"/>
+</head>
 
-    <!-- ADDITIONAL JS -->
-    <th:block th:fragment="additionalJs">
-        <!-- Nếu bạn có JS riêng cho trang dashboard, thêm vào đây -->
-        <!-- Ví dụ:
-        <script th:src="@{/js/admin/dashboard.js}"></script>
-        -->
-    </th:block>
+<body>
+<!-- ================= PAGE CONTENT ================= -->
+<div class="dashboard-content" th:fragment="pageContent">
+    <div class="container-fluid py-4">
+
+        <!-- 🎯 Tổng quan -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-primary text-white text-center p-3">
+                    <h5>Khách hàng</h5>
+                    <h3 id="totalUsers">0</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-success text-white text-center p-3">
+                    <h5>Đơn hàng</h5>
+                    <h3 id="totalOrders">0</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-info text-white text-center p-3">
+                    <h5>Chi nhánh</h5>
+                    <h3 id="totalBranches">0</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-warning text-dark text-center p-3">
+                    <h5>Shipper</h5>
+                    <h3 id="totalShippers">0</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-danger text-white text-center p-3">
+                    <h5>Doanh thu</h5>
+                    <h3 id="totalRevenue">0₫</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="card summary-card bg-dark text-white text-center p-3">
+                    <h5>Chiến dịch</h5>
+                    <h3 id="activePromotions">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📈 Biểu đồ -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card shadow-sm chart-card p-3">
+                    <h5 class="mb-3 fw-bold text-primary"><i class="fas fa-chart-line me-2"></i>Doanh thu theo thời gian</h5>
+                    <canvas id="revenueChart" height="100"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm chart-card p-3">
+                    <h5 class="mb-3 fw-bold text-success"><i class="fas fa-pie-chart me-2"></i>Trạng thái đơn hàng</h5>
+                    <canvas id="orderStatusChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏆 Top sản phẩm - chi nhánh - chiến dịch -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card shadow-sm p-3 top-list">
+                    <h5 class="mb-3 text-danger"><i class="fas fa-crown me-2"></i>Top sản phẩm</h5>
+                    <ul id="topProducts" class="list-group small list-group-flush"></ul>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm p-3 top-list">
+                    <h5 class="mb-3 text-info"><i class="fas fa-store me-2"></i>Top chi nhánh</h5>
+                    <ul id="topBranches" class="list-group small list-group-flush"></ul>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm p-3 top-list">
+                    <h5 class="mb-3 text-warning"><i class="fas fa-bullhorn me-2"></i>Top chiến dịch</h5>
+                    <ul id="topCampaigns" class="list-group small list-group-flush"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🧾 Đơn hàng mới nhất -->
+        <div class="card shadow-sm p-3 latest-orders">
+            <h5 class="mb-3 text-primary fw-bold"><i class="fas fa-clock me-2"></i>Đơn hàng mới nhất</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="latestOrders"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ================= END PAGE CONTENT ================= -->
+
+<!-- ================= ADDITIONAL JS ================= -->
+<th:block th:fragment="additionalJs">
+    <script src="https://kit.fontawesome.com/a2e0d9b6b0.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:src="@{/js/admin/dashboard.js}"></script>
+</th:block>
+
 </body>
 </html>

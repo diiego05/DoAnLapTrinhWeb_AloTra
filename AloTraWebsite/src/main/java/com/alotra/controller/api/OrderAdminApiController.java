@@ -16,15 +16,22 @@ public class OrderAdminApiController {
 
     private final OrderService orderService;
 
-    // 📜 Danh sách tất cả đơn hàng (lọc theo branch + status nếu có)
+    /**
+     * 📜 Danh sách tất cả đơn hàng
+     * Có thể lọc theo branchId, status (trạng thái đơn hàng)
+     * và sau này có thể mở rộng thêm lọc theo trạng thái thanh toán nếu cần
+     */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getOrders(
             @RequestParam(required = false) Long branchId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status
+    ) {
         return ResponseEntity.ok(orderService.getOrdersForAdmin(branchId, status));
     }
 
-    // 📦 Chi tiết đơn hàng
+    /**
+     * 📦 Chi tiết đơn hàng (bao gồm cả thông tin thanh toán mới nhất)
+     */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDetailDTO> getOrderDetail(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderDetailForAdmin(orderId));

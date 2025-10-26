@@ -230,6 +230,7 @@ import com.alotra.dto.OrderDTO;
 import com.alotra.dto.OrderDetailDTO;
 import com.alotra.dto.OrderItemDTO;
 import com.alotra.dto.OrderStatusHistoryDTO;
+import com.alotra.dto.PaymentDTO;
 import com.alotra.dto.checkout.CheckoutRequestDTO;
 import com.alotra.dto.checkout.OrderResponseDTO;
 import com.alotra.entity.*;
@@ -246,7 +247,9 @@ import com.alotra.dto.ToppingDTO;
 import java.math.BigDecimal;
 import com.alotra.repository.BranchRepository;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -265,6 +268,8 @@ public class OrderService {
     private final BranchService branchService;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final BranchRepository branchRepository;
+    private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
 
     @Autowired
     private ShipperRepository shipperRepository;
@@ -288,11 +293,13 @@ public class OrderService {
             throw new IllegalStateException("Một số sản phẩm không khả dụng tại chi nhánh này.");
         }
 
+        // 🧮 Tính tổng phụ + topping
         BigDecimal subtotal = items.stream()
                 .map(i -> i.getUnitPrice().add(i.getToppingTotalEach())
                         .multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 🚚 Tính phí vận chuyển
         BigDecimal shippingFee = BigDecimal.ZERO;
         if (req.getPaymentMethod() == null ||
                 !req.getPaymentMethod().equalsIgnoreCase(PaymentMethod.PICKUP.name())) {
@@ -300,6 +307,7 @@ public class OrderService {
             shippingFee = carrier.getBaseFee();
         }
 
+        // 🏷️ Áp dụng mã giảm giá
         BigDecimal discount = BigDecimal.ZERO;
         Long couponId = null;
         if (req.getCouponCode() != null && !req.getCouponCode().isBlank()) {
@@ -312,8 +320,10 @@ public class OrderService {
         BigDecimal total = subtotal.subtract(discount).add(shippingFee);
         if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
 
+        // 🏡 Snapshot địa chỉ
         String deliveryAddress = addressService.snapshotAddress(req.getAddressId(), userId, req.getPaymentMethod());
 
+        // 🧾 Tạo đơn hàng
         Order order = Order.builder()
                 .code(generateOrderCode())
                 .userId(userId)
@@ -332,6 +342,7 @@ public class OrderService {
                 .build();
         orderRepository.save(order);
 
+        // 💬 Lưu các item
         List<OrderItem> orderItems = items.stream()
                 .map(ci -> OrderItem.builder()
                         .order(order)
@@ -349,6 +360,7 @@ public class OrderService {
                 .toList();
         orderItemRepository.saveAll(orderItems);
 
+        // 🧋 Lưu topping
         var toppingEntities = items.stream()
                 .flatMap(cartItem -> {
                     int idx = items.indexOf(cartItem);
@@ -366,10 +378,12 @@ public class OrderService {
                 .toList();
         if (!toppingEntities.isEmpty()) orderItemToppingRepository.saveAll(toppingEntities);
 
+        // 🛒 Xóa giỏ hàng
         cartService.removeItems(userId, req.getCartItemIds());
 
         if (couponId != null) couponService.increaseUsedCount(couponId);
 
+        // 🕓 Lưu lịch sử trạng thái đơn hàng
         orderStatusHistoryRepository.save(OrderStatusHistory.builder()
                 .order(order)
                 .status(OrderStatus.PENDING.name())
@@ -378,8 +392,18 @@ public class OrderService {
                 .build()
         );
 
-        sendAsyncNotifications(userId, order, orderItems);
+        // 💳 Tạo payment record
+        paymentService.createPayment(
+                order.getId(),
+                req.getGateway() != null ? req.getGateway() : "COD",
+                total,
+                order.getPaymentMethod()
+        );
 
+        // 📩 Gửi thông báo
+        sendAsyncNotifications(userId, order);
+
+        // ✅ Trả về phản hồi
         return OrderResponseDTO.builder()
                 .orderId(order.getId())
                 .code(order.getCode())
@@ -401,6 +425,7 @@ public class OrderService {
                         .toList())
                 .build();
     }
+
 
     @Async
     public void sendAsyncNotifications(Long userId, Order order, List<OrderItem> orderItems) {
@@ -463,16 +488,21 @@ public class OrderService {
 
     @Async
     public void sendAsyncNotifications(Long userId, Order order) {
+        // 🧾 1. Kiểm tra trạng thái thanh toán riêng (nếu có Payment)
         safe(() -> {
-            if (OrderStatus.PAID.name().equals(order.getStatus())) {
-                emailService.sendPaymentSuccessEmail(userId, order);
-            } else if (OrderStatus.FAILED.name().equals(order.getStatus())) {
-                emailService.sendPaymentFailedEmail(userId, order);
+            var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId());
+            if (payment.isPresent()) {
+                var pay = payment.get();
+                switch (pay.getStatus()) {
+                    case SUCCESS -> emailService.sendPaymentSuccessEmail(userId, order);
+                    case FAILED -> emailService.sendPaymentFailedEmail(userId, order);
+                    default -> {} // không gửi mail nếu chưa thanh toán
+                }
             }
         });
 
+        // 📨 2. Gửi thông báo cập nhật trạng thái đơn hàng
         String vnStatus = getStatusLabel(order.getStatus());
-
         safe(() -> notificationService.create(
                 userId,
                 "ORDER",
@@ -482,6 +512,7 @@ public class OrderService {
                 order.getId()
         ));
     }
+
 
     private String getStatusLabel(String status) {
         return switch (status) {
@@ -522,36 +553,57 @@ public class OrderService {
             orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
         }
 
-        // 🔸 Map sang DTO
-        return orders.stream()
-                .map((Order order) -> {
-                    List<OrderItemDTO> items = orderItemRepository.findByOrderId(order.getId())
-                            .stream()
-                            .map((OrderItem item) -> OrderItemDTO.builder()
-                                    .id(item.getId())
-                                    .productId(item.getProductId())       // ✅
-                                    .variantId(item.getVariantId())
-                                    .productName(item.getProductName())
-                                    .sizeName(item.getSizeName())
-                                    .quantity(item.getQuantity())
-                                    .unitPrice(item.getUnitPrice())
-                                    .toppingTotal(item.getToppingTotal())
-                                    .lineTotal(item.getLineTotal())
-                                    .note(item.getNote())
-                                    .build())
-                            .collect(Collectors.toList());
+        return orders.stream().map(order -> {
+            // 🧾 Map danh sách sản phẩm
+            List<OrderItemDTO> items = orderItemRepository.findByOrderId(order.getId())
+                    .stream()
+                    .map(item -> OrderItemDTO.builder()
+                            .id(item.getId())
+                            .productId(item.getProductId())
+                            .variantId(item.getVariantId())
+                            .productName(item.getProductName())
+                            .sizeName(item.getSizeName())
+                            .quantity(item.getQuantity())
+                            .unitPrice(item.getUnitPrice())
+                            .toppingTotal(item.getToppingTotal())
+                            .lineTotal(item.getLineTotal())
+                            .note(item.getNote())
+                            .build())
+                    .collect(Collectors.toList());
 
-                    return OrderDTO.builder()
-                            .id(order.getId())
-                            .code(order.getCode())
-                            .createdAt(order.getCreatedAt())
-                            .status(order.getStatus())
-                            .total(order.getTotal())
-                            .paymentMethod(order.getPaymentMethod())
-                            .items(items)
+            // 💳 Lấy bản ghi Payment mới nhất (nếu có nhiều)
+            PaymentDTO paymentDTO = null;
+            if (order.getPayments() != null && !order.getPayments().isEmpty()) {
+                Payment latestPayment = order.getPayments().stream()
+                        .max(Comparator.comparing(Payment::getCreatedAt)) // lấy payment mới nhất
+                        .orElse(null);
+
+                if (latestPayment != null) {
+                    paymentDTO = PaymentDTO.builder()
+                            .id(latestPayment.getId())
+                            .gateway(latestPayment.getGateway())
+                            .paymentMethod(latestPayment.getPaymentMethod())
+                            .amount(latestPayment.getAmount())
+                            .status(latestPayment.getStatus())                   // ✅ Enum
+                            .createdAt(latestPayment.getCreatedAt())
+                            .paidAt(latestPayment.getPaidAt())
+                            .refundStatus(latestPayment.getRefundStatus())
+                            .transactionCode(latestPayment.getTransactionCode()) // ✅ Mã giao dịch
                             .build();
-                })
-                .collect(Collectors.toList());
+                }
+            }
+
+            return OrderDTO.builder()
+                    .id(order.getId())
+                    .code(order.getCode())
+                    .createdAt(order.getCreatedAt())
+                    .status(order.getStatus())
+                    .total(order.getTotal())
+                    .paymentMethod(order.getPaymentMethod())
+                    .items(items)
+                    .payment(paymentDTO)
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -612,14 +664,16 @@ public class OrderService {
         sendAsyncNotifications(order.getUserId(), order);
     }
 
-
     @Transactional(readOnly = true)
     public OrderDetailDTO getOrderDetail(Long userId, Long orderId) {
         // 🧭 1. Xác thực quyền truy cập đơn hàng
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-
+        // (Tùy chọn: nếu bạn muốn kiểm tra quyền truy cập người dùng)
+        // if (!order.getUser().getId().equals(userId)) {
+        //     throw new RuntimeException("Không có quyền truy cập đơn hàng này");
+        // }
 
         // 🧃 2. Lấy danh sách sản phẩm & topping
         List<OrderItemDTO> itemDTOs = orderItemRepository.findByOrderId(orderId)
@@ -637,7 +691,7 @@ public class OrderService {
                     // 🛍️ 2.2. Map sang DTO sản phẩm
                     return OrderItemDTO.builder()
                             .id(item.getId())
-                            .productId(item.getProductId())       // ✅
+                            .productId(item.getProductId())
                             .variantId(item.getVariantId())
                             .productName(item.getProductName())
                             .sizeName(item.getSizeName())
@@ -660,9 +714,27 @@ public class OrderService {
                         .changedAt(h.getChangedAt())
                         .note(h.getNote())
                         .build())
-                .collect(Collectors.toList()); // ⚡ dùng Collectors để tránh lỗi type inference
+                .collect(Collectors.toList());
 
-        // 📦 4. Trả về DTO chi tiết đơn hàng
+        // 💳 4. Lấy thông tin thanh toán mới nhất (nếu có)
+        Optional<Payment> paymentOpt = paymentRepository.findTopByOrderIdOrderByCreatedAtDesc(orderId);
+
+        PaymentDTO paymentDTO = null;
+        if (paymentOpt.isPresent()) {
+            Payment p = paymentOpt.get();
+            paymentDTO = PaymentDTO.builder()
+                    .id(p.getId())
+                    .gateway(p.getGateway())
+                    .amount(p.getAmount())
+                    .transactionCode(p.getTransactionCode())
+                    .status(p.getStatus())       // ⚡ Trạng thái thanh toán
+                    .paidAt(p.getPaidAt())
+                    .createdAt(p.getCreatedAt())
+                    .paymentMethod(p.getPaymentMethod())
+                    .build();
+        }
+
+        // 📦 5. Trả về DTO chi tiết đơn hàng
         return OrderDetailDTO.builder()
                 .id(order.getId())
                 .code(order.getCode())
@@ -676,9 +748,132 @@ public class OrderService {
                 .createdAt(order.getCreatedAt())
                 .items(itemDTOs)
                 .statusHistory(historyDTOs)
+                .payment(paymentDTO)  // ✅ thêm payment vào DTO
                 .build();
     }
 
+
+
+    @Transactional(readOnly = true)
+    public List<OrderDTO> getOrdersForAdmin(Long branchId, String status) {
+        List<Order> orders;
+
+        if (branchId != null && status != null) {
+            orders = orderRepository.findByBranchIdAndStatusOrderByCreatedAtDesc(branchId, status);
+        } else if (branchId != null) {
+            orders = orderRepository.findByBranchIdOrderByCreatedAtDesc(branchId);
+        } else if (status != null) {
+            orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
+        } else {
+            orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        }
+
+        return orders.stream()
+                .map(this::mapToOrderDTOWithPayment) // 🆕 map có thêm thông tin thanh toán
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailDTO getOrderDetailForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        return mapToOrderDetailDTOWithPayment(order);
+    }
+
+    private OrderDTO mapToOrderDTOWithPayment(Order order) {
+        String branchName = null;
+        if (order.getBranchId() != null) {
+            branchName = branchRepository.findById(order.getBranchId())
+                    .map(Branch::getName)
+                    .orElse(null);
+        }
+
+        // 🔸 Lấy payment mới nhất
+        var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId()).orElse(null);
+        PaymentDTO paymentDTO = mapPaymentToDTO(payment);
+
+        return OrderDTO.builder()
+                .id(order.getId())
+                .code(order.getCode())
+                .total(order.getTotal())
+                .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
+                .branchName(branchName)
+                .paymentMethod(order.getPaymentMethod())
+                .payment(paymentDTO) // 🆕 gắn vào DTO
+                .build();
+    }
+
+    private OrderDetailDTO mapToOrderDetailDTOWithPayment(Order order) {
+        String branchName = null;
+        if (order.getBranchId() != null) {
+            branchName = branchRepository.findById(order.getBranchId())
+                    .map(Branch::getName)
+                    .orElse(null);
+        }
+
+        List<OrderItemDTO> itemDTOs = orderItemRepository.findByOrderId(order.getId())
+                .stream()
+                .map(item -> OrderItemDTO.builder()
+                        .id(item.getId())
+                        .productId(item.getProductId())
+                        .variantId(item.getVariantId())
+                        .productName(item.getProductName())
+                        .sizeName(item.getSizeName())
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .toppingTotal(item.getToppingTotal())
+                        .lineTotal(item.getLineTotal())
+                        .note(item.getNote())
+                        .build())
+                .toList();
+
+        List<OrderStatusHistoryDTO> historyDTOs = orderStatusHistoryRepository
+                .findByOrderIdOrderByChangedAtAsc(order.getId())
+                .stream()
+                .map(h -> OrderStatusHistoryDTO.builder()
+                        .status(h.getStatus())
+                        .changedAt(h.getChangedAt())
+                        .note(h.getNote())
+                        .build())
+                .toList();
+
+        // 🔸 Lấy payment mới nhất
+        var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId()).orElse(null);
+        PaymentDTO paymentDTO = mapPaymentToDTO(payment);
+
+        return OrderDetailDTO.builder()
+                .id(order.getId())
+                .code(order.getCode())
+                .subtotal(order.getSubtotal())
+                .discount(order.getDiscount())
+                .shippingFee(order.getShippingFee())
+                .total(order.getTotal())
+                .status(order.getStatus())
+                .paymentMethod(order.getPaymentMethod())
+                .deliveryAddress(order.getDeliveryAddress())
+                .createdAt(order.getCreatedAt())
+                .branchName(branchName)
+                .items(itemDTOs)
+                .statusHistory(historyDTOs)
+                .payment(paymentDTO) // 🆕 gắn vào DTO
+                .build();
+    }
+
+    private PaymentDTO mapPaymentToDTO(com.alotra.entity.Payment payment) {
+        if (payment == null) return null;
+        return PaymentDTO.builder()
+                .id(payment.getId())
+                .gateway(payment.getGateway())
+                .paymentMethod(payment.getPaymentMethod())
+                .amount(payment.getAmount())
+                .status(payment.getStatus())
+                .createdAt(payment.getCreatedAt())
+                .paidAt(payment.getPaidAt())
+                .refundStatus(payment.getRefundStatus())
+                .build();
+    }
 
  // ====================================
     // 🧾 3. QUẢN LÝ ĐƠN HÀNG VENDOR
@@ -788,102 +983,6 @@ public class OrderService {
         sendAsyncNotifications(order.getUserId(), order);
     }
 
-    @Transactional(readOnly = true)
-    public List<OrderDTO> getOrdersForAdmin(Long branchId, String status) {
-        List<Order> orders;
-
-        if (branchId != null && status != null) {
-            orders = orderRepository.findByBranchIdAndStatusOrderByCreatedAtDesc(branchId, status);
-        } else if (branchId != null) {
-            orders = orderRepository.findByBranchIdOrderByCreatedAtDesc(branchId);
-        } else if (status != null) {
-            orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
-        } else {
-            orders = orderRepository.findAllByOrderByCreatedAtDesc();
-        }
-
-        return orders.stream().map(this::mapToOrderDTO).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public OrderDetailDTO getOrderDetailForAdmin(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-
-        return mapToOrderDetailDTO(order);
-    }
-
-    private OrderDTO mapToOrderDTO(Order order) {
-        String branchName = null;
-        if (order.getBranchId() != null) {
-            branchName = branchRepository.findById(order.getBranchId())
-                    .map(Branch::getName)
-                    .orElse(null);
-        }
-
-        return OrderDTO.builder()
-                .id(order.getId())
-                .code(order.getCode())
-                .total(order.getTotal())
-                .status(order.getStatus())
-                .createdAt(order.getCreatedAt())
-                .branchName(branchName)               // ✅ lấy tên chi nhánh qua branchId
-                .paymentMethod(order.getPaymentMethod())
-                .build();
-    }
-
-
-    private OrderDetailDTO mapToOrderDetailDTO(Order order) {
-        String branchName = null;
-        if (order.getBranchId() != null) {
-            branchName = branchRepository.findById(order.getBranchId())
-                    .map(Branch::getName)
-                    .orElse(null);
-        }
-
-        List<OrderItemDTO> itemDTOs = orderItemRepository.findByOrderId(order.getId())
-                .stream()
-                .map(item -> OrderItemDTO.builder()
-                        .id(item.getId())
-                        .productId(item.getProductId())       // ✅
-                        .variantId(item.getVariantId())
-
-                        .productName(item.getProductName())
-                        .sizeName(item.getSizeName())
-                        .quantity(item.getQuantity())
-                        .unitPrice(item.getUnitPrice())
-                        .toppingTotal(item.getToppingTotal())
-                        .lineTotal(item.getLineTotal())
-                        .note(item.getNote())
-                        .build())
-                .toList();
-
-        List<OrderStatusHistoryDTO> historyDTOs = orderStatusHistoryRepository
-                .findByOrderIdOrderByChangedAtAsc(order.getId())
-                .stream()
-                .map(h -> OrderStatusHistoryDTO.builder()
-                        .status(h.getStatus())
-                        .changedAt(h.getChangedAt())
-                        .note(h.getNote())
-                        .build())
-                .toList();
-
-        return OrderDetailDTO.builder()
-                .id(order.getId())
-                .code(order.getCode())
-                .subtotal(order.getSubtotal())
-                .discount(order.getDiscount())
-                .shippingFee(order.getShippingFee())
-                .total(order.getTotal())
-                .status(order.getStatus())
-                .paymentMethod(order.getPaymentMethod())
-                .deliveryAddress(order.getDeliveryAddress())
-                .createdAt(order.getCreatedAt())
-                .branchName(branchName)                // ✅ lấy tên chi nhánh qua branchId
-                .items(itemDTOs)
-                .statusHistory(historyDTOs)
-                .build();
-    }
 
 
     @Transactional
@@ -891,24 +990,25 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        order.setStatus("SHIPPING");
+        // 🚚 Đặt trạng thái đơn sang "chờ giao hàng"
+        order.setStatus("WAITING_FOR_PICKUP");
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        // 🧭 Lấy tất cả shipper thuộc chi nhánh
+        // 🧭 Lấy tất cả shipper thuộc chi nhánh / nhà vận chuyển
         List<Shipper> shippers = shipperRepository.findByCarrierIdAndIsDeletedFalse(order.getShippingCarrierId());
         for (Shipper s : shippers) {
             ShippingAssignment assignment = new ShippingAssignment();
             assignment.setOrderId(order.getId());
             assignment.setShipperId(s.getId());
-            assignment.setStatus("PENDING");
+            assignment.setStatus("PENDING"); // trạng thái phân công ban đầu
             assignment.setAssignedAt(LocalDateTime.now());
             shippingAssignmentRepository.save(assignment);
         }
 
         // 📩 Gửi thông báo đến các shipper
         shippers.forEach(s -> notificationService.create(
-              s.getUser().getId(),
+                s.getUser().getId(),
                 "ORDER",
                 "Có đơn hàng mới",
                 "Bạn có một đơn hàng mới #" + order.getCode() + " cần giao",
@@ -916,4 +1016,5 @@ public class OrderService {
                 order.getId()
         ));
     }
+
 }

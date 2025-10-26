@@ -3,6 +3,7 @@
 const contextPath = "/alotra-website";
 const fmt = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v ?? 0);
 
+// 📌 Biến toàn cục
 let selectedAddressId = null;
 let selectedBranchId = null;
 let selectedCarrierId = null;
@@ -12,6 +13,7 @@ let discount = 0;
 let shippingFee = 0;
 let cartItems = [];
 
+// ========================= 📥 INIT =========================
 document.addEventListener("DOMContentLoaded", async () => {
     await loadCheckoutItems();
     await loadAddresses();
@@ -26,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btn-save-address").onclick = saveNewAddress;
 });
 
-// 🌀 Vòng tròn loading toàn trang
+// ========================= ⏳ LOADING OVERLAY =========================
 function showLoading() {
     let overlay = document.getElementById("loading-overlay");
     if (!overlay) {
@@ -40,6 +42,7 @@ function showLoading() {
             </div>
         `;
         document.body.appendChild(overlay);
+
         const style = document.createElement("style");
         style.innerHTML = `
             #loading-overlay {
@@ -62,7 +65,7 @@ function hideLoading() {
     if (overlay) overlay.style.display = "none";
 }
 
-// 🧭 Hàm gọi API chung
+// ========================= 🧭 API HELPER =========================
 async function api(url, method = 'GET', data) {
     const opt = { method, headers: { 'Content-Type': 'application/json' } };
     if (data) opt.body = JSON.stringify(data);
@@ -71,7 +74,7 @@ async function api(url, method = 'GET', data) {
     return res.json();
 }
 
-// 🛒 Load sản phẩm checkout
+// ========================= 🛒 LOAD GIỎ HÀNG =========================
 async function loadCheckoutItems() {
     const ids = JSON.parse(localStorage.getItem("checkoutItems") || "[]");
     if (ids.length === 0) {
@@ -86,14 +89,12 @@ async function loadCheckoutItems() {
     updateSummary();
 }
 
-// 🧋 Render danh sách item
 function renderCheckoutItems() {
     const list = document.getElementById("checkout-item-list");
     list.innerHTML = cartItems.map(it => {
         const toppingHtml = it.toppings?.length
-            ? `<div class="small text-muted">
-                   Topping: ${it.toppings.map(t => `${t.name} (${fmt(t.price)})`).join(", ")}
-               </div>` : "";
+            ? `<div class="small text-muted">Topping: ${it.toppings.map(t => `${t.name} (${fmt(t.price)})`).join(", ")}</div>`
+            : "";
         const noteHtml = it.note ? `<div class="small text-info">Ghi chú: ${it.note}</div>` : "";
         return `
             <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
@@ -111,7 +112,7 @@ function renderCheckoutItems() {
     }).join("");
 }
 
-// 💰 Cập nhật tổng
+// ========================= 💰 CẬP NHẬT TỔNG =========================
 function updateSummary() {
     document.getElementById("subtotal").innerText = fmt(subtotal);
     document.getElementById("discount").innerText = fmt(discount);
@@ -119,7 +120,7 @@ function updateSummary() {
     document.getElementById("grand-total").innerText = fmt(subtotal - discount + shippingFee);
 }
 
-// 🏠 Load địa chỉ
+// ========================= 🏠 ĐỊA CHỈ =========================
 async function loadAddresses() {
     const list = await api("/api/addresses");
     const container = document.getElementById("address-list");
@@ -145,13 +146,10 @@ async function loadAddresses() {
     });
 }
 
-// 🏡 Modal thêm địa chỉ
 function showAddAddressModal() {
-    const modal = new bootstrap.Modal(document.getElementById("addAddressModal"));
-    modal.show();
+    new bootstrap.Modal(document.getElementById("addAddressModal")).show();
 }
 
-// 🏡 Lưu địa chỉ mới
 async function saveNewAddress() {
     const body = {
         recipient: document.getElementById("new-recipient").value.trim(),
@@ -178,12 +176,12 @@ async function saveNewAddress() {
     }
 }
 
-// 🏪 Load chi nhánh
+// ========================= 🏪 CHI NHÁNH =========================
 async function loadBranches() {
     const select = document.getElementById("branch-select");
     select.innerHTML = `<option value="">-- Chọn chi nhánh --</option>`;
     try {
-        const branches = await api("/api/public/branches/active", "GET");
+        const branches = await api("/api/public/branches/active");
         branches.forEach(b => {
             const opt = document.createElement("option");
             opt.value = b.id;
@@ -196,7 +194,6 @@ async function loadBranches() {
     }
 }
 
-// 📍 Khi chọn chi nhánh → kiểm tra availability
 async function handleBranchChange(e) {
     selectedBranchId = parseInt(e.target.value) || null;
     const branchWarning = document.getElementById("branch-warning");
@@ -208,20 +205,15 @@ async function handleBranchChange(e) {
         if (unavailable.length > 0) {
             branchWarning.style.display = "block";
             branchWarning.textContent = `⚠️ Có ${unavailable.length} sản phẩm không khả dụng tại chi nhánh này.`;
-        } else {
-            branchWarning.style.display = "none";
-        }
-    } else {
-        branchWarning.style.display = "none";
-    }
+        } else branchWarning.style.display = "none";
+    } else branchWarning.style.display = "none";
 }
 
-// 🚚 Load đơn vị vận chuyển
+// ========================= 🚚 VẬN CHUYỂN =========================
 async function loadCarriers() {
     const carriers = await api("/api/public/shipping-carriers");
     const select = document.getElementById("carrier-select");
     select.innerHTML = `<option value="">-- Chọn đơn vị vận chuyển --</option>`;
-
     carriers.forEach(c => {
         const opt = document.createElement("option");
         opt.value = c.id;
@@ -230,45 +222,39 @@ async function loadCarriers() {
     });
 }
 
-// 🪙 Chọn đơn vị vận chuyển
 async function handleCarrierChange(e) {
     selectedCarrierId = parseInt(e.target.value) || null;
-
+    shippingFee = 0;
     if (selectedCarrierId) {
         const carrier = await api(`/api/public/shipping-carriers/${selectedCarrierId}/fee`);
         shippingFee = carrier.discountedFee;
-    } else {
-        shippingFee = 0;
     }
-
     document.getElementById("shipping-fee").innerText = fmt(shippingFee);
     document.getElementById("ship-fee-summary").innerText = fmt(shippingFee);
     updateSummary();
 }
 
-// 🎟️ Áp mã giảm giá
+// ========================= 🎟️ COUPON =========================
 async function applyCoupon() {
     const code = document.getElementById("coupon-code").value.trim();
     if (!code) return;
 
     const productIds = cartItems.map(it => it.productId);
-
     try {
         const res = await api(`/api/public/coupons/validate/${code}?orderTotal=${subtotal}`, "POST", productIds);
         discount = res;
         couponCode = code;
         document.getElementById("coupon-msg").innerText = `✅ Áp dụng mã thành công - Giảm ${fmt(discount)}`;
-        updateSummary();
     } catch (e) {
         console.error(e);
         document.getElementById("coupon-msg").innerText = `❌ Mã không hợp lệ hoặc không áp dụng cho sản phẩm`;
         discount = 0;
         couponCode = null;
-        updateSummary();
     }
+    updateSummary();
 }
 
-// ✅ Xác nhận đặt hàng
+// ========================= 🧾 XÁC NHẬN ĐẶT HÀNG =========================
 async function confirmOrder() {
     const btn = document.getElementById("btn-confirm-order");
     btn.disabled = true;
@@ -294,7 +280,6 @@ async function confirmOrder() {
             return;
         }
 
-        // 📦 Gửi request tạo đơn hàng
         const body = {
             cartItemIds: cartItems.map(it => it.cartItemId),
             branchId: selectedBranchId,
@@ -306,7 +291,6 @@ async function confirmOrder() {
 
         const res = await api("/api/orders", "POST", body);
 
-        // ⚡ Nếu là VNPay → chuyển hướng thanh toán
         if (paymentMethod === "BANK") {
             const paymentRes = await fetch(`${contextPath}/api/payment/vnpay/create?orderId=${res.orderId}`, {
                 method: "POST"
@@ -314,9 +298,8 @@ async function confirmOrder() {
             if (!paymentRes.ok) throw new Error("Không thể tạo link thanh toán VNPay");
             const paymentUrl = await paymentRes.text();
             localStorage.removeItem("checkoutItems");
-            window.location.href = paymentUrl; // 🔁 chuyển hướng sang VNPay
+            window.location.href = paymentUrl;
         } else {
-            // ✅ THAY ALERT BẰNG MODAL ĐẸP
             showSuccessModal(res.code);
         }
     } catch (e) {
@@ -328,7 +311,7 @@ async function confirmOrder() {
     }
 }
 
-// ✅ THÊM FUNCTION MỚI - HIỂN THỊ MODAL THÀNH CÔNG
+// ========================= ✅ MODAL THÀNH CÔNG =========================
 function showSuccessModal(orderCode) {
     const modalHTML = `
         <div class="success-modal-overlay" id="successModalOverlay">
@@ -364,41 +347,18 @@ function showSuccessModal(orderCode) {
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // ✅ GẮN SỰ KIỆN CHO CÁC NÚT SAU KHI MODAL ĐƯỢC THÊM VÀO DOM
-    document.getElementById('btnGoHome').addEventListener('click', function() {
+    document.getElementById('btnGoHome').onclick = () => {
         localStorage.removeItem("checkoutItems");
         window.location.href = contextPath + "/";
-    });
-
-    document.getElementById('btnGoOrders').addEventListener('click', function() {
+    };
+    document.getElementById('btnGoOrders').onclick = () => {
         localStorage.removeItem("checkoutItems");
         window.location.href = contextPath + "/orders";
-    });
-
-    // ✅ THÊM: Click overlay để đóng modal
-    document.getElementById('successModalOverlay').addEventListener('click', function(e) {
-        if (e.target === this) {
+    };
+    document.getElementById('successModalOverlay').onclick = (e) => {
+        if (e.target === e.currentTarget) {
             localStorage.removeItem("checkoutItems");
             window.location.href = contextPath + "/orders";
         }
-    });
+    };
 }
-// ✅ THÊM FUNCTION - ĐÓNG MODAL VÀ VỀ TRANG CHỦ
-function closeSuccessModal() {
-    const overlay = document.getElementById('successModalOverlay');
-    if (overlay) {
-        overlay.style.animation = 'fadeOut 0.3s ease';
-        setTimeout(() => {
-            overlay.remove();
-            localStorage.removeItem("checkoutItems");
-            window.location.href = contextPath + "/";
-        }, 300);
-    }
-}
-
-// ✅ THÊM FUNCTION - CHUYỂN ĐẾN TRANG ĐƠN HÀNG
-function goToOrders() {
-    localStorage.removeItem("checkoutItems");
-    window.location.href = contextPath + "/orders";
-}
-

@@ -2,12 +2,14 @@ package com.alotra.controller.api;
 
 import com.alotra.dto.OrderDTO;
 import com.alotra.dto.OrderStatusHistoryDTO;
+import com.alotra.dto.PaymentDTO;
 import com.alotra.entity.Order;
 import com.alotra.entity.OrderStatusHistory;
 import com.alotra.entity.ShippingAssignment;
 import com.alotra.enums.OrderStatus;
 import com.alotra.repository.OrderRepository;
 import com.alotra.repository.OrderStatusHistoryRepository;
+import com.alotra.repository.PaymentRepository;
 import com.alotra.repository.ShippingAssignmentRepository;
 import com.alotra.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -26,21 +28,22 @@ public class ShipperOrderApiController {
     private final ShippingAssignmentRepository shippingAssignmentRepository;
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final PaymentRepository paymentRepository;
     private final UserService userService;
 
-    // ======================= 📦 Lấy danh sách đơn được phân công =======================
+    // ======================= 📦 Lấy tất cả đơn hàng được phân công cho shipper =======================
     @GetMapping
     public List<OrderDTO> getAssignedOrders() {
         Long shipperId = userService.getCurrentShipperId();
 
         List<Long> orderIds = shippingAssignmentRepository
-                .findByShipperIdAndStatusIn(shipperId, List.of("PENDING", "ACCEPTED"))
+                .findByShipperId(shipperId)
                 .stream()
                 .map(ShippingAssignment::getOrderId)
                 .toList();
 
         return orderRepository.findAllById(orderIds).stream()
-                .map(this::mapToOrderDTO)
+                .map(this::mapToOrderDTOWithPayment) // 🆕 map có thông tin thanh toán
                 .toList();
     }
 
@@ -49,7 +52,7 @@ public class ShipperOrderApiController {
     public ResponseEntity<OrderDTO> getOrderDetail(@PathVariable Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-        return ResponseEntity.ok(mapToOrderDTO(order));
+        return ResponseEntity.ok(mapToOrderDTOWithPayment(order)); // 🆕 có thông tin thanh toán
     }
 
     // ======================= ✅ Shipper nhận đơn =======================
@@ -61,11 +64,10 @@ public class ShipperOrderApiController {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        if (!OrderStatus.CONFIRMED.name().equals(order.getStatus())) {
-            return ResponseEntity.badRequest().body("Đơn hàng không thể nhận");
+        if (!OrderStatus.WAITING_FOR_PICKUP.name().equals(order.getStatus())) {
+            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái chờ nhận");
         }
 
-        // ✅ Shipper hiện tại nhận đơn
         ShippingAssignment assignment = shippingAssignmentRepository
                 .findByOrderIdAndShipperId(id, shipperId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phân công"));
@@ -74,7 +76,6 @@ public class ShipperOrderApiController {
         assignment.setAssignedAt(LocalDateTime.now());
         shippingAssignmentRepository.save(assignment);
 
-        // ❌ Các shipper khác bị khóa
         shippingAssignmentRepository.findByOrderId(id).forEach(a -> {
             if (!a.getShipperId().equals(shipperId)) {
                 a.setStatus("LOCKED");
@@ -82,12 +83,10 @@ public class ShipperOrderApiController {
             }
         });
 
-        // 🚚 Cập nhật trạng thái đơn hàng
         order.setStatus(OrderStatus.SHIPPING.name());
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        // 📝 Ghi lịch sử trạng thái
         orderStatusHistoryRepository.save(
                 OrderStatusHistory.builder()
                         .order(order)
@@ -100,7 +99,7 @@ public class ShipperOrderApiController {
         return ResponseEntity.ok().build();
     }
 
-    // ======================= 🚀 Giao hàng thành công =======================
+    // ======================= 🚀 Shipper giao hàng thành công =======================
     @Transactional
     @PutMapping("/{id}/delivered")
     public ResponseEntity<?> markDelivered(@PathVariable Long id) {
@@ -110,10 +109,9 @@ public class ShipperOrderApiController {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
         if (!OrderStatus.SHIPPING.name().equals(order.getStatus())) {
-            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái giao hàng");
+            return ResponseEntity.badRequest().body("Đơn hàng không ở trạng thái đang giao");
         }
 
-        // ✅ Xác nhận assignment của shipper
         ShippingAssignment assignment = shippingAssignmentRepository
                 .findByOrderIdAndShipperId(id, shipperId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phân công"));
@@ -122,12 +120,10 @@ public class ShipperOrderApiController {
         assignment.setDeliveredAt(LocalDateTime.now());
         shippingAssignmentRepository.save(assignment);
 
-        // 🟢 Cập nhật trạng thái đơn
         order.setStatus(OrderStatus.COMPLETED.name());
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        // 📝 Ghi lịch sử trạng thái (đúng trạng thái COMPLETED)
         orderStatusHistoryRepository.save(
                 OrderStatusHistory.builder()
                         .order(order)
@@ -140,8 +136,8 @@ public class ShipperOrderApiController {
         return ResponseEntity.ok().build();
     }
 
-    // ======================= 🧭 Mapper =======================
-    private OrderDTO mapToOrderDTO(Order order) {
+    // ======================= 🧭 Mapper có payment =======================
+    private OrderDTO mapToOrderDTOWithPayment(Order order) {
         var history = orderStatusHistoryRepository
                 .findByOrderIdOrderByChangedAtAsc(order.getId())
                 .stream()
@@ -152,6 +148,22 @@ public class ShipperOrderApiController {
                         .build())
                 .toList();
 
+        // 🆕 Lấy payment mới nhất
+        var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId()).orElse(null);
+        PaymentDTO paymentDTO = null;
+        if (payment != null) {
+            paymentDTO = PaymentDTO.builder()
+                    .id(payment.getId())
+                    .gateway(payment.getGateway())
+                    .paymentMethod(payment.getPaymentMethod())
+                    .amount(payment.getAmount())
+                    .status(payment.getStatus())
+                    .createdAt(payment.getCreatedAt())
+                    .paidAt(payment.getPaidAt())
+                    .refundStatus(payment.getRefundStatus())
+                    .build();
+        }
+
         return OrderDTO.builder()
                 .id(order.getId())
                 .code(order.getCode())
@@ -161,6 +173,7 @@ public class ShipperOrderApiController {
                 .paymentMethod(order.getPaymentMethod())
                 .createdAt(order.getCreatedAt())
                 .statusHistory(history)
+                .payment(paymentDTO) // 🆕 thêm payment vào DTO
                 .build();
     }
 }

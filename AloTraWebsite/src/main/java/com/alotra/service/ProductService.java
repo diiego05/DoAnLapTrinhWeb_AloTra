@@ -1529,5 +1529,77 @@ public class ProductService {
                 .limit(limit)
                 .collect(Collectors.toList());
     }
+
+
+    @Transactional
+    public void updateProductForBranch(Long id, ProductFormDTO dto, List<MultipartFile> files, Long branchId) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm!"));
+
+        // ✅ Cập nhật thông tin chung (nếu bạn muốn cho phép)
+        product.setName(dto.getName());
+        product.setSlug(toSlug(dto.getName()));
+        product.setDescription(dto.getDescription());
+        product.setStatus(dto.getStatus());
+
+        Category category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
+        product.setCategory(category);
+
+        // 🧹 Xóa các variant cũ của sản phẩm (trong DB)
+        List<ProductVariant> oldVariants = productVariantRepository.findByProductId(id);
+
+        // ⚠️ Xóa inventory chỉ của chi nhánh hiện tại (không đụng chi nhánh khác)
+        for (ProductVariant oldVariant : oldVariants) {
+            branchInventoryRepository.deleteByVariantIdAndBranchId(oldVariant.getId(), branchId);
+        }
+
+        product.getVariants().clear();
+        productRepository.save(product);
+        productRepository.flush();
+
+        String variantStatus = "ACTIVE".equalsIgnoreCase(product.getStatus()) ? "ACTIVE" : "INACTIVE";
+
+        // 🆕 Thêm variant mới
+        dto.getVariants().forEach(variantDTO -> {
+            Size size = sizeRepository.findById(variantDTO.getSizeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy size!"));
+            ProductVariant variant = new ProductVariant();
+            variant.setProduct(product);
+            variant.setSize(size);
+            variant.setPrice(variantDTO.getPrice());
+            variant.setSku(product.getSlug() + "-" + size.getCode());
+            variant.setStatus(variantStatus);
+            product.getVariants().add(variant);
+        });
+
+        // 🖼️ Cập nhật media (nếu cho phép theo chi nhánh)
+        if (files != null && !files.isEmpty()) {
+            product.getMedia().clear();
+            final AtomicInteger counter = new AtomicInteger(0);
+            files.forEach(file -> {
+                String url = cloudinaryService.uploadFile(file);
+                ProductMedia media = new ProductMedia();
+                media.setProduct(product);
+                media.setUrl(url);
+                media.setPrimary(counter.getAndIncrement() == 0);
+                product.getMedia().add(media);
+            });
+        }
+
+        Product updatedProduct = productRepository.save(product);
+
+        // 🏪 Cập nhật inventory chỉ cho branchId này
+        String inventoryStatus = "ACTIVE".equalsIgnoreCase(updatedProduct.getStatus()) ? "AVAILABLE" : "DISABLED";
+
+        for (ProductVariant variant : updatedProduct.getVariants()) {
+            BranchInventory inventory = new BranchInventory();
+            inventory.setBranchId(branchId);
+            inventory.setVariantId(variant.getId());
+            inventory.setStatus(inventoryStatus);
+            branchInventoryRepository.save(inventory);
+        }
+    }
+
 }
 

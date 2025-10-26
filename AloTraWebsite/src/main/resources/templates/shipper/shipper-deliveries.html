@@ -6,11 +6,20 @@
 
 <!-- 📦 Nội dung chính -->
 <div class="page-content" th:fragment="pageContent">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="mb-0">🚚 Danh sách đơn giao</h4>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <select id="statusFilter" class="form-select form-select-sm">
+        <option value="">Tất cả</option>
+        <option value="CONFIRMED">Chờ nhận</option>
+        <option value="SHIPPING">Đang giao</option>
+        <option value="COMPLETED">Đã giao</option>
+        <option value="CANCELED">Đã hủy</option>
+      </select>
       <input id="shipperSearch" class="form-control form-control-sm" placeholder="🔎 Tìm theo mã đơn...">
-      <button id="shipperReload" class="btn btn-outline-secondary btn-sm"><i class="fas fa-rotate"></i></button>
+      <button id="shipperReload" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-rotate"></i>
+      </button>
     </div>
   </div>
 
@@ -18,7 +27,10 @@
     <!-- Bảng danh sách -->
     <div class="col-lg-6">
       <div class="card shadow-sm">
-        <div class="card-header bg-light fw-bold">Đơn được giao</div>
+        <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+          <span>Đơn được giao</span>
+          <span class="small text-muted" id="paginationInfo"></span>
+        </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="shipperTable">
@@ -39,13 +51,21 @@
             </table>
           </div>
         </div>
-        <div class="card-footer small text-muted">
-          Nhấn vào biểu tượng 👁 để xem chi tiết
+
+        <!-- 📄 Pagination -->
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <button id="prevPage" class="btn btn-sm btn-outline-secondary" disabled>
+            <i class="fas fa-chevron-left"></i> Trước
+          </button>
+          <div id="pageNumbers" class="small fw-bold"></div>
+          <button id="nextPage" class="btn btn-sm btn-outline-secondary" disabled>
+            Sau <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Panel chi tiết -->
+    <!-- Panel chi tiết (giữ nguyên phần bên phải) -->
     <div class="col-lg-6">
       <div class="card shadow-sm" id="detailCard" style="display:none;">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -72,24 +92,22 @@
             </div>
           </div>
 
-          <!-- Sản phẩm -->
           <h6 class="fw-bold mt-2">Sản phẩm</h6>
           <div class="table-responsive">
             <table class="table table-sm align-middle mb-0">
               <thead>
-              <tr>
-                <th>Tên SP</th>
-                <th>Size</th>
-                <th>SL</th>
-                <th>Giá</th>
-                <th>Thành tiền</th>
-              </tr>
+                <tr>
+                  <th>Tên SP</th>
+                  <th>Size</th>
+                  <th>SL</th>
+                  <th>Giá</th>
+                  <th>Thành tiền</th>
+                </tr>
               </thead>
               <tbody id="detailItems"></tbody>
             </table>
           </div>
 
-          <!-- Tổng hợp -->
           <div class="table-responsive mt-3">
             <table class="table table-sm mb-0">
               <tbody>
@@ -101,7 +119,6 @@
             </table>
           </div>
 
-          <!-- Timeline -->
           <h6 class="fw-bold mt-4 mb-2">Lịch sử trạng thái</h6>
           <ul class="timeline list-unstyled" id="detailHistory"></ul>
         </div>
@@ -119,7 +136,6 @@
         </div>
       </div>
 
-      <!-- Khung rỗng khi chưa chọn đơn -->
       <div class="card border-0 bg-light" id="emptyDetailCard">
         <div class="card-body text-center text-muted">
           <i class="fas fa-info-circle me-1"></i> Hãy chọn một đơn ở bảng bên trái để xem chi tiết
@@ -132,8 +148,8 @@
 <th:block th:fragment="additionalJs">
   <script type="module" src="/alotra-website/js/shipper-deliveries.js"></script>
   <style>
-    .timeline-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-    .order-row:hover{background:#f8f9fa}
+    .timeline-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0 }
+    .order-row:hover { background:#f8f9fa }
   </style>
 </th:block>
 

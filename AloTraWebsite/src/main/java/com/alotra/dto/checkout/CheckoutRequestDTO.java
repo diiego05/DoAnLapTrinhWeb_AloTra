@@ -1,5 +1,6 @@
 // com/alotra/dto/checkout/CheckoutRequestDTO.java
 package com.alotra.dto.checkout;
+
 import lombok.Data;
 import java.util.List;
 
@@ -12,4 +13,7 @@ public class CheckoutRequestDTO {
     private String couponCode;        // optional
     private String paymentMethod;     // PICKUP | COD | BANK_TRANSFER
     private String note;              // ghi chú chung đơn hàng
+
+    // 🆕 Thêm field này để xử lý gateway thanh toán (VNPay, MoMo, PayOS, COD, ...)
+    private String gateway;
 }

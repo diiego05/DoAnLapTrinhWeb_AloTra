@@ -20,4 +20,7 @@ public class OrderDTO {
     private String branchName;
     private String deliveryAddress;
     private List<OrderStatusHistoryDTO> statusHistory;
+
+    // 🆕 Thêm thông tin thanh toán (nếu có)
+    private PaymentDTO payment;
 }

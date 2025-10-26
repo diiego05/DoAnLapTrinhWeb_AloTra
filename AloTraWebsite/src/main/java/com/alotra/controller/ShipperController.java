@@ -26,6 +26,7 @@ public class ShipperController {
     @GetMapping("/statistics")
     public String showStatistics(Model model) {
         model.addAttribute("pageTitle", "Kênh Shipper - Thống kê giao hàng");
+        model.addAttribute("currentPage", "statistics");
         return "shipper/shipper-statistics";
         // Tương ứng: /templates/shipper/shipper-statistics.html
     }

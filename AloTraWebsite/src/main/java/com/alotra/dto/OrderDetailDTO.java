@@ -23,4 +23,7 @@ public class OrderDetailDTO {
     private List<OrderItemDTO> items;
     private List<OrderStatusHistoryDTO> statusHistory;
     private String branchName;
+
+    // 🆕 Thêm thông tin thanh toán mới nhất
+    private PaymentDTO payment;
 }

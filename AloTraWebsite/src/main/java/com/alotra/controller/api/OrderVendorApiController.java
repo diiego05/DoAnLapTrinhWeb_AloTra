@@ -17,14 +17,20 @@ public class OrderVendorApiController {
     private final OrderService orderService;
     private final UserService userService;
 
-    // 🧾 Danh sách đơn hàng
+    /**
+     * 🧾 Danh sách đơn hàng theo chi nhánh của vendor
+     * ✅ OrderDTO đã bao gồm thông tin thanh toán mới nhất (PaymentDTO)
+     */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getOrders(@RequestParam(required = false) String status) {
         Long vendorId = userService.getCurrentUserId();
-        return ResponseEntity.ok(orderService.getOrdersByVendor(vendorId, status));
+        List<OrderDTO> orders = orderService.getOrdersByVendor(vendorId, status);
+        return ResponseEntity.ok(orders);
     }
 
-    // ✅ Duyệt đơn
+    /**
+     * ✅ Duyệt đơn
+     */
     @PutMapping("/{orderId}/confirm")
     public ResponseEntity<Void> confirmOrder(@PathVariable Long orderId) {
         Long vendorId = userService.getCurrentUserId();
@@ -32,7 +38,9 @@ public class OrderVendorApiController {
         return ResponseEntity.ok().build();
     }
 
-    // 🚚 Giao shipper
+    /**
+     * 🚚 Giao shipper
+     */
     @PutMapping("/{orderId}/ship")
     public ResponseEntity<Void> shipOrder(@PathVariable Long orderId) {
         Long vendorId = userService.getCurrentUserId();
@@ -40,7 +48,9 @@ public class OrderVendorApiController {
         return ResponseEntity.ok().build();
     }
 
-    // ❌ Hủy đơn (chỉ PENDING)
+    /**
+     * ❌ Hủy đơn (chỉ PENDING)
+     */
     @PutMapping("/{orderId}/cancel")
     public ResponseEntity<Void> cancelOrder(@PathVariable Long orderId) {
         Long vendorId = userService.getCurrentUserId();

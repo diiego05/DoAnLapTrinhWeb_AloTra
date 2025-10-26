@@ -145,4 +145,39 @@ public class BranchService {
 	    return branch.getManager().getId().equals(vendorId);
 	}
 
+
+    /**
+     * 📍 Lấy branchId mà vendor hiện tại đang quản lý
+     */
+    @Transactional(readOnly = true)
+    public Long getBranchIdByVendorId(Long vendorId) {
+        Branch branch = branchRepository.findByManagerId(vendorId)
+                .orElseThrow(() -> new RuntimeException("Vendor này chưa quản lý chi nhánh nào"));
+        return branch.getId();
+    }
+
+    /**
+     * 📍 Kiểm tra vendor có phải quản lý chi nhánh đó không
+     */
+    @Transactional(readOnly = true)
+    public void validateVendorBranch(Long vendorId, Long branchId) {
+        Branch branch = branchRepository.findById(branchId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
+
+        if (branch.getManager() == null || !branch.getManager().getId().equals(vendorId)) {
+            throw new RuntimeException("Bạn không có quyền truy cập chi nhánh này");
+        }
+    }
+
+    /**
+     * 📍 Lấy thông tin chi nhánh của vendor
+     */
+    @Transactional(readOnly = true)
+    public BranchDTO getBranchInfoByVendor(Long vendorId) {
+        Branch branch = branchRepository.findByManagerId(vendorId)
+                .orElseThrow(() -> new RuntimeException("Vendor này chưa quản lý chi nhánh nào"));
+        return new BranchDTO(branch.getId(), branch.getName(), branch.getSlug(),
+                branch.getAddress(), branch.getPhone(), branch.getStatus());
+    }
+
 }
