@@ -891,25 +891,24 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        // 🚚 Đặt trạng thái đơn sang "chờ giao hàng"
-        order.setStatus("WAITING_FOR_PICKUP");
+        order.setStatus("SHIPPING");
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        // 🧭 Lấy tất cả shipper thuộc chi nhánh / nhà vận chuyển
+        // 🧭 Lấy tất cả shipper thuộc chi nhánh
         List<Shipper> shippers = shipperRepository.findByCarrierIdAndIsDeletedFalse(order.getShippingCarrierId());
         for (Shipper s : shippers) {
             ShippingAssignment assignment = new ShippingAssignment();
             assignment.setOrderId(order.getId());
             assignment.setShipperId(s.getId());
-            assignment.setStatus("PENDING"); // trạng thái phân công ban đầu
+            assignment.setStatus("PENDING");
             assignment.setAssignedAt(LocalDateTime.now());
             shippingAssignmentRepository.save(assignment);
         }
 
         // 📩 Gửi thông báo đến các shipper
         shippers.forEach(s -> notificationService.create(
-                s.getUser().getId(),
+              s.getUser().getId(),
                 "ORDER",
                 "Có đơn hàng mới",
                 "Bạn có một đơn hàng mới #" + order.getCode() + " cần giao",
@@ -917,5 +916,4 @@ public class OrderService {
                 order.getId()
         ));
     }
-
 }

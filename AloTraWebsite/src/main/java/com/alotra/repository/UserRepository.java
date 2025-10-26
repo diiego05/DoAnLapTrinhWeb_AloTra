@@ -2,8 +2,6 @@ package com.alotra.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import com.alotra.entity.User;
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +17,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
     Optional<User> findByIdCardNumber(String idCardNumber);
     long countByEmailContaining(String emailPattern);
-
-    @Query("""
-            SELECT COUNT(DISTINCT u.id)
-            FROM User u
-            JOIN Order o ON u.id = o.userId
-            WHERE o.branchId = :branchId
-        """)
-        long countDistinctByBranch(@Param("branchId") Long branchId);
 }

@@ -119,65 +119,43 @@ function renderOrderCard(o){
 }
 
 /* ======================= CHI TIẾT ĐƠN ======================= */
-window.showOrderDetail = async function (orderId) {
-  const modal = new bootstrap.Modal(document.getElementById("orderDetailModal"));
-  const loadingEl = document.getElementById("orderModalLoading");
-  const contentEl = document.getElementById("orderModalContent");
+window.showOrderDetail=async function(orderId){
+  const modal=new bootstrap.Modal(document.getElementById("orderDetailModal"));
+  const loadingEl=document.getElementById("orderModalLoading");
+  const contentEl=document.getElementById("orderModalContent");
 
   modal.show();
-  loadingEl.style.display = "block";
-  contentEl.style.display = "none";
+  loadingEl.style.display="block";
+  contentEl.style.display="none";
 
-  try {
-    const res = await apiFetch(`/api/orders/${orderId}`);
-    if (!res.ok) throw new Error(`order ${res.status}`);
-    const order = await res.json();
+  try{
+    const res=await apiFetch(`/api/orders/${orderId}`);
+    if(!res.ok)throw new Error(`order ${res.status}`);
+    const order=await res.json();
 
-    // ================== 🧾 Thông tin đơn ==================
-    document.getElementById("modalOrderCode").textContent = `#${order.code}`;
-    document.getElementById("modalOrderDate").textContent = new Date(order.createdAt).toLocaleString('vi-VN');
-    document.getElementById("modalOrderStatus").textContent = mapStatusText(order.status);
-    document.getElementById("modalOrderStatus").className = `badge bg-${mapStatusColor(order.status)}`;
-    document.getElementById("modalOrderPayment").textContent = mapPaymentMethodText(order.paymentMethod);
-    document.getElementById("modalOrderAddress").textContent = order.deliveryAddress || '—';
-    document.getElementById("modalSubtotal").textContent = fmtVND(order.subtotal);
-    document.getElementById("modalDiscount").textContent = fmtVND(order.discount);
-    document.getElementById("modalShipping").textContent = fmtVND(order.shippingFee);
-    document.getElementById("modalOrderTotal").textContent = fmtVND(order.total);
+    document.getElementById("modalOrderCode").textContent=`#${order.code}`;
+    document.getElementById("modalOrderDate").textContent=new Date(order.createdAt).toLocaleString('vi-VN');
+    document.getElementById("modalOrderStatus").textContent=mapStatusText(order.status);
+    document.getElementById("modalOrderStatus").className=`badge bg-${mapStatusColor(order.status)}`;
+    document.getElementById("modalOrderPayment").textContent=mapPaymentMethodText(order.paymentMethod);
+    document.getElementById("modalOrderAddress").textContent=order.deliveryAddress||'—';
+    document.getElementById("modalSubtotal").textContent=fmtVND(order.subtotal);
+    document.getElementById("modalDiscount").textContent=fmtVND(order.discount);
+    document.getElementById("modalShipping").textContent=fmtVND(order.shippingFee);
+    document.getElementById("modalOrderTotal").textContent=fmtVND(order.total);
 
-    // ================== 🛍️ Sản phẩm ==================
-    const items = order.items || [];
-    document.getElementById("modalOrderItems").innerHTML = items.length
-      ? (await Promise.all(items.map(renderOrderItemRow(order.status)))).join('')
-      : `<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>`;
+    const items=order.items||[];
+    document.getElementById("modalOrderItems").innerHTML=items.length
+      ?(await Promise.all(items.map(renderOrderItemRow(order.status)))).join('')
+      :`<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm</td></tr>`;
 
-    // ================== 🕒 Lịch sử trạng thái ==================
-    const historyEl = document.getElementById("modalOrderHistory");
-    const history = order.statusHistory || [];
-    if (history.length === 0) {
-      historyEl.innerHTML = `<li class="text-muted">Không có lịch sử trạng thái</li>`;
-    } else {
-      historyEl.innerHTML = history.map(h => `
-        <li class="mb-2 d-flex align-items-start">
-          <div class="timeline-dot bg-${mapStatusColor(h.status)} me-2"></div>
-          <div>
-            <div class="fw-bold">${mapStatusText(h.status)}</div>
-            <div class="text-muted small">${new Date(h.changedAt).toLocaleString("vi-VN")}</div>
-            ${h.note ? `<div class="small fst-italic">${h.note}</div>` : ""}
-          </div>
-        </li>
-      `).join("");
-    }
-
-    // ✅ Hiển thị modal nội dung
-    loadingEl.style.display = "none";
-    contentEl.style.display = "block";
-  } catch (e) {
-    console.error('❌ Lỗi showOrderDetail:', e);
-    loadingEl.textContent = "⚠️ Lỗi tải dữ liệu đơn hàng!";
+    loadingEl.style.display="none";
+    contentEl.style.display="block";
+  }catch(e){
+    console.error('❌ Lỗi showOrderDetail:',e);
+    loadingEl.textContent="⚠️ Lỗi tải dữ liệu đơn hàng!";
   }
 };
-
 
 function pickProductId(it){
   return(it.productId??it.product?.id??it.product?.productId??it.productVariant?.productId??it.variant?.productId??null);

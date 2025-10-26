@@ -5,112 +5,19 @@
                     pageContent=~{::pageContent},
                     additionalJs=~{::additionalJs}
                   )}">
-<head>
-    <link th:href="@{/css/dashboard.css}" rel="stylesheet"/>
-</head>
+
 <body>
-<!-- ================= PAGE CONTENT ================= -->
-<div class="dashboard-page" th:fragment="pageContent">
-    <div class="container-fluid py-4">
-
-        <!-- 🎯 Tổng quan -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-4 col-sm-6">
-                <div class="card stat-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-                    <i class="fas fa-user fa-2x text-success mb-2"></i>
-                    <h5>Khách hàng</h5>
-                    <h3 id="totalCustomers" class="fw-bold text-success">0</h3>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="card stat-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-                    <i class="fas fa-receipt fa-2x text-success mb-2"></i>
-                    <h5>Đơn hàng</h5>
-                    <h3 id="totalOrders" class="fw-bold text-success">0</h3>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6">
-                <div class="card stat-card text-center p-3 h-100 d-flex flex-column justify-content-center">
-                    <i class="fas fa-coins fa-2x text-success mb-2"></i>
-                    <h5>Doanh thu</h5>
-                    <h3 id="totalRevenue" class="fw-bold text-success">0₫</h3>
-                </div>
-            </div>
-        </div>
-
-        <!-- 📈 Biểu đồ -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-8">
-                <div class="card chart-card shadow-sm p-3 h-100">
-                    <h5 class="mb-3">
-                        <i class="fas fa-chart-line me-2 text-success"></i>
-                        Doanh thu theo thời gian
-                    </h5>
-                    <canvas id="revenueChart" style="min-height: 300px;"></canvas>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card chart-card shadow-sm p-3 h-100">
-                    <h5 class="mb-3">
-                        <i class="fas fa-chart-pie me-2 text-success"></i>
-                        Trạng thái đơn hàng
-                    </h5>
-                    <canvas id="orderStatusChart" style="min-height: 300px;"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🏆 Top sản phẩm - khách hàng -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <div class="card top-list-card shadow-sm p-3 h-100">
-                    <h5 class="mb-3">
-                        <i class="fas fa-crown me-2 text-success"></i>
-                        Top sản phẩm bán chạy
-                    </h5>
-                    <ul id="topProducts" class="list-group small"></ul>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card top-list-card shadow-sm p-3 h-100">
-                    <h5 class="mb-3">
-                        <i class="fas fa-user-friends me-2 text-success"></i>
-                        Top khách hàng
-                    </h5>
-                    <ul id="topCustomers" class="list-group small"></ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🧾 Đơn hàng mới nhất -->
-        <div class="card table-card shadow-sm p-3">
-            <h5 class="mb-3">
-                <i class="fas fa-clock me-2 text-success"></i>
-                Đơn hàng mới nhất
-            </h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Mã đơn</th>
-                            <th>Khách hàng</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                        </tr>
-                    </thead>
-                    <tbody id="latestOrders"></tbody>
-                </table>
-            </div>
-        </div>
+    <!-- PAGE CONTENT -->
+    <div class="dashboard-content" th:fragment="pageContent">
+        <h1>Chào mừng đến với trang quản lý AloTra!</h1>
     </div>
-</div>
-<!-- ================= END PAGE CONTENT ================= -->
 
-<!-- ================= ADDITIONAL JS ================= -->
-<th:block th:fragment="additionalJs">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script th:src="@{/js/vendor/dashboard.js}"></script>
-</th:block>
+    <!-- ADDITIONAL JS -->
+    <th:block th:fragment="additionalJs">
+        <!-- Nếu bạn có JS riêng cho trang dashboard, thêm vào đây -->
+        <!-- Ví dụ:
+        <script th:src="@{/js/admin/dashboard.js}"></script>
+        -->
+    </th:block>
 </body>
 </html>

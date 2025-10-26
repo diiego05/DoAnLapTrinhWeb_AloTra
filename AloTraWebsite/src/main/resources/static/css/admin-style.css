@@ -1,218 +1,125 @@
-/* ======================== */
-/* 🎨 CẤU HÌNH CHUNG        */
-/* ======================== */
 body {
-    background-color: #f5f6fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+    background-color: #f8f9fa;
 }
 
 #wrapper {
-    min-height: 100vh;
     display: flex;
-    flex-wrap: nowrap;
 }
 
-/* ======================== */
-/* 🧭 SIDEBAR               */
-/* ======================== */
 #sidebar-wrapper {
-    width: 250px;
+    width: 280px;
     min-height: 100vh;
-    background: #ffffff;
-    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-    position: fixed;
-    z-index: 1000;
+    flex-shrink: 0; /* Ngăn sidebar bị co lại */
 }
 
-#sidebar-wrapper .sidebar-heading {
-    background: #f8f9fa;
-    padding: 1rem;
-    text-align: center;
-}
-
-#sidebar-wrapper img {
-    max-width: 100%;
-    border-radius: 8px;
-}
-
-#sidebar-wrapper .list-group-item {
-    border: none;
-    padding: 14px 20px;
-    font-weight: 500;
-    transition: background 0.2s ease, color 0.2s ease;
-}
-
-#sidebar-wrapper .list-group-item i {
-    width: 22px;
-    text-align: center;
-}
-
-#sidebar-wrapper .list-group-item:hover {
-    background: #f1f1f1;
-    color: #28a745; /* ✅ xanh lá */
-}
-
-#sidebar-wrapper .active-custom {
-    background: linear-gradient(to right, #28a745, #52c41a);
-    color: white;
-    font-weight: 600;
-}
-
-#sidebar-wrapper .active-custom i {
-    color: white;
-}
-
-#sidebar-wrapper .active-submenu {
-    background: #f0fff4; /* nền nhạt xanh lá */
-    color: #28a745;
-    font-weight: 600;
-}
-
-/* Khi thu gọn sidebar */
-#wrapper.toggled #sidebar-wrapper {
-    margin-left: -250px;
-}
-
-/* ======================== */
-/* 🧭 NAVBAR HEADER         */
-/* ======================== */
 #page-content-wrapper {
-    margin-left: 250px;
+    flex-grow: 1;
     width: 100%;
-    transition: margin-left 0.3s ease;
 }
 
-#wrapper.toggled #page-content-wrapper {
-    margin-left: 0;
-}
-
-.navbar {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.navbar .btn-light {
-    border: none;
-}
-
-.navbar .btn-light:hover {
-    background: #e9ecef;
-}
-
-#adminNotifDropdown {
-    color: #333;
-}
-
-#adminNotifDropdown:hover {
-    color: #28a745;
-}
-
-/* ======================== */
-/* 🛎️ NOTIFICATION DROPDOWN */
-/* ======================== */
-#adminNotifList .notif-item {
-    padding: 8px 10px;
-    border-radius: 6px;
-}
-
-#adminNotifList .notif-item:hover {
-    background-color: #f1fdf6;
-}
-
-/* ======================== */
-/* 🧾 BREADCRUMB            */
-/* ======================== */
-.breadcrumb {
-    background: transparent;
-    padding: 0;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
-}
-
-.breadcrumb-item a {
-    color: #28a745;
-    text-decoration: none;
-}
-
-.breadcrumb-item a:hover {
-    text-decoration: underline;
-}
-
-/* ======================== */
-/* 📊 PAGE CONTENT          */
-/* ======================== */
-.page-content {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.card {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+.sidebar-heading {
+    padding: 1.1rem 1.25rem;
+    font-size: 1.2rem;
+    font-weight: 700;
 }
 
 .list-group-item {
-    font-size: 0.95rem;
-}
-
-/* ======================== */
-/* 📱 RESPONSIVE            */
-/* ======================== */
-@media (max-width: 992px) {
-    #sidebar-wrapper {
-        margin-left: -250px;
-    }
-
-    #wrapper.toggled #sidebar-wrapper {
-        margin-left: 0;
-    }
-
-    #page-content-wrapper {
-        margin-left: 0;
-    }
-}
-
-/* ======================== */
-/* 🌟 HIỆU ỨNG & TIỆN ÍCH   */
-/* ======================== */
-.btn-primary {
-    background: linear-gradient(90deg, #28a745, #52c41a);
     border: none;
+    padding: 0.9rem 1.25rem;
+
 }
 
-.btn-primary:hover {
-    background: linear-gradient(90deg, #218838, #45b414);
+/* === PHẦN QUAN TRỌNG: MÀU XANH LÁ NHẠT KHI ACTIVE === */
+.list-group-item.active-custom {
+    background-color: #d4edda; /* Màu xanh lá nhạt */
+    color: #155724;            /* Màu chữ xanh đậm tương phản */
+    border-left: 5px solid #28a745; /* Thêm điểm nhấn */
+    font-weight: 600;
+}
+.list-group-item-action:hover, .list-group-item-action:focus {
+    background-color: #e9ecef;
+}
+#page-content-wrapper .navbar {
+    padding-top: 1rem;      /* Tăng khoảng đệm trên */
+    padding-bottom: 1rem;   /* Tăng khoảng đệm dưới */
 }
 
-.badge.bg-danger {
-    font-size: 0.75rem;
-    padding: 4px 6px;
+/* ===================== TOGGLE SIDEBAR ===================== */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: -280px; /* Ẩn sidebar đi */
+    transition: margin 0.3s ease;
 }
 
-.rounded-circle {
+#wrapper #sidebar-wrapper {
+    transition: margin 0.3s ease;
+}
+
+#wrapper #page-content-wrapper {
+    transition: margin 0.3s ease;
+}
+
+/* ===== FIX RESPONSIVE CHO BẢNG SẢN PHẨM (Admin - Product List) ===== */
+
+/* Giữ nội dung không bị xuống dòng */
+#product-table-body td,
+#product-table-body th {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Cột "Trạng thái" (thứ 4) — mở rộng tối thiểu 120px để badge hiển thị đẹp */
+.table thead th:nth-child(4),
+.table tbody td:nth-child(4) {
+    min-width: 120px !important;
+    text-align: center;
+}
+
+/* Cột "Hành động" (thứ 5) — chứa nhiều nút nên cần rộng hơn */
+.table thead th:nth-child(5),
+.table tbody td:nth-child(5) {
+    min-width: 200px !important;
+    text-align: center;
+}
+
+/* Ảnh sản phẩm trong bảng */
+.table img {
+    width: 50px;
+    height: 50px;
     object-fit: cover;
+    border-radius: 6px;
+}
+/* ===== FIX RESPONSIVE + PHÂN TRANG CHO BẢNG SẢN PHẨM ===== */
+#product-table-body td,
+#product-table-body th {
+    vertical-align: middle;
+    white-space: nowrap;
 }
 
-/* Custom Scrollbar */
-#sidebar-wrapper::-webkit-scrollbar,
-#adminNotifList::-webkit-scrollbar {
-    width: 6px;
+.table th:nth-child(4),
+.table td:nth-child(4) {
+    min-width: 120px !important;
+    text-align: center;
 }
-#sidebar-wrapper::-webkit-scrollbar-thumb,
-#adminNotifList::-webkit-scrollbar-thumb {
-    background-color: #a8d5a2; /* xanh nhạt */
-    border-radius: 10px;
+
+.table th:nth-child(5),
+.table td:nth-child(5) {
+    min-width: 200px !important;
+    text-align: center;
 }
-#sidebar-wrapper::-webkit-scrollbar-thumb:hover,
-#adminNotifList::-webkit-scrollbar-thumb:hover {
-    background-color: #28a745;
+
+.table img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+/* Phân trang */
+.pagination {
+    justify-content: center;
+}
+.page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
 }
