@@ -8,9 +8,10 @@ public record AddressDTO(
         String phone,
         String line1,
         String ward,
-        String district,
         String city,
-        boolean isDefault
+        boolean isDefault,
+        Double latitude,
+        Double longitude
 ) {
     public static AddressDTO from(Address entity) {
         return new AddressDTO(
@@ -19,9 +20,10 @@ public record AddressDTO(
                 entity.getPhone(),
                 entity.getLine1(),
                 entity.getWard(),
-                entity.getDistrict(),
                 entity.getCity(),
-                entity.isDefault()
+                entity.isDefault(),
+                entity.getLatitude(),
+                entity.getLongitude()
         );
     }
 }

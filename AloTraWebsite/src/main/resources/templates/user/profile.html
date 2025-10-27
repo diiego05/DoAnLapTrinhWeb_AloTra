@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-	th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+	th:replace="~{layouts/default_layout :: layout(pageTitle='Thông tin cá nhân', content=~{::content}, additionalJs=~{::additionalJs})}">
 <head>
+<!-- head is handled by layout -->
 <style>
 @keyframes slideIn {
     from {
@@ -110,6 +111,37 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+/* Enhanced address modal styles */
+.address-input-enhanced {
+	position: relative;
+}
+
+.address-input-icon {
+	position: absolute;
+	top: 50%;
+	right: 10px;
+	transform: translateY(-50%);
+	color: #6c757d;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.btn-close-white {
+    filter: invert(1);
+}
 </style>
 </head>
 
@@ -204,44 +236,68 @@
 
 		<!-- =============== MODAL THÊM / SỬA ĐỊA CHỈ =============== -->
 		<div class="modal fade" id="addressModal" tabindex="-1" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-dialog modal-dialog-centered modal-lg">
 				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title">Thêm / Sửa địa chỉ</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					<div class="modal-header bg-success text-white">
+						<h5 class="modal-title">
+							<i class="fas fa-map-marker-alt me-2"></i>Thêm / Sửa địa chỉ giao hàng
+						</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 					</div>
 					<div class="modal-body">
 						<input type="hidden" id="addressId">
-						<div class="mb-2">
-							<input id="recip" class="form-control" placeholder="Người nhận">
+						
+						<!-- Thông tin người nhận -->
+						<div class="row g-3 mb-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Người nhận <span class="text-danger">*</span></label>
+								<input id="recip" class="form-control" placeholder="Nhập tên người nhận">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+								<input id="addrPhone" class="form-control" placeholder="Nhập số điện thoại">
+							</div>
 						</div>
-						<div class="mb-2">
-							<input id="addrPhone" class="form-control" placeholder="Số điện thoại">
+						
+						<!-- Địa chỉ chi tiết với autocomplete -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+							<div class="address-input-enhanced">
+								<input id="line1" class="form-control" placeholder="Nhập số nhà, tên đường (có hỗ trợ gợi ý)">
+								<i class="fas fa-map-marker-alt address-input-icon"></i>
+							</div>
+							<small class="text-muted">
+								<i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ từ Google Maps
+							</small>
 						</div>
-						<div class="mb-2">
-							<input id="line1" class="form-control" placeholder="Địa chỉ chi tiết (số nhà, tên đường)">
-						</div>
-						<div class="row g-2 mb-2">
-							<div class="col-md-4">
+						
+						<!-- Phường, Thành phố -->
+						<div class="row g-3 mb-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Phường/Xã</label>
 								<input id="ward" class="form-control" placeholder="Phường/Xã">
 							</div>
-							<div class="col-md-4">
-								<input id="district" class="form-control" placeholder="Quận/Huyện">
-							</div>
-							<div class="col-md-4">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Tỉnh/Thành phố</label>
 								<input id="city" class="form-control" placeholder="Tỉnh/Thành phố">
 							</div>
 						</div>
+						
+						<!-- Địa chỉ mặc định -->
 						<div class="mb-2 form-check">
 							<input type="checkbox" class="form-check-input" id="isDefault">
 							<label class="form-check-label" for="isDefault">
-								Đặt làm địa chỉ mặc định
+								<i class="fas fa-star text-warning"></i> Đặt làm địa chỉ mặc định
 							</label>
 						</div>
 					</div>
 					<div class="modal-footer">
-						<button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-						<button class="btn btn-success" id="btnSaveAddress">Lưu</button>
+						<button class="btn btn-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Hủy
+						</button>
+						<button class="btn btn-success" id="btnSaveAddress">
+							<i class="fas fa-save me-1"></i> Lưu địa chỉ
+						</button>
 					</div>
 				</div>
 			</div>

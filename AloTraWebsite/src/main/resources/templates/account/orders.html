@@ -1,28 +1,32 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/site-layout :: ~{body(content=~{::main})}}">
-<head>
-    <title>Lịch Sử Đơn Hàng</title>
-</head>
+      th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
 <body>
-    <main>
-        <h2 class="mb-4">Tài khoản của tôi</h2>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="list-group">
-                    <a th:href="@{/account/profile}" class="list-group-item list-group-item-action">Thông tin cá nhân</a>
-                    <a th:href="@{/account/orders}" class="list-group-item list-group-item-action active">Lịch sử đơn hàng</a>
-                </div>
+
+<th:block th:fragment="content">
+    <div class="row my-4">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a th:href="@{/account/profile}" class="list-group-item list-group-item-action">Thông tin cá nhân</a>
+                <a th:href="@{/account/orders}" class="list-group-item list-group-item-action active">Lịch sử đơn hàng</a>
             </div>
-            <div class="col-md-9">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Lịch sử đơn hàng</h5>
-                        <p>Một bảng danh sách các đơn hàng đã đặt sẽ được hiển thị ở đây.</p>
+        </div>
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Lịch sử đơn hàng</h5>
+                    <div id="orderHistoryContainer">
+                        <p class="text-muted">Mục lịch sử đơn hàng sẽ hiển thị ở đây.</p>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <!-- JS riêng cho trang đơn hàng (nếu có) -->
+</th:block>
+
 </body>
 </html>

@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+      th:replace="~{layouts/default_layout :: layout(
+          pageTitle='Đăng ký Shipper',
+          content=~{::content},
+          additionalJs=~{::additionalJs}
+      )}">
+<head>
+    <style>
+        /* ✅ Styling cho input địa chỉ với autocomplete */
+        .address-input-enhanced {
+            position: relative;
+        }
+        .address-input-enhanced .form-control {
+            padding-left: 40px;
+        }
+        .address-input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #28a745;
+            pointer-events: none;
+        }
+    </style>
+</head>
 <body>
 <th:block th:fragment="content">
 
@@ -67,6 +90,17 @@
                 <h5 class="text-success mb-3">
                     <i class="fas fa-map-marker-alt me-2"></i>Khu vực hoạt động
                 </h5>
+                <!-- 🆕 Thêm input tìm kiếm địa chỉ -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tìm kiếm địa chỉ <span class="text-danger">*</span></label>
+                    <div class="address-input-enhanced">
+                        <input type="text" id="addressSearch" class="form-control" placeholder="Nhập địa chỉ để tìm kiếm (có hỗ trợ gợi ý)">
+                        <i class="fas fa-map-marker-alt address-input-icon"></i>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ từ Google Maps
+                    </small>
+                </div>
                 <div class="row g-2">
                     <div class="col-md-4">
                         <label class="form-label">Phường/Xã</label>
@@ -121,43 +155,49 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">✏️ Cập nhật yêu cầu Shipper</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-  <input type="hidden" id="editShipperId">
-
-  <div class="mb-3">
-    <label class="form-label fw-semibold">Nhà vận chuyển</label>
-    <select id="editCarrierSelect" class="form-select"></select>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label fw-semibold">Phương tiện</label>
-    <input type="text" id="editVehicleType" class="form-control">
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label fw-semibold">Biển số xe</label>
-    <input type="text" id="editVehiclePlate" class="form-control">
-  </div>
-
-  <!-- 🗺️ Khu vực hoạt động (THÊM MỚI) -->
-  <div class="row g-2">
-    <div class="col-md-4">
-      <label class="form-label">Phường/Xã</label>
-      <input id="editWard" class="form-control" placeholder="Phường/Xã">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Quận/Huyện</label>
-      <input id="editDistrict" class="form-control" placeholder="Quận/Huyện">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Tỉnh/Thành phố</label>
-      <input id="editCity" class="form-control" placeholder="Tỉnh/Thành phố">
-    </div>
-  </div>
-</div>
-
+                    <input type="hidden" id="editShipperId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nhà vận chuyển</label>
+                        <select id="editCarrierSelect" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Phương tiện</label>
+                        <input type="text" id="editVehicleType" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Biển số xe</label>
+                        <input type="text" id="editVehiclePlate" class="form-control">
+                    </div>
+                    <!-- 🆕 Thêm input tìm kiếm địa chỉ trong modal -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tìm kiếm địa chỉ <span class="text-danger">*</span></label>
+                        <div class="address-input-enhanced">
+                            <input type="text" id="editAddressSearch" class="form-control" placeholder="Nhập địa chỉ (có hỗ trợ gợi ý)">
+                            <i class="fas fa-map-marker-alt address-input-icon"></i>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ
+                        </small>
+                    </div>
+                    <!-- 🗺️ Khu vực hoạt động -->
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Phường/Xã</label>
+                            <input id="editWard" class="form-control" placeholder="Phường/Xã">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Quận/Huyện</label>
+                            <input id="editDistrict" class="form-control" placeholder="Quận/Huyện">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tỉnh/Thành phố</label>
+                            <input id="editCity" class="form-control" placeholder="Tỉnh/Thành phố">
+                        </div>
+                    </div>
+                </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                     <button class="btn btn-success" id="btnSaveEditShipper">Lưu</button>

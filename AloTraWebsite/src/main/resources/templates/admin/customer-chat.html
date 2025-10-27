@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f7a3a 0%, #064d24 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -33,7 +33,7 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
-            left: -150px; /* ← THÊM: Dịch sang trái 150px */
+            margin: 0 auto; /* căn giữa ngang */
         }
 
         /* Header */
@@ -327,19 +327,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 
     <script>
-        // derive base path from current location so page works in any host/context
-        function _deriveBase() {
-            try {
-                const origin = window.location.origin;
-                const pathParts = window.location.pathname.split('/').filter(Boolean);
-                const context = pathParts.length > 0 ? `/${pathParts[0]}` : '';
-                return origin + context;
-            } catch (e) { return ''; }
-        }
-
         // Configuration
-        const WS_URL = _deriveBase() + '/ws/chat';
-        const API_URL = _deriveBase() + '/api/chat';
+        const WS_URL = 'http://localhost:8080/alotra-website/ws/chat';
+        const API_URL = 'http://localhost:8080/alotra-website/api/chat';
 
         let stompClient = null;
         let roomId = null;
@@ -407,43 +397,23 @@
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
-            const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
-            const headers = {};
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+            stompClient.connect({}, function(frame) {
+                console.log('WebSocket Connected: ' + frame.server);
 
-            let attempts = 0;
-            const doConnect = () => {
-                stompClient.connect(headers, function(frame) {
-                    attempts = 0;
-                    console.log('WebSocket Connected: ' + (frame && frame.server));
-
-                    // Subscribe to room messages
-                    stompClient.subscribe(`/topic/chat/room/${roomId}`, function(message) {
-                        const msg = JSON.parse(message.body);
-                        handleIncomingMessage(msg);
-                    });
-
-                    // Notify server that user joined
-                    stompClient.send(`/app/chat/join/${roomId}`, {}, JSON.stringify({}));
-
-                    // Enable send button
-                    document.getElementById('sendBtn').disabled = false;
-                }, function(error) {
-                    console.warn('WebSocket error/disconnected', error);
-                    attempts++;
-                    const backoff = Math.min(30000, 1000 * Math.pow(2, attempts));
-                    setTimeout(() => {
-                        try {
-                            const sock = new SockJS(WS_URL);
-                            stompClient = Stomp.over(sock);
-                            stompClient.debug = null;
-                        } catch (e) { console.warn('Error recreating SockJS client', e); }
-                        doConnect();
-                    }, backoff);
+                // Subscribe to room messages
+                stompClient.subscribe(`/topic/chat/room/${roomId}`, function(message) {
+                    const msg = JSON.parse(message.body);
+                    handleIncomingMessage(msg);
                 });
-            };
 
-            doConnect();
+                // Notify server that user joined
+                stompClient.send(`/app/chat/join/${roomId}`, {}, JSON.stringify({}));
+
+                // Enable send button
+                document.getElementById('sendBtn').disabled = false;
+            });
+
+            stompClient.reconnect_delay = 5000;
         }
 
         // Handle Incoming Message

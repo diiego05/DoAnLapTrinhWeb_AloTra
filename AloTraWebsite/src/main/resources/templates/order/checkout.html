@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+      th:replace="~{layouts/default_layout :: layout(
+          pageTitle='Thanh Toán',
+          content=~{::content},
+          additionalJs=~{::additionalJs},
+          additionalCss=~{::additionalCss}
+      )}">
 <head>
     <meta charset="UTF-8">
     <title>Thanh Toán</title>
+    <th:block th:fragment="additionalCss">
+        <link rel="stylesheet" th:href="@{/css/checkout.css}">
+        <link rel="stylesheet" th:href="@{/css/address-autocomplete.css}">
+    </th:block>
 </head>
 <body>
 <th:block th:fragment="content">
@@ -35,6 +44,9 @@
                             <option value="">-- Chọn chi nhánh --</option>
                         </select>
                         <div id="branch-warning" class="text-danger mt-2" style="display:none;"></div>
+                        <div id="branch-distance" class="text-muted small mt-2" style="display:none;">
+                            <i class="fas fa-map-marker-alt"></i> Khoảng cách: <span id="distance-text"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -76,19 +88,19 @@
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="paymentMethod" value="PICKUP" id="pm-pickup">
                             <label class="form-check-label" for="pm-pickup">
-                                Nhận tại quán
+                                <i class="fas fa-store me-1"></i> Nhận tại quán
                             </label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="paymentMethod" value="COD" id="pm-cod" checked>
                             <label class="form-check-label" for="pm-cod">
-                                Thanh toán khi nhận hàng
+                                <i class="fas fa-money-bill-wave me-1"></i> Thanh toán khi nhận hàng
                             </label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="paymentMethod" value="BANK" id="pm-bank">
                             <label class="form-check-label" for="pm-bank">
-                                Chuyển khoản
+                                <i class="fas fa-university me-1"></i> Chuyển khoản ngân hàng
                             </label>
                         </div>
                     </div>
@@ -119,7 +131,7 @@
                         <hr>
                         <div class="d-flex justify-content-between fs-5 mb-3">
                             <span><strong>Tổng cộng</strong></span>
-                            <strong id="grand-total">0₫</strong>
+                            <strong id="grand-total" class="text-success">0₫</strong>
                         </div>
                         <button class="btn btn-lg btn-success w-100" id="btn-confirm-order">
                             <i class="fas fa-check me-2"></i> Xác nhận đặt hàng
@@ -132,45 +144,58 @@
 
     <!-- 🏡 Modal Thêm Địa Chỉ -->
     <div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title"><i class="fas fa-map-marker-alt me-2"></i> Thêm địa chỉ mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-2">
-                        <label>Người nhận</label>
-                        <input type="text" class="form-control" id="new-recipient">
-                    </div>
-                    <div class="mb-2">
-                        <label>Số điện thoại</label>
-                        <input type="text" class="form-control" id="new-phone">
-                    </div>
-                    <div class="mb-2">
-                        <label>Địa chỉ</label>
-                        <input type="text" class="form-control" id="new-line1">
-                    </div>
-                    <div class="mb-2">
-                        <label>Phường/Xã</label>
-                        <input type="text" class="form-control" id="new-ward">
-                    </div>
-                    <div class="mb-2">
-                        <label>Quận/Huyện</label>
-                        <input type="text" class="form-control" id="new-district">
-                    </div>
-                    <div class="mb-2">
-                        <label>Tỉnh/Thành phố</label>
-                        <input type="text" class="form-control" id="new-city">
-                    </div>
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" id="new-default">
-                        <label class="form-check-label" for="new-default">Đặt làm địa chỉ mặc định</label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Người nhận <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="new-recipient" placeholder="Nhập tên người nhận">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="new-phone" placeholder="Nhập số điện thoại">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                            <div class="address-input-enhanced">
+                                <input type="text" class="form-control" id="new-line1" 
+                                       placeholder="Nhập số nhà, tên đường (có hỗ trợ gợi ý)">
+                                <i class="fas fa-map-marker-alt address-input-icon"></i>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phường/Xã</label>
+                            <input type="text" class="form-control" id="new-ward" placeholder="Phường/Xã">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tỉnh/Thành phố</label>
+                            <input type="text" class="form-control" id="new-city" placeholder="Tỉnh/Thành phố">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="new-default">
+                                <label class="form-check-label" for="new-default">
+                                    <i class="fas fa-star text-warning"></i> Đặt làm địa chỉ mặc định
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-success" id="btn-save-address">Lưu</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-success" id="btn-save-address">
+                        <i class="fas fa-save me-1"></i> Lưu địa chỉ
+                    </button>
                 </div>
             </div>
         </div>

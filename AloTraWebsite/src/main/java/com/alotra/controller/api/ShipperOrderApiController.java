@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Comparator; // (SỬA) Import thêm Comparator
 import java.util.List;
+import java.util.stream.Collectors; // (SỬA) Import thêm Collectors
 
 @RestController
 @RequestMapping("/api/shipper/orders")
@@ -42,9 +44,18 @@ public class ShipperOrderApiController {
                 .map(ShippingAssignment::getOrderId)
                 .toList();
 
-        return orderRepository.findAllById(orderIds).stream()
-                .map(this::mapToOrderDTOWithPayment) // 🆕 map có thông tin thanh toán
-                .toList();
+        // (SỬA) Lấy danh sách Order
+        List<Order> orders = orderRepository.findAllById(orderIds);
+
+        // (SỬA) Sắp xếp danh sách Order: Mới nhất đến cũ nhất
+        // Chúng ta sắp xếp theo 'createdAt'. Nếu trường ngày tạo của bạn có tên khác (ví dụ: 'orderDate'),
+        // hãy thay đổi 'getCreatedAt' ở dòng dưới.
+        orders.sort(Comparator.comparing(Order::getCreatedAt).reversed());
+
+        // (SỬA) Map và trả về
+        return orders.stream()
+                .map(this::mapToOrderDTOWithPayment)
+                .collect(Collectors.toList()); // Dùng collect để tương thích tốt hơn
     }
 
     // ======================= 📄 Lấy chi tiết đơn hàng =======================

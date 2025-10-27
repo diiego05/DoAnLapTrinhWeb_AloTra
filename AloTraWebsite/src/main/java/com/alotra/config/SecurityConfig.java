@@ -16,16 +16,13 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtFilter;
     private final JwtAuthenticationEntryPoint authEntryPoint;
     private final JwtAccessDeniedHandler accessDeniedHandler;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
                           JwtAuthenticationEntryPoint authEntryPoint,
-                          JwtAccessDeniedHandler accessDeniedHandler,
-                          OAuth2SuccessHandler oAuth2SuccessHandler) {
+                          JwtAccessDeniedHandler accessDeniedHandler) {
         this.jwtFilter = jwtFilter;
         this.authEntryPoint = authEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
-        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
     @Bean
@@ -43,8 +40,6 @@ public class SecurityConfig {
                     "/login",
                     "/register",
                     "/forgot-password",
-                    "/login/oauth2/code/**",
-                    "/oauth2/**",
                     "/css/**",
                     "/js/**",
                     "/images/**",
@@ -71,11 +66,6 @@ public class SecurityConfig {
                     res.setContentType("application/json");
                     res.getWriter().write("{\"error\": \"Forbidden\"}");
                 })
-            )
-
-            // OAuth2 Login
-            .oauth2Login(oauth2 -> oauth2
-                .successHandler(oAuth2SuccessHandler)
             )
 
             // Thêm filter JWT

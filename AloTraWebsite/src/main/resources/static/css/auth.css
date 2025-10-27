@@ -75,32 +75,3 @@ body.auth-page {
 #togglePassword i {
     color: #555;
 }
-/* --- Google OAuth Button --- */
-.divider-or {
-    display: flex;
-    align-items: center;
-    color: #999;
-    font-size: 0.9rem;
-    margin: 1.5rem 0;
-}
-
-.divider-or::before,
-.divider-or::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background-color: #ddd;
-}
-
-.divider-or span {
-    padding: 0 10px;
-}
-
-.btn-light:hover {
-    background-color: #f0f0f0 !important;
-}
-
-.btn-light:focus {
-    box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.1);
-}
-

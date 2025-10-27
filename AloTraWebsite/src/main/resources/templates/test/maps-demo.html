@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: layout(
+          pageTitle='Google Maps Demo',
+          content=~{::content},
+          additionalJs=~{::additionalJs}
+      )}">
+<head>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .result-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            min-height: 60px;
+        }
+    </style>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <h2 class="mb-4 text-success">
+            <i class="fas fa-map-marked-alt me-2"></i>Google Maps API Demo
+        </h2>
+
+        <!-- 1. AUTOCOMPLETE -->
+        <div class="demo-section">
+            <h4 class="mb-3"><i class="fas fa-search me-2"></i>1. Tìm kiếm địa chỉ (Autocomplete)</h4>
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" id="autocompleteInput" class="form-control" 
+                           placeholder="Nhập địa chỉ tìm kiếm...">
+                </div>
+                <div class="col-md-4">
+                    <button id="btnTestAutocomplete" class="btn btn-success w-100">
+                        <i class="fas fa-check me-1"></i> Test Autocomplete
+                    </button>
+                </div>
+            </div>
+            <div class="result-box" id="autocompleteResult">
+                <small class="text-muted">Kết quả sẽ hiển thị ở đây...</small>
+            </div>
+        </div>
+
+        <!-- 2. GEOCODING -->
+        <div class="demo-section">
+            <h4 class="mb-3"><i class="fas fa-map-pin me-2"></i>2. Geocoding (Địa chỉ → Tọa độ)</h4>
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" id="geocodeInput" class="form-control" 
+                           placeholder="Nhập địa chỉ để geocode..." 
+                           value="185 Cao Thắng, Phường 12, Quận 10, TP.HCM">
+                </div>
+                <div class="col-md-4">
+                    <button id="btnGeocode" class="btn btn-primary w-100">
+                        <i class="fas fa-location-arrow me-1"></i> Geocode
+                    </button>
+                </div>
+            </div>
+            <div class="result-box" id="geocodeResult">
+                <small class="text-muted">Nhấn nút để xem tọa độ...</small>
+            </div>
+        </div>
+
+        <!-- 3. DISTANCE CALCULATION -->
+        <div class="demo-section">
+            <h4 class="mb-3"><i class="fas fa-route me-2"></i>3. Tính khoảng cách</h4>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Điểm A (lat, lng)</label>
+                    <input type="text" id="pointA" class="form-control" 
+                           placeholder="10.762622, 106.660172" value="10.762622, 106.660172">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Điểm B (lat, lng)</label>
+                    <input type="text" id="pointB" class="form-control" 
+                           placeholder="10.782622, 106.680172" value="10.782622, 106.680172">
+                </div>
+            </div>
+            <button id="btnCalculateDistance" class="btn btn-warning">
+                <i class="fas fa-calculator me-1"></i> Tính khoảng cách
+            </button>
+            <div class="result-box" id="distanceResult">
+                <small class="text-muted">Kết quả sẽ hiển thị ở đây...</small>
+            </div>
+        </div>
+
+        <!-- 4. MAP DISPLAY -->
+        <div class="demo-section">
+            <h4 class="mb-3"><i class="fas fa-map me-2"></i>4. Hiển thị bản đồ</h4>
+            <div class="mb-3">
+                <button id="btnShowMap" class="btn btn-info me-2">
+                    <i class="fas fa-eye me-1"></i> Hiển thị bản đồ
+                </button>
+                <button id="btnAddMarker" class="btn btn-secondary" disabled>
+                    <i class="fas fa-map-marker-alt me-1"></i> Thêm Marker
+                </button>
+            </div>
+            <div id="map" style="display:none;"></div>
+        </div>
+
+        <!-- 5. API STATUS -->
+        <div class="demo-section">
+            <h4 class="mb-3"><i class="fas fa-info-circle me-2"></i>5. Trạng thái API</h4>
+            <div class="result-box" id="apiStatus">
+                <small class="text-muted">Đang kiểm tra...</small>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🗺️ Maps Demo initialized');
+
+    let map = null;
+    let markers = [];
+
+    // ========== API STATUS ==========
+    async function checkApiStatus() {
+        const statusEl = document.getElementById('apiStatus');
+        const loaded = await window.googleMapsLoader.load();
+        
+        if (loaded) {
+            statusEl.innerHTML = `
+                <div class="text-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Google Maps API đã sẵn sàng!</strong>
+                    <div class="mt-2 small">
+                        <div>✅ API Key: Configured</div>
+                        <div>✅ Libraries: places</div>
+                        <div>✅ Language: vi</div>
+                        <div>✅ Region: VN</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            statusEl.innerHTML = `
+                <div class="text-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Google Maps API không khả dụng</strong>
+                    <div class="mt-2 small">
+                        Vui lòng kiểm tra cấu hình API key trong application.properties
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // ========== AUTOCOMPLETE ==========
+    const autocompleteInput = document.getElementById('autocompleteInput');
+    const autocomplete = await window.googleMapsLoader.createAutocomplete(autocompleteInput);
+    
+    if (autocomplete) {
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            const resultEl = document.getElementById('autocompleteResult');
+            
+            if (place.geometry) {
+                const parsed = window.googleMapsLoader.parseVietnameseAddress(
+                    place.address_components || []
+                );
+                
+                resultEl.innerHTML = `
+                    <div class="text-success">
+                        <strong>📍 ${place.formatted_address}</strong>
+                        <div class="mt-2 small">
+                            <div><strong>Tọa độ:</strong> ${place.geometry.location.lat()}, ${place.geometry.location.lng()}</div>
+                            <div><strong>Phường/Xã:</strong> ${parsed.ward || '—'}</div>
+                            <div><strong>Quận/Huyện:</strong> ${parsed.district || '—'}</div>
+                            <div><strong>Tỉnh/TP:</strong> ${parsed.city || '—'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    // ========== GEOCODING ==========
+    document.getElementById('btnGeocode').addEventListener('click', async () => {
+        const address = document.getElementById('geocodeInput').value;
+        const resultEl = document.getElementById('geocodeResult');
+        
+        if (!address) {
+            resultEl.innerHTML = '<div class="text-warning">⚠️ Vui lòng nhập địa chỉ</div>';
+            return;
+        }
+
+        resultEl.innerHTML = '<div class="text-muted">Đang geocoding...</div>';
+        
+        const result = await window.googleMapsLoader.geocode(address);
+        
+        if (result) {
+            resultEl.innerHTML = `
+                <div class="text-success">
+                    <strong>✅ Geocoding thành công!</strong>
+                    <div class="mt-2">
+                        <div><strong>Latitude:</strong> ${result.lat}</div>
+                        <div><strong>Longitude:</strong> ${result.lng}</div>
+                        <div class="mt-2">
+                            <a href="https://www.google.com/maps?q=${result.lat},${result.lng}" 
+                               target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-external-link-alt me-1"></i> Xem trên Google Maps
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultEl.innerHTML = '<div class="text-danger">❌ Không thể geocode địa chỉ này</div>';
+        }
+    });
+
+    // ========== DISTANCE ==========
+    document.getElementById('btnCalculateDistance').addEventListener('click', () => {
+        const pointAStr = document.getElementById('pointA').value;
+        const pointBStr = document.getElementById('pointB').value;
+        const resultEl = document.getElementById('distanceResult');
+
+        try {
+            const [lat1, lng1] = pointAStr.split(',').map(s => parseFloat(s.trim()));
+            const [lat2, lng2] = pointBStr.split(',').map(s => parseFloat(s.trim()));
+
+            if (isNaN(lat1) || isNaN(lng1) || isNaN(lat2) || isNaN(lng2)) {
+                throw new Error('Invalid coordinates');
+            }
+
+            const distance = window.googleMapsLoader.calculateDistance(lat1, lng1, lat2, lng2);
+
+            resultEl.innerHTML = `
+                <div class="text-success">
+                    <strong>📏 Khoảng cách:</strong> ${distance.toFixed(2)} km
+                    <div class="mt-2 small text-muted">
+                        Điểm A: (${lat1}, ${lng1})<br>
+                        Điểm B: (${lat2}, ${lng2})
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            resultEl.innerHTML = '<div class="text-danger">❌ Tọa độ không hợp lệ</div>';
+        }
+    });
+
+    // ========== MAP ==========
+    document.getElementById('btnShowMap').addEventListener('click', async () => {
+        const mapEl = document.getElementById('map');
+        mapEl.style.display = 'block';
+
+        if (!map) {
+            map = await window.googleMapsLoader.createMap(mapEl, {
+                center: { lat: 10.762622, lng: 106.660172 },
+                zoom: 13
+            });
+
+            if (map) {
+                document.getElementById('btnAddMarker').disabled = false;
+            }
+        }
+    });
+
+    document.getElementById('btnAddMarker').addEventListener('click', () => {
+        if (map) {
+            const center = map.getCenter();
+            const marker = window.googleMapsLoader.createMarker(map, {
+                position: { lat: center.lat(), lng: center.lng() },
+                title: `Marker ${markers.length + 1}`,
+                animation: google.maps.Animation.DROP
+            });
+            markers.push(marker);
+        }
+    });
+
+    // ========== INIT ==========
+    await checkApiStatus();
+});
+</script>
+</th:block>
+</body>
+</html>

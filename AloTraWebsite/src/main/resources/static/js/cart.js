@@ -2,8 +2,21 @@
 const contextPath = "/alotra-website";
 const fmt = v => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v ?? 0);
 
+// ✅ Helper function để lấy JWT token
+function getToken() {
+    return localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
+}
+
+// ✅ Cập nhật api helper để tự động thêm Authorization header
 async function api(url, method = 'GET', data) {
-    const opt = { method, headers: { 'Content-Type': 'application/json' } };
+    const token = getToken();
+    const opt = { 
+        method, 
+        headers: { 
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        } 
+    };
     if (data) opt.body = JSON.stringify(data);
     const res = await fetch(contextPath + url, opt);
     if (!res.ok) throw new Error(`Lỗi API: ${url}`);

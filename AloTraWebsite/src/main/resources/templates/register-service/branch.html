@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+      th:replace="~{layouts/default_layout :: layout(
+          pageTitle='Đăng ký chi nhánh',
+          content=~{::content},
+          additionalJs=~{::additionalJs}
+      )}">
+<head>
+    <style>
+        /* ✅ Styling cho input địa chỉ với autocomplete */
+        .address-input-enhanced {
+            position: relative;
+        }
+        .address-input-enhanced .form-control {
+            padding-left: 40px;
+        }
+        .address-input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #28a745;
+            pointer-events: none;
+        }
+    </style>
+</head>
 <body>
 <th:block th:fragment="content">
     <div class="container py-5">
@@ -85,8 +108,14 @@
                     <input type="text" id="branchPhone" class="form-control" placeholder="Nhập số điện thoại">
                 </div>
                 <div class="mb-3">
-                    <label for="address" class="form-label fw-semibold">Địa chỉ chi nhánh</label>
-                    <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ chi nhánh">
+                    <label for="address" class="form-label fw-semibold">Địa chỉ chi nhánh <span class="text-danger">*</span></label>
+                    <div class="address-input-enhanced">
+                        <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ chi nhánh (có hỗ trợ gợi ý)">
+                        <i class="fas fa-map-marker-alt address-input-icon"></i>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ từ Google Maps
+                    </small>
                 </div>
             </div>
 
@@ -121,8 +150,14 @@
                         <input type="text" id="editBranchPhone" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Địa chỉ</label>
-                        <input type="text" id="editBranchAddress" class="form-control">
+                        <label class="form-label fw-semibold">Địa chỉ <span class="text-danger">*</span></label>
+                        <div class="address-input-enhanced">
+                            <input type="text" id="editBranchAddress" class="form-control" placeholder="Nhập địa chỉ (có hỗ trợ gợi ý)">
+                            <i class="fas fa-map-marker-alt address-input-icon"></i>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ
+                        </small>
                     </div>
                 </div>
                 <div class="modal-footer">

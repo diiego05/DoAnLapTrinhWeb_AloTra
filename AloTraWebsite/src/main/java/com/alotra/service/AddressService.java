@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +18,7 @@ public class AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final GeocodingService geocodingService;
 
     /**
      * 📦 Lấy danh sách địa chỉ của user, địa chỉ mặc định sẽ lên đầu.
@@ -48,12 +50,37 @@ public class AddressService {
         address.setPhone(dto.phone());
         address.setLine1(dto.line1());
         address.setWard(dto.ward());
-        address.setDistrict(dto.district());
         address.setCity(dto.city());
         address.setDefault(dto.isDefault());
 
-        return AddressDTO.from(addressRepository.save(address));
+        // ✅ Ưu tiên toạ độ client cung cấp (từ Google/Nominatim Autocomplete)
+        boolean setFromClient = setIfValidCoordinates(address, dto.latitude(), dto.longitude());
+
+        // 🌐 Nếu client không gửi hoặc không hợp lệ -> geocode server-side
+        if (!setFromClient) {
+            String fullAddress = address.getFullAddressForGeocoding();
+            System.out.println("🗺️ [AddressService] Geocoding address: " + fullAddress);
+
+            geocodingService.geocodeAddress(fullAddress)
+                    .ifPresent(ll -> {
+                        System.out.println("✅ [AddressService] Geocoded successfully - lat: " + ll.latitude() + ", lng: " + ll.longitude());
+                        address.setLatitude(ll.latitude());
+                        address.setLongitude(ll.longitude());
+                    });
+            
+            if (address.getLatitude() == null || address.getLongitude() == null) {
+                System.out.println("⚠️ [AddressService] Geocoding failed for: " + fullAddress);
+            }
+        } else {
+            System.out.println("✅ [AddressService] Using client-provided coordinates: lat=" + address.getLatitude() + ", lng=" + address.getLongitude());
+        }
+
+        Address saved = addressRepository.save(address);
+        System.out.println("💾 [AddressService] Saved address ID=" + saved.getId() + " with coords: (" + saved.getLatitude() + ", " + saved.getLongitude() + ")");
+        
+        return AddressDTO.from(saved);
     }
+
     @Transactional
     public AddressDTO updateAddress(Long userId, Long addressId, AddressDTO dto) {
         Address address = addressRepository.findByIdAndUser_Id(addressId, userId)
@@ -64,7 +91,6 @@ public class AddressService {
         address.setPhone(dto.phone());
         address.setLine1(dto.line1());
         address.setWard(dto.ward());
-        address.setDistrict(dto.district());
         address.setCity(dto.city());
 
         // Nếu set là mặc định, xóa mặc định cũ
@@ -75,8 +101,25 @@ public class AddressService {
             address.setDefault(false);
         }
 
+        // ✅ Ưu tiên toạ độ client cung cấp
+        boolean setFromClient = setIfValidCoordinates(address, dto.latitude(), dto.longitude());
+
+        // 🌐 Nếu client không gửi hoặc không hợp lệ -> geocode lại với địa chỉ đầy đủ kèm "Vietnam"
+        if (!setFromClient) {
+            String fullAddress = address.getFullAddressForGeocoding();
+            System.out.println("🗺️ [DEBUG] Re-geocoding address: " + fullAddress);
+
+            geocodingService.geocodeAddress(fullAddress)
+                    .ifPresent(ll -> {
+                        System.out.println("✅ [DEBUG] Re-geocoded successfully - lat: " + ll.latitude() + ", lng: " + ll.longitude());
+                        address.setLatitude(ll.latitude());
+                        address.setLongitude(ll.longitude());
+                    });
+        }
+
         return AddressDTO.from(addressRepository.save(address));
     }
+
     /**
      * 🌟 Đặt địa chỉ mặc định cho user.
      * Nếu địa chỉ không thuộc user -> không thực hiện.
@@ -102,7 +145,7 @@ public class AddressService {
 
     /**
      * 📌 Snapshot địa chỉ: dùng khi lưu vào Order
-     * Trả về chuỗi đầy đủ: "line1, ward, district, city (Recipient - Phone)"
+     * Trả về chuỗi đầy đủ: "line1, ward, city (Recipient - Phone)"
      */
     @Transactional(readOnly = true)
     public String snapshotAddress(Long addressId, Long userId, String paymentMethod) {
@@ -110,10 +153,9 @@ public class AddressService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy địa chỉ hợp lệ"));
 
         return String.format(
-                "%s, %s, %s, %s (%s - %s)",
+                "%s, %s, %s (%s - %s)",
                 address.getLine1(),
                 address.getWard(),
-                address.getDistrict(),
                 address.getCity(),
                 address.getRecipient(),
                 address.getPhone()
@@ -130,5 +172,49 @@ public class AddressService {
                 .findFirst()
                 .map(AddressDTO::from)
                 .orElse(null);
+    }
+
+    // 🧭 Toạ độ từ addressId cho OrderService
+    @Transactional(readOnly = true)
+    public Optional<GeocodingService.LatLng> getCoordinates(Long userId, Long addressId) {
+        // ✅ Nếu có userId, kiểm tra quyền sở hữu
+        if (userId != null) {
+            return addressRepository.findByIdAndUser_Id(addressId, userId)
+                    .map(a -> a.getLatitude() != null && a.getLongitude() != null
+                            ? new GeocodingService.LatLng(a.getLatitude(), a.getLongitude())
+                            : null)
+                    .map(Optional::ofNullable)
+                    .orElse(Optional.empty());
+        }
+
+        // ✅ Nếu userId = null, cho phép query address bất kỳ (dùng cho API public)
+        return addressRepository.findById(addressId)
+                .map(a -> a.getLatitude() != null && a.getLongitude() != null
+                        ? new GeocodingService.LatLng(a.getLatitude(), a.getLongitude())
+                        : null)
+                .map(Optional::ofNullable)
+                .orElse(Optional.empty());
+    }
+
+    // =========================
+    // 🔎 Helpers
+    // =========================
+    private boolean setIfValidCoordinates(Address address, Double lat, Double lng) {
+        if (lat == null || lng == null) return false;
+        if (!Double.isFinite(lat) || !Double.isFinite(lng)) {
+            System.out.println("⚠️ [AddressService] Invalid coordinates (NaN or Infinity): lat=" + lat + ", lng=" + lng);
+            return false;
+        }
+        if (!isValidVietnameseCoordinates(lat, lng)) {
+            System.out.println("⚠️ [AddressService] Coordinates outside Vietnam bounds: lat=" + lat + ", lng=" + lng);
+            return false;
+        }
+        address.setLatitude(lat);
+        address.setLongitude(lng);
+        return true;
+    }
+
+    private boolean isValidVietnameseCoordinates(double lat, double lng) {
+        return lat >= 8.0 && lat <= 24.5 && lng >= 102.0 && lng <= 110.5;
     }
 }

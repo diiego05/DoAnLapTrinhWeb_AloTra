@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: body(content=~{::content}, additionalJs=~{::additionalJs})}">
+      th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
 <head>
-    <meta charset="UTF-8">
-    <title>Lịch sử đơn hàng</title>
-
-
+    <!-- head handled by layout -->
 </head>
 <body>
 <th:block th:fragment="content">
@@ -174,7 +171,8 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-    <script type="module" src="/alotra-website/js/order-history.js"></script>
+    <script type="module" th:src="@{/js/order-history.js}"></script>
 </th:block>
+
 </body>
 </html>

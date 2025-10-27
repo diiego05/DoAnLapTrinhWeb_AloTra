@@ -28,6 +28,11 @@ public class RegistrationService {
     private final NotificationService notificationService;
     private final ShipperRepository shipperRepo;
     private final RoleRepository roleRepo;
+    // 🗺️ Geocoding service to compute branch coordinates on approval
+    private final GeocodingService geocodingService;
+    // 📦 Repository để tạo inventory cho sản phẩm
+    private final ProductVariantRepository productVariantRepo;
+    private final BranchInventoryRepository branchInventoryRepo;
 
     // ================== 🏪 USER - BRANCH ==================
     @Transactional
@@ -68,6 +73,23 @@ public class RegistrationService {
             newReq.setName(dto.getName().trim());
             newReq.setPhone(dto.getPhone().trim());
             newReq.setAddress(dto.getAddress().trim());
+            
+            // 🗺️ ✅ GEOCODE NGAY KHI TẠO YÊU CẦU (giống AddressService)
+            // Ưu tiên tọa độ từ client (Google/Nominatim autocomplete)
+            if (isValidVietnameseCoordinates(dto.getLatitude(), dto.getLongitude())) {
+                newReq.setLatitude(dto.getLatitude());
+                newReq.setLongitude(dto.getLongitude());
+            } else {
+                // Fallback: geocode server-side
+                String fullAddress = newReq.getAddress();
+                if (!fullAddress.toLowerCase().contains("vietnam") && !fullAddress.toLowerCase().contains("việt nam")) {
+                    fullAddress = fullAddress + ", Vietnam";
+                }
+                geocodingService.geocodeAddress(fullAddress).ifPresent(ll -> {
+                    newReq.setLatitude(ll.latitude());
+                    newReq.setLongitude(ll.longitude());
+                });
+            }
         }
 
         return branchReqRepo.save(newReq);
@@ -104,6 +126,21 @@ public class RegistrationService {
         req.setPhone(dto.getPhone().trim());
         req.setAddress(dto.getAddress().trim());
         req.setUpdatedAt(LocalDateTime.now());
+
+        // 🗺️ ✅ GEOCODE LẠI KHI CẬP NHẬT (giống AddressService)
+        if (isValidVietnameseCoordinates(dto.getLatitude(), dto.getLongitude())) {
+            req.setLatitude(dto.getLatitude());
+            req.setLongitude(dto.getLongitude());
+        } else {
+            String fullAddress = req.getAddress();
+            if (!fullAddress.toLowerCase().contains("vietnam") && !fullAddress.toLowerCase().contains("việt nam")) {
+                fullAddress = fullAddress + ", Vietnam";
+            }
+            geocodingService.geocodeAddress(fullAddress).ifPresent(ll -> {
+                req.setLatitude(ll.latitude());
+                req.setLongitude(ll.longitude());
+            });
+        }
 
         if (req.getStatus() == RequestStatus.REJECTED) {
             req.setStatus(RequestStatus.PENDING);
@@ -150,8 +187,43 @@ public class RegistrationService {
             branch.setStatus("ACTIVE");
             branch.setManager(req.getUser());
             branch.setSlug(generateSlug(req.getName()));
+            
+            // 🗺️ ✅ SỬ DỤNG TỌA ĐỘ ĐÃ CÓ TỪ REQUEST (đã geocode khi user tạo)
+            if (isValidVietnameseCoordinates(req.getLatitude(), req.getLongitude())) {
+                branch.setLatitude(req.getLatitude());
+                branch.setLongitude(req.getLongitude());
+            } else {
+                // Fallback: geocode lại nếu request không có toạ độ (dữ liệu cũ)
+                try {
+                    String fullAddress = branch.getAddress();
+                    if (!fullAddress.toLowerCase().contains("vietnam") && !fullAddress.toLowerCase().contains("việt nam")) {
+                        fullAddress = fullAddress + ", Vietnam";
+                    }
+                    geocodingService.geocodeAddress(fullAddress).ifPresent(ll -> {
+                        branch.setLatitude(ll.latitude());
+                        branch.setLongitude(ll.longitude());
+                    });
+                } catch (Exception e) {
+                    // ignore geocoding errors, proceed without coordinates
+                }
+            }
+            
             Branch saved = branchRepo.save(branch);
             req.setBranch(saved);
+            
+            // ✅ TẠO INVENTORY CHO TẤT CẢ SẢN PHẨM (VARIANTS)
+            List<ProductVariant> allVariants = productVariantRepo.findAll();
+            System.out.println("📦 [RegistrationService] Creating inventory for " + allVariants.size() + " variants in new branch: " + saved.getName());
+            
+            for (ProductVariant variant : allVariants) {
+                BranchInventory inventory = new BranchInventory();
+                inventory.setBranchId(saved.getId());
+                inventory.setVariantId(variant.getId());
+                inventory.setStatus("AVAILABLE"); // Mặc định là AVAILABLE
+                branchInventoryRepo.save(inventory);
+            }
+            
+            System.out.println("✅ [RegistrationService] Created " + allVariants.size() + " inventory records for branch: " + saved.getName());
         }
 
         Role vendorRole = roleRepo.findByCode("VENDOR")
@@ -411,5 +483,10 @@ public class RegistrationService {
 
     public List<BranchRegistrationRequest> getPendingBranchRequests() {
         return branchReqRepo.findByStatusOrderByCreatedAtAsc(RequestStatus.PENDING);
+    }
+
+    private boolean isValidVietnameseCoordinates(Double lat, Double lng) {
+        if (lat == null || lng == null) return false;
+        return lat >= 8.0 && lat <= 24.5 && lng >= 102.0 && lng <= 110.5;
     }
 }

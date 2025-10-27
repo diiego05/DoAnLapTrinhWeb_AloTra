@@ -4,9 +4,11 @@ const ordersList = document.getElementById('vendorOrdersList');
 const filterButtons = document.querySelectorAll('[data-status]');
 const searchInput = document.getElementById('vendorOrderSearch');
 const reloadBtn = document.getElementById('vendorOrderReload');
+const applyBtn = document.getElementById('vendorOrderApply');
+const fromInput = document.getElementById('vendorOrderFrom');
+const toInput = document.getElementById('vendorOrderTo');
 
 let currentStatus = '';
-let searchKeyword = '';
 
 const fmtVND = v => (Number(v) || 0).toLocaleString('vi-VN') + ' ₫';
 
@@ -32,6 +34,19 @@ function mapStatusText(status) {
     }
 }
 
+function buildApiUrl() {
+    const params = new URLSearchParams();
+    if (currentStatus) params.set('status', currentStatus);
+    const from = fromInput?.value?.trim();
+    const to = toInput?.value?.trim();
+    const q = searchInput?.value?.trim();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (q) params.set('q', q);
+    const query = params.toString();
+    return `/api/vendor/orders${query ? ('?' + query) : ''}`;
+}
+
 // =================== 📥 Lọc trạng thái + tìm kiếm ===================
 filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -42,17 +57,31 @@ filterButtons.forEach(btn => {
     });
 });
 
-if (searchInput) {
-    searchInput.addEventListener('input', () => {
-        searchKeyword = searchInput.value.trim().toLowerCase();
+if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
         loadVendorOrders();
+    });
+}
+
+if (searchInput) {
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            loadVendorOrders();
+        }
     });
 }
 
 if (reloadBtn) {
     reloadBtn.addEventListener('click', () => {
-        searchKeyword = '';
+        // reset filters
+        currentStatus = '';
+        filterButtons.forEach(b => b.classList.remove('active'));
+        const allBtn = Array.from(filterButtons).find(b => b.dataset.status === '');
+        if (allBtn) allBtn.classList.add('active');
         if (searchInput) searchInput.value = '';
+        if (fromInput) fromInput.value = '';
+        if (toInput) toInput.value = '';
         loadVendorOrders();
     });
 }
@@ -64,16 +93,12 @@ async function loadVendorOrders() {
     </div>`;
 
     try {
-        const res = await apiFetch(`/api/vendor/orders${currentStatus ? `?status=${currentStatus}` : ''}`);
+        const url = buildApiUrl();
+        const res = await apiFetch(url);
         if (!res.ok) throw new Error();
-        let data = await res.json();
+        const data = await res.json();
 
-        // 🔍 Lọc theo từ khóa
-        if (searchKeyword) {
-            data = data.filter(o => o.code.toLowerCase().includes(searchKeyword));
-        }
-
-        if (data.length === 0) {
+        if (!data || data.length === 0) {
             ordersList.innerHTML = `<div class="text-center text-muted py-4">Không có đơn hàng</div>`;
             return;
         }
@@ -122,6 +147,7 @@ async function loadVendorOrders() {
         `).join('');
 
     } catch (e) {
+        console.error(e);
         ordersList.innerHTML = `<div class="text-center text-danger py-4">⚠️ Lỗi tải đơn hàng</div>`;
     }
 }

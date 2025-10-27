@@ -165,7 +165,6 @@ public class AdminController {
 	                           @RequestParam("avatarFile") MultipartFile avatarFile,
 	                           @RequestParam(required = false) String addressLine1,
 	                           @RequestParam(required = false) String addressCity,
-	                           @RequestParam(required = false) String addressDistrict,
 	                           @RequestParam(required = false) String addressWard,
 	                           Model model, RedirectAttributes redirectAttributes) {
 
@@ -184,7 +183,7 @@ public class AdminController {
 	        }
 
 	        try {
-	            userService.save(user, avatarFile, addressLine1, addressCity, addressDistrict, addressWard);
+	            userService.save(user, avatarFile, addressLine1, addressCity, addressWard);
 	            redirectAttributes.addFlashAttribute("message", "Lưu người dùng thành công!");
 
 	        } catch (DataIntegrityViolationException e) {

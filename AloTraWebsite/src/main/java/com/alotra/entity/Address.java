@@ -24,24 +24,63 @@ public class Address {
     @Column(name = "Ward")
     private String ward;
 
-    @Column(name = "District")
-    private String district;
-
     @Column(name = "City")
     private String city;
 
-    @Column(name = "IsDefault", nullable = false)
-    private boolean isDefault;
+    @Column(name = "Label")
+    private String label; // Nhãn địa chỉ (VD: "Nhà riêng", "Văn phòng", etc.)
 
-    // Mối quan hệ nhiều-một: Nhiều địa chỉ thuộc về một User
+    @Column(name = "IsDefault", nullable = false)
+    private boolean isDefault = false;
+
+    // 🆕 Toạ độ địa lý
+    @Column(name = "Latitude")
+    private Double latitude;
+
+    @Column(name = "Longitude")
+    private Double longitude;
+
+    // Quan hệ nhiều-1: Nhiều địa chỉ thuộc về 1 user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false)
     private User user;
 
-    // Phương thức tiện ích để hiển thị địa chỉ đầy đủ
+    // Trả về chuỗi địa chỉ đầy đủ (line1, ward, city)
     public String getFullAddress() {
-        return String.format("%s, %s, %s, %s", line1, ward, district, city);
+        String result = String.format("%s, %s, %s",
+                line1 != null ? line1 : "",
+                ward != null ? ward : "",
+                city != null ? city : ""
+        );
+        // normalize duplicated commas/spaces
+        return result.replaceAll(", ", ", ")
+                .replaceAll(", ,", ",")
+                .replaceAll("^, |, $", "")
+                .trim();
     }
+
+    // 🌐 Trả về địa chỉ đầy đủ kèm quốc gia (dùng cho geocoding)
+    public String getFullAddressForGeocoding() {
+        StringBuilder sb = new StringBuilder();
+
+        if (line1 != null && !line1.trim().isEmpty()) {
+            sb.append(line1.trim());
+        }
+        if (ward != null && !ward.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(ward.trim());
+        }
+        if (city != null && !city.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(city.trim());
+        }
+        if (sb.length() > 0) sb.append(", Vietnam");
+
+        String result = sb.toString();
+        System.out.println("🗺️ [DEBUG] Full address for geocoding: " + result);
+        return result;
+    }
+
 }*/
 package com.alotra.entity;
 
@@ -69,28 +108,61 @@ public class Address {
     @Column(name = "Ward")
     private String ward;
 
-    @Column(name = "District")
-    private String district;
-
     @Column(name = "City")
     private String city;
 
+    @Column(name = "Label")
+    private String label; // Nhãn địa chỉ (VD: "Nhà riêng", "Văn phòng", etc.)
+
     @Column(name = "IsDefault", nullable = false)
     private boolean isDefault = false;
+
+    // 🆕 Toạ độ địa lý
+    @Column(name = "Latitude")
+    private Double latitude;
+
+    @Column(name = "Longitude")
+    private Double longitude;
 
     // Quan hệ nhiều-1: Nhiều địa chỉ thuộc về 1 user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false)
     private User user;
 
-    // Trả về chuỗi địa chỉ đầy đủ
+    // Trả về chuỗi địa chỉ đầy đủ (line1, ward, city)
     public String getFullAddress() {
-        return String.format("%s, %s, %s, %s",
+        String result = String.format("%s, %s, %s",
                 line1 != null ? line1 : "",
                 ward != null ? ward : "",
-                district != null ? district : "",
                 city != null ? city : ""
-        ).replaceAll(", ,", ",");
+        );
+        // normalize duplicated commas/spaces
+        return result.replaceAll(", ", ", ")
+                .replaceAll(", ,", ",")
+                .replaceAll("^, |, $", "")
+                .trim();
+    }
+
+    // 🌐 Trả về địa chỉ đầy đủ kèm quốc gia (dùng cho geocoding)
+    public String getFullAddressForGeocoding() {
+        StringBuilder sb = new StringBuilder();
+
+        if (line1 != null && !line1.trim().isEmpty()) {
+            sb.append(line1.trim());
+        }
+        if (ward != null && !ward.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(ward.trim());
+        }
+        if (city != null && !city.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(city.trim());
+        }
+        if (sb.length() > 0) sb.append(", Vietnam");
+
+        String result = sb.toString();
+        System.out.println("🗺️ [DEBUG] Full address for geocoding: " + result);
+        return result;
     }
 
 }

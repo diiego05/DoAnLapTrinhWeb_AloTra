@@ -512,6 +512,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     		        @Param("to") LocalDateTime to
     		);
 
-
+    // ==========================
+    // 🔍 TÌM KIẾM ĐƠN HÀNG (VENDOR)
+    // ==========================
+    @Query(value = """
+        SELECT o.* FROM Orders o
+        JOIN Branches b ON o.BranchId = b.Id
+        WHERE b.ManagerId = :vendorId
+        AND (:status IS NULL OR o.Status = :status)
+        AND (:from IS NULL OR o.CreatedAt >= :from)
+        AND (:to IS NULL OR o.CreatedAt <= :to)
+        AND (:q IS NULL OR o.Code LIKE CONCAT('%', :q, '%'))
+        ORDER BY o.CreatedAt DESC
+    """, nativeQuery = true)
+    List<Order> searchVendorOrders(
+            @Param("vendorId") Long vendorId,
+            @Param("status") String status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("q") String keyword
+    );
 }
-

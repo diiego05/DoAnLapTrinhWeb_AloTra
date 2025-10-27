@@ -104,9 +104,23 @@ public class CartService {
             }
         }
         if (req.getNote() != null) item.setNote(req.getNote());
+        
+        // ✅ Lưu cart item trước khi xử lý topping
         cartItemRepository.save(item);
+        
+        // ✅ Xử lý topping với logic cải tiến
         if (req.getToppingIds() != null) {
-            cartItemToppingRepository.deleteByCartItem_Id(item.getId());
+            // 1. Lấy danh sách topping hiện tại
+            List<CartItemTopping> currentToppings = cartItemToppingRepository.findByCartItem_Id(item.getId());
+            
+            // 2. Xóa tất cả topping cũ
+            if (!currentToppings.isEmpty()) {
+                cartItemToppingRepository.deleteAll(currentToppings);
+                // ✅ Flush để đảm bảo xóa hoàn tất trước khi insert
+                cartItemToppingRepository.flush();
+            }
+            
+            // 3. Thêm topping mới
             List<Topping> tops = toppingRepository.findAllById(req.getToppingIds());
             for (Topping t : tops) {
                 CartItemTopping ct = new CartItemTopping();
@@ -115,6 +129,9 @@ public class CartService {
                 ct.setPriceAtAddition(t.getPrice());
                 cartItemToppingRepository.save(ct);
             }
+            
+            // ✅ Flush để đảm bảo tất cả insert hoàn tất
+            cartItemToppingRepository.flush();
         }
     }
 

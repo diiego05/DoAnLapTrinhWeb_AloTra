@@ -1,229 +1,3 @@
-/*package com.alotra.service;
-
-import com.alotra.dto.checkout.CheckoutRequestDTO;
-import com.alotra.dto.checkout.OrderResponseDTO;
-import com.alotra.entity.Order;
-import com.alotra.entity.OrderItem;
-import com.alotra.entity.OrderItemTopping;
-import com.alotra.entity.OrderStatusHistory;
-import com.alotra.enums.OrderStatus;
-import com.alotra.enums.PaymentMethod;
-import com.alotra.repository.OrderItemRepository;
-import com.alotra.repository.OrderItemToppingRepository;
-import com.alotra.repository.OrderRepository;
-import com.alotra.repository.OrderStatusHistoryRepository;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
-@Service
-@RequiredArgsConstructor
-public class OrderService {
-
-    private final CartService cartService;
-    private final CouponService couponService;
-    private final ShippingCarrierService shippingCarrierService;
-    private final AddressService addressService;
-    private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final OrderItemToppingRepository orderItemToppingRepository;
-    private final EmailService emailService;
-    private final NotificationService notificationService;
-    private final BranchService branchService;
-    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
-    private final OrderStatusHistory orderStatusHistory;
-
-
-    @Transactional
-    public OrderResponseDTO checkout(Long userId, CheckoutRequestDTO req) {
-        // 1️⃣ Kiểm tra cart item
-        if (req.getCartItemIds() == null || req.getCartItemIds().isEmpty()) {
-            throw new IllegalArgumentException("Không có sản phẩm nào để thanh toán");
-        }
-
-        // 2️⃣ Lấy snapshot cart item
-        var items = cartService.getItemDetailsByIds(userId, req.getCartItemIds());
-        if (items.isEmpty()) throw new IllegalArgumentException("Cart items không hợp lệ");
-
-        // ✅ 2.1️⃣ Kiểm tra khả dụng của các item theo chi nhánh đã chọn
-        List<Long> unavailableIds = branchService.checkCartItemAvailability(req.getBranchId(), req.getCartItemIds());
-        if (!unavailableIds.isEmpty()) {
-            throw new IllegalStateException("Một số sản phẩm không khả dụng tại chi nhánh này. Vui lòng chọn chi nhánh khác hoặc cập nhật giỏ hàng.");
-        }
-
-        // 3️⃣ Tính subtotal
-        BigDecimal subtotal = items.stream()
-                .map(i -> i.getUnitPrice().add(i.getToppingTotalEach())
-                        .multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // 4️⃣ Tính shipping
-        BigDecimal shippingFee = BigDecimal.ZERO;
-        if (req.getPaymentMethod() == null ||
-                !req.getPaymentMethod().equalsIgnoreCase(PaymentMethod.PICKUP.name())) {
-            var carrier = shippingCarrierService.findActiveById(req.getShippingCarrierId());
-            shippingFee = carrier.getBaseFee();
-        }
-
-        // 5️⃣ Áp dụng coupon (nếu có)
-        BigDecimal discount = BigDecimal.ZERO;
-        Long couponId = null;
-        if (req.getCouponCode() != null && !req.getCouponCode().isBlank()) {
-            List<Long> productIds = items.stream()
-                    .map(i -> i.getProductId())
-                    .collect(Collectors.toList());
-
-            var coupon = couponService.validateCoupon(req.getCouponCode(), subtotal, productIds);
-            discount = couponService.calculateDiscount(coupon, subtotal);
-            couponId = coupon.getId();
-        }
-
-        BigDecimal total = subtotal.subtract(discount).add(shippingFee);
-        if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
-
-        // 6️⃣ Snapshot địa chỉ
-        String deliveryAddress = addressService.snapshotAddress(
-                req.getAddressId(),
-                userId,
-                req.getPaymentMethod()
-        );
-
-        // 7️⃣ Tạo mã đơn hàng
-        String code = generateOrderCode();
-
-        // 8️⃣ Lưu Order
-        Order order = Order.builder()
-                .code(code)
-                .userId(userId)
-                .branchId(req.getBranchId())
-                .shippingCarrierId(req.getShippingCarrierId())
-                .couponId(couponId)
-                .deliveryAddress(deliveryAddress)
-                .paymentMethod(normalizePaymentMethod(req.getPaymentMethod()))
-                .subtotal(subtotal)
-                .shippingFee(shippingFee)
-                .discount(discount)
-                .total(total)
-                .status(OrderStatus.PENDING.name())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-        order = orderRepository.save(order);
-        final Order savedOrder = order;
-
-        // 9️⃣ Lưu OrderItem
-        List<OrderItem> orderItems = items.stream().map(ci -> OrderItem.builder()
-                .order(savedOrder)
-                .productId(ci.getProductId())
-                .variantId(ci.getVariantId())
-                .productName(ci.getProductName())
-                .sizeName(ci.getSizeName())
-                .note(ci.getNote())
-                .quantity(ci.getQuantity())
-                .unitPrice(ci.getUnitPrice())
-                .toppingTotal(ci.getToppingTotalEach())
-                .lineTotal(ci.getUnitPrice().add(ci.getToppingTotalEach())
-                        .multiply(BigDecimal.valueOf(ci.getQuantity())))
-                .build()
-        ).collect(Collectors.toList());
-        orderItemRepository.saveAll(orderItems);
-
-        // 🆕 9️⃣.1 Lưu topping
-        for (int i = 0; i < items.size(); i++) {
-            var cartDetail = items.get(i);
-            var orderItem = orderItems.get(i);
-
-            if (cartDetail.getToppings() != null && !cartDetail.getToppings().isEmpty()) {
-                var orderToppings = cartDetail.getToppings().stream()
-                        .map(t -> OrderItemTopping.builder()
-                                .orderItem(orderItem)
-                                .toppingId(t.getToppingId())
-                                .toppingName(t.getName())
-                                .priceAtAddition(t.getPrice())
-                                .build())
-                        .toList();
-
-                orderItemToppingRepository.saveAll(orderToppings);
-            }
-        }
-
-        // 🔟 Clear giỏ hàng
-        cartService.removeItems(userId, req.getCartItemIds());
-
-        // 🪙 1️⃣0️⃣.1 Cập nhật số lần sử dụng coupon
-        if (couponId != null) {
-            couponService.increaseUsedCount(couponId);
-        }
-
-        // 🕓 1️⃣0️⃣.2 Lưu lịch sử trạng thái đơn hàng
-        orderStatusHistoryRepository.save(
-            OrderStatusHistory.builder()
-                    .order(savedOrder)
-                    .status(OrderStatus.PENDING.name())
-                    .changedAt(LocalDateTime.now())
-                    .note("Đơn hàng được khởi tạo")
-                    .build()
-        );
-
-        // 1️⃣1️⃣ Gửi mail + thông báo
-        safe(() -> emailService.sendOrderConfirmationEmail(userId, savedOrder, orderItems));
-        safe(() -> notificationService.create(
-                userId,
-                "ORDER",
-                "Đặt hàng thành công",
-                "Đơn hàng #" + code + " đã được tạo thành công.",
-                "Order",
-                savedOrder.getId()
-        ));
-
-        // 1️⃣2️⃣ Trả về DTO
-        return OrderResponseDTO.builder()
-                .orderId(savedOrder.getId())
-                .code(savedOrder.getCode())
-                .status(savedOrder.getStatus())
-                .subtotal(savedOrder.getSubtotal())
-                .discount(savedOrder.getDiscount())
-                .shippingFee(savedOrder.getShippingFee())
-                .total(savedOrder.getTotal())
-                .items(orderItems.stream().map(oi -> OrderResponseDTO.OrderedLineDTO.builder()
-                        .productName(oi.getProductName())
-                        .sizeName(oi.getSizeName())
-                        .quantity(oi.getQuantity())
-                        .unitPrice(oi.getUnitPrice())
-                        .toppingTotal(oi.getToppingTotal())
-                        .lineTotal(oi.getLineTotal())
-                        .note(oi.getNote())
-                        .build()).toList())
-                .build();
-    }
-
-
-    private String normalizePaymentMethod(String pm) {
-        if (pm == null) return PaymentMethod.COD.name();
-        try {
-            return PaymentMethod.valueOf(pm.toUpperCase()).name();
-        } catch (Exception e) {
-            return PaymentMethod.COD.name();
-        }
-    }
-
-    private String generateOrderCode() {
-        // ví dụ: ALO-20251014-xxxxx
-        String ymd = java.time.LocalDate.now().toString().replaceAll("-", "");
-        String rand = String.valueOf((int) (Math.random() * 90000) + 10000);
-        return "ALO-" + ymd + "-" + rand;
-    }
-
-    private void safe(Runnable r) {
-        try { r.run(); } catch (Exception ignored) {}
-    }
-}*/
 package com.alotra.service;
 
 import com.alotra.dto.OrderDTO;
@@ -288,7 +62,16 @@ public class OrderService {
         var items = cartService.getItemDetailsByIds(userId, req.getCartItemIds());
         if (items.isEmpty()) throw new IllegalArgumentException("Cart items không hợp lệ");
 
-        var unavailable = branchService.checkCartItemAvailability(req.getBranchId(), req.getCartItemIds());
+        // 🧭 Xác định chi nhánh: dùng branchId nếu truyền vào, nếu không -> tìm gần nhất theo tọa độ địa chỉ
+        Long selectedBranchId = req.getBranchId();
+        if (selectedBranchId == null) {
+            selectedBranchId = findNearestActiveBranchId(userId, req.getAddressId());
+            if (selectedBranchId == null) {
+                throw new IllegalStateException("Không thể xác định chi nhánh gần nhất. Vui lòng chọn chi nhánh.");
+            }
+        }
+
+        var unavailable = branchService.checkCartItemAvailability(selectedBranchId, req.getCartItemIds());
         if (!unavailable.isEmpty()) {
             throw new IllegalStateException("Một số sản phẩm không khả dụng tại chi nhánh này.");
         }
@@ -327,7 +110,7 @@ public class OrderService {
         Order order = Order.builder()
                 .code(generateOrderCode())
                 .userId(userId)
-                .branchId(req.getBranchId())
+                .branchId(selectedBranchId)
                 .shippingCarrierId(req.getShippingCarrierId())
                 .couponId(couponId)
                 .deliveryAddress(deliveryAddress)
@@ -426,107 +209,28 @@ public class OrderService {
                 .build();
     }
 
-
-    @Async
-    public void sendAsyncNotifications(Long userId, Order order, List<OrderItem> orderItems) {
-        safe(() -> emailService.sendOrderConfirmationEmail(userId, order, orderItems));
-        safe(() -> notificationService.create(
-                userId,
-                "ORDER",
-                "Đặt hàng thành công",
-                "Đơn hàng #" + order.getCode() + " đã được tạo thành công.",
-                "Order",
-                order.getId()
-        ));
+    private Long findNearestActiveBranchId(Long userId, Long addressId) {
+        var opt = addressService.getCoordinates(userId, addressId);
+        if (opt.isEmpty()) return null;
+        double lat = opt.get().latitude();
+        double lng = opt.get().longitude();
+        return branchRepository.findByStatus("ACTIVE").stream()
+                .filter(b -> b.getLatitude() != null && b.getLongitude() != null)
+                .min(Comparator.comparingDouble(b -> haversineKm(lat, lng, b.getLatitude(), b.getLongitude())))
+                .map(Branch::getId)
+                .orElse(null);
     }
 
-    private String normalizePaymentMethod(String pm) {
-        if (pm == null) return PaymentMethod.COD.name();
-        try {
-            return PaymentMethod.valueOf(pm.toUpperCase()).name();
-        } catch (Exception e) {
-            return PaymentMethod.COD.name();
-        }
+    private double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371.0; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
-
-    private String generateOrderCode() {
-        String ymd = java.time.LocalDate.now().toString().replaceAll("-", "");
-        String rand = String.valueOf((int) (Math.random() * 90000) + 10000);
-        return "ALO-" + ymd + "-" + rand;
-    }
-
-    private void safe(Runnable r) {
-        try {
-            r.run();
-        } catch (Exception ignored) {
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Order findOrderById(Long id) {
-        return orderRepository.findById(id).orElse(null);
-    }
-
-    @Transactional
-    public void updateOrderStatusByCode(String code, String status, String note) {
-        Order order = orderRepository.findByCode(code).orElse(null);
-        if (order != null) {
-            order.setStatus(status);
-            order.setUpdatedAt(LocalDateTime.now());
-            orderRepository.save(order);
-
-            orderStatusHistoryRepository.save(OrderStatusHistory.builder()
-                    .order(order)
-                    .status(status)
-                    .changedAt(LocalDateTime.now())
-                    .note(note)
-                    .build());
-
-            sendAsyncNotifications(order.getUserId(), order);
-        }
-    }
-
-    @Async
-    public void sendAsyncNotifications(Long userId, Order order) {
-        // 🧾 1. Kiểm tra trạng thái thanh toán riêng (nếu có Payment)
-        safe(() -> {
-            var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId());
-            if (payment.isPresent()) {
-                var pay = payment.get();
-                switch (pay.getStatus()) {
-                    case SUCCESS -> emailService.sendPaymentSuccessEmail(userId, order);
-                    case FAILED -> emailService.sendPaymentFailedEmail(userId, order);
-                    default -> {} // không gửi mail nếu chưa thanh toán
-                }
-            }
-        });
-
-        // 📨 2. Gửi thông báo cập nhật trạng thái đơn hàng
-        String vnStatus = getStatusLabel(order.getStatus());
-        safe(() -> notificationService.create(
-                userId,
-                "ORDER",
-                "Cập nhật trạng thái đơn hàng",
-                String.format("Đơn hàng #%s đã được cập nhật trạng thái: %s", order.getCode(), vnStatus),
-                "Order",
-                order.getId()
-        ));
-    }
-
-
-    private String getStatusLabel(String status) {
-        return switch (status) {
-            case "PENDING" -> "Chờ xác nhận";
-            case "CONFIRMED" -> "Đã xác nhận";
-            case "SHIPPING" -> "Đang giao";
-            case "COMPLETED" -> "Hoàn thành";
-            case "CANCELED" -> "Đã hủy";
-            case "PAID" -> "Thanh toán thành công";
-            case "FAILED" -> "Thanh toán thất bại";
-            default -> status;
-        };
-    }
-
 
     // ====================================
     // 🧾 2. LỊCH SỬ & CHI TIẾT ĐƠN HÀNG
@@ -880,24 +584,17 @@ public class OrderService {
     // ====================================
 
     @Transactional(readOnly = true)
-    public List<OrderDTO> getOrdersByVendor(Long vendorId, String status) {
-        List<Order> orders;
+    public List<OrderDTO> getOrdersByVendor(Long vendorId, String status, LocalDateTime from, LocalDateTime to, String keyword) {
+        // ✅ Sử dụng truy vấn tổng hợp hỗ trợ lọc
+        List<Order> orders = orderRepository.searchVendorOrders(vendorId, emptyToNull(status), from, to, emptyToNull(keyword));
 
-        // ✅ Gọi repository JPQL thay vì method cũ
-        if (status == null || status.isBlank()) {
-            orders = orderRepository.findOrdersByVendorId(vendorId);
-        } else {
-            orders = orderRepository.findOrdersByVendorIdAndStatus(vendorId, status);
-        }
-
-        // ✅ Map sang DTO
         return orders.stream()
                 .map(order -> {
                     List<OrderItemDTO> items = orderItemRepository.findByOrderId(order.getId())
                             .stream()
                             .map(item -> OrderItemDTO.builder()
                                     .id(item.getId())
-                                    .productId(item.getProductId())       // ✅
+                                    .productId(item.getProductId())
                                     .variantId(item.getVariantId())
                                     .productName(item.getProductName())
                                     .sizeName(item.getSizeName())
@@ -922,6 +619,9 @@ public class OrderService {
                 .toList();
     }
 
+    private String emptyToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s;
+    }
 
     @Transactional
     public void confirmOrderByVendor(Long orderId, Long vendorId) {
@@ -1017,5 +717,49 @@ public class OrderService {
         ));
     }
 
+    @Transactional(readOnly = true)
+    public Order findOrderById(Long id) {
+        return orderRepository.findById(id).orElse(null);
+    }
 
+    // Helpers
+    private String generateOrderCode() {
+        String ymd = java.time.LocalDate.now().toString().replaceAll("-", "");
+        String rand = String.valueOf((int) (Math.random() * 90000) + 10000);
+        return "ALO-" + ymd + "-" + rand;
+    }
+
+    private String normalizePaymentMethod(String pm) {
+        if (pm == null) return PaymentMethod.COD.name();
+        try {
+            return PaymentMethod.valueOf(pm.toUpperCase()).name();
+        } catch (Exception e) {
+            return PaymentMethod.COD.name();
+        }
+    }
+
+    @Async
+    protected void sendAsyncNotifications(Long userId, Order order) {
+        try {
+            notificationService.create(
+                    userId,
+                    "ORDER",
+                    "Cập nhật đơn hàng",
+                    "Đơn hàng #" + order.getCode() + " hiện trạng thái: " + order.getStatus(),
+                    "Order",
+                    order.getId()
+            );
+        } catch (Exception ignore) {}
+
+        try {
+            if (OrderStatus.PENDING.name().equals(order.getStatus())) {
+                var items = orderItemRepository.findByOrderId(order.getId());
+                emailService.sendOrderConfirmationEmail(userId, order, items);
+            }
+        } catch (Exception ignore) {}
+    }
+
+    private void safe(Runnable r) {
+        try { r.run(); } catch (Exception ignored) {}
+    }
 }

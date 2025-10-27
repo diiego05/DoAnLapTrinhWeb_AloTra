@@ -1,7 +1,6 @@
 "use strict";
 
-
-// === HÀM HIỂN THỊ CONFIRM DIALOG (ĐÃ NHÚNG CSS) ===
+// === HÀM HIỂN THỊ CONFIRM ĐĂNG XUẤT ===
 function showConfirm(message, submessage = '') {
     return new Promise((resolve) => {
         // Tạo overlay
@@ -114,6 +113,103 @@ function showConfirm(message, submessage = '') {
 // === BIẾN TOKEN GLOBAL ===
 let globalToken = null;
 
+// 🗺️ Lưu toạ độ tạm thời khi user chọn từ autocomplete (profile address modal)
+let modalAddressLat = null;
+let modalAddressLng = null;
+
+// 🗺️ Sử dụng Google Maps Loader
+async function initAddressAutocomplete() {
+    const line1Input = document.getElementById("line1");
+    if (!line1Input) return;
+
+    // Reset toạ độ tạm khi mở modal hoặc init
+    modalAddressLat = null;
+    modalAddressLng = null;
+
+    // Sử dụng Google Maps Loader
+    const autocomplete = await window.googleMapsLoader.createAutocomplete(line1Input, {
+        types: ["geocode"]
+    });
+
+    if (!autocomplete) {
+        console.warn('⚠️ Autocomplete initialization failed');
+        return;
+    }
+
+    // ✅ XỬ LÝ GOOGLE PLACES AUTOCOMPLETE
+    if (autocomplete.addListener) {
+        autocomplete.addListener("place_changed", function () {
+            const place = autocomplete.getPlace();
+            if (!place || !place.address_components) return;
+
+            // Sử dụng parser từ Google Maps Loader
+            const parsed = window.googleMapsLoader.parseVietnameseAddress(place.address_components);
+
+            // ✅ CHỈ lấy street cho Line1
+            document.getElementById("line1").value = parsed.street || '';
+            document.getElementById("ward").value = parsed.ward;
+            document.getElementById("city").value = parsed.city;
+
+            // ✅ Lưu toạ độ nếu Google trả về geometry
+            if (place.geometry && place.geometry.location) {
+                try {
+                    modalAddressLat = place.geometry.location.lat();
+                    modalAddressLng = place.geometry.location.lng();
+                } catch (_) {}
+            }
+            console.log('✅ Address parsed and filled:', parsed, modalAddressLat, modalAddressLng);
+        });
+        console.log('✅ Google Places autocomplete initialized');
+    } 
+    // ✅ XỬ LÝ NOMINATIM AUTOCOMPLETE (fallback)
+    else if (autocomplete.nominatim) {
+        line1Input.addEventListener('nominatim-select', (e) => {
+            const detail = e.detail;
+            console.log('📍 Nominatim address selected:', detail.address);
+
+            // Parse địa chỉ Nominatim theo format Việt Nam
+            const parts = detail.address.split(',').map(p => p.trim());
+
+            // ✅ Lọc bỏ postal code và VN
+            const filtered = parts.filter(part => {
+                if (/^\d{5,6}$/.test(part)) return false;
+                if (part.toLowerCase() === 'việt nam' || part.toLowerCase() === 'vietnam') return false;
+                return true;
+            });
+
+            const wardIndex = filtered.findIndex(p => 
+                p.includes('Phường') || 
+                p.includes('Xã') || 
+                p.includes('Thị trấn')
+            );
+
+            if (wardIndex > 0) {
+                const line1Parts = filtered.slice(0, wardIndex);
+                document.getElementById("line1").value = line1Parts.join(', ');
+                const ward = filtered[wardIndex] || '';
+                document.getElementById("ward").value = ward;
+                const city = filtered[filtered.length - 1] || '';
+                document.getElementById("city").value = city;
+            } else if (wardIndex === 0) {
+                document.getElementById("line1").value = '';
+                document.getElementById("ward").value = filtered[0] || '';
+                document.getElementById("city").value = filtered[1] || '';
+            } else {
+                document.getElementById("line1").value = filtered[0] || '';
+                document.getElementById("ward").value = '';
+                document.getElementById("city").value = filtered[1] || '';
+            }
+
+            // ✅ Lưu toạ độ nếu có từ detail
+            if (detail && (detail.lat || detail.lon || detail.lng)) {
+                modalAddressLat = Number(detail.lat ?? detail.latitude ?? null);
+                modalAddressLng = Number(detail.lon ?? detail.lng ?? detail.longitude ?? null);
+            }
+        });
+        console.log('✅ Nominatim autocomplete initialized');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
     if (!window.location.pathname.includes("/profile")) return;
 
@@ -133,6 +229,23 @@ document.addEventListener("DOMContentLoaded", async function() {
     const avatarInput = document.getElementById("avatarInput");
     const addressModal = new bootstrap.Modal(document.getElementById("addressModal"));
     const addressBody = document.getElementById("addressTableBody");
+
+    // 🔌 Load Google Maps khi trang khởi động
+    window.googleMapsLoader.load().then(loaded => {
+        if (loaded) {
+            console.log('✅ Google Maps loaded for profile page');
+        }
+    });
+
+    // Khi modal địa chỉ mở, khởi tạo autocomplete và reset toạ độ tạm
+    const addressModalEl = document.getElementById('addressModal');
+    if (addressModalEl) {
+        addressModalEl.addEventListener('shown.bs.modal', () => {
+            modalAddressLat = null;
+            modalAddressLng = null;
+            initAddressAutocomplete();
+        }, { once: true });
+    }
 
     // === HÀM HIỂN THỊ TOAST THÔNG BÁO ===
     window.showToast = function(message, type = 'success') {
@@ -295,7 +408,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 <tr class="${a.isDefault ? 'table-success' : ''}">
                     <td>${a.recipient}</td>
                     <td>${a.phone}</td>
-                    <td>${a.line1}, ${a.ward || ''}, ${a.district || ''}, ${a.city || ''}</td>
+                    <td>${a.line1}, ${a.ward || ''}, ${a.city || ''}</td>
                     <td class="text-center">${a.isDefault ? '<i class="fas fa-star text-warning"></i>' : ''}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-primary me-1" onclick="editAddress(${a.id})"><i class="fas fa-edit"></i></button>
@@ -313,9 +426,12 @@ document.addEventListener("DOMContentLoaded", async function() {
     // === THÊM / SỬA ĐỊA CHỈ ===
     document.getElementById("btnShowAddModal").addEventListener("click", () => {
         document.getElementById("addressId").value = "";
-        document.querySelectorAll("#recip, #addrPhone, #line1, #ward, #district, #city").forEach(i => i.value = "");
+        document.querySelectorAll("#recip, #addrPhone, #line1, #ward, #city").forEach(i => i.value = "");
         const defaultCheckbox = document.getElementById("isDefault");
         if (defaultCheckbox) defaultCheckbox.checked = false;
+        // reset coords
+        modalAddressLat = null;
+        modalAddressLng = null;
         addressModal.show();
     });
 
@@ -328,9 +444,11 @@ document.addEventListener("DOMContentLoaded", async function() {
                 phone: document.getElementById("addrPhone").value,
                 line1: document.getElementById("line1").value,
                 ward: document.getElementById("ward").value,
-                district: document.getElementById("district").value,
                 city: document.getElementById("city").value,
-                isDefault: document.getElementById("isDefault")?.checked || false
+                isDefault: document.getElementById("isDefault")?.checked || false,
+                // ✅ gửi toạ độ nếu user đã chọn từ autocomplete
+                latitude: modalAddressLat,
+                longitude: modalAddressLng
             };
 
             if (!address.recipient || !address.phone || !address.line1) {
@@ -393,13 +511,16 @@ document.addEventListener("DOMContentLoaded", async function() {
             document.getElementById("addrPhone").value = addr.phone;
             document.getElementById("line1").value = addr.line1;
             document.getElementById("ward").value = addr.ward || "";
-            document.getElementById("district").value = addr.district || "";
             document.getElementById("city").value = addr.city || "";
 
             const defaultCheckbox = document.getElementById("isDefault");
             if (defaultCheckbox) {
                 defaultCheckbox.checked = addr.isDefault;
             }
+
+            // ✅ preset coords để nếu user không chọn lại autocomplete thì không bị null
+            modalAddressLat = typeof addr.latitude === 'number' ? addr.latitude : null;
+            modalAddressLng = typeof addr.longitude === 'number' ? addr.longitude : null;
 
             addressModal.show();
         } catch (err) {
@@ -463,3 +584,11 @@ window.setDefault = async function(id) {
         window.showToast("Có lỗi xảy ra!", "error");
     }
 };
+
+// Call this after DOMContentLoaded (kept for backward-compat)
+document.addEventListener("DOMContentLoaded", function() {
+    // if Maps loaded early by cache, init immediately
+    if (window.google && window.google.maps && window.google.maps.places) {
+        initAddressAutocomplete();
+    }
+});

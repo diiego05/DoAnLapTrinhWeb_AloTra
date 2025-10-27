@@ -135,8 +135,69 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    /* ======================== 🏪 LOAD CHI NHÁNH CÓ SẢN PHẨM ======================== */
+    async function loadBranchesWithProduct() {
+        const branchListEl = document.getElementById("branchList");
+        if (!branchListEl) return;
+
+        try {
+            const res = await apiFetch(`/api/public/branches/with-product/${productId}`);
+            if (!res?.ok) throw new Error(`Failed to load branches: ${res?.status}`);
+            
+            const branches = await res.json();
+            
+            if (!branches || branches.length === 0) {
+                branchListEl.innerHTML = `
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Hiện tại chưa có chi nhánh nào có sản phẩm này.
+                    </div>
+                `;
+                return;
+            }
+
+            // Render danh sách chi nhánh
+            branchListEl.innerHTML = `
+                <div class="row g-3">
+                    ${branches.map(branch => `
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-store me-2"></i>${branch.name}
+                                    </h5>
+                                    <p class="card-text">
+                                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                        <small>${branch.address || 'Chưa có địa chỉ'}</small>
+                                    </p>
+                                    ${branch.phone ? `
+                                        <p class="card-text mb-0">
+                                            <i class="fas fa-phone text-primary me-2"></i>
+                                            <small>${branch.phone}</small>
+                                        </p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            console.log(`✅ Loaded ${branches.length} branches with this product`);
+        } catch (error) {
+            console.error("❌ Lỗi khi tải danh sách chi nhánh:", error);
+            branchListEl.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Không thể tải danh sách chi nhánh. Vui lòng thử lại sau.
+                </div>
+            `;
+        }
+    }
+
     if (token) updateCartFloatingCount();
     loadProductVariants();
+    await loadBranchesWithProduct();
 
     function bounceCartIcon() {
         const cartBtn = document.querySelector("#floating-cart .cart-btn");

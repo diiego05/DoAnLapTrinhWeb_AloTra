@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/default_layout :: layout(
+          pageTitle='Tìm Chi Nhánh Gần Nhất',
+          content=~{::content},
+          additionalJs=~{::additionalJs}
+      )}">
+<head>
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .branch-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .branch-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .branch-card.selected {
+            border: 2px solid #28a745;
+            background: #f8fff9;
+        }
+        .distance-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .search-box {
+            position: relative;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<th:block th:fragment="content">
+    <div class="container my-5">
+        <h2 class="mb-4 text-success">
+            <i class="fas fa-map-marked-alt me-2"></i>Tìm Chi Nhánh Gần Bạn
+        </h2>
+
+        <!-- Search & Filter -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="search-box">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-search me-2"></i>Nhập địa chỉ của bạn
+                    </label>
+                    <input type="text" id="searchAddress" class="form-control form-control-lg" 
+                           placeholder="Nhập địa chỉ để tìm chi nhánh gần nhất...">
+                    <div class="form-text">
+                        Hoặc nhấn nút bên phải để sử dụng vị trí hiện tại của bạn
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button id="btnUseCurrentLocation" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-location-arrow me-2"></i>Vị trí hiện tại
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4" id="statsSection" style="display: none;">
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h3 class="text-success mb-0" id="nearestDistance">—</h3>
+                        <small class="text-muted">Chi nhánh gần nhất</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <h3 class="text-info mb-0" id="totalBranches">—</h3>
+                        <small class="text-muted">Tổng số chi nhánh</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h3 class="text-warning mb-0" id="averageDistance">—</h3>
+                        <small class="text-muted">Khoảng cách trung bình</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-map me-2"></i>Bản đồ chi nhánh
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- Branch List -->
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <i class="fas fa-list me-2"></i>Danh sách chi nhánh
+                    <span class="badge bg-success" id="branchCount">0</span>
+                </h4>
+            </div>
+        </div>
+        <div class="row" id="branchList">
+            <div class="col-12 text-center text-muted py-5">
+                Đang tải danh sách chi nhánh...
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script src="/alotra-website/js/maps-utils.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🗺️ Branch Locator initialized');
+
+    let map = null;
+    let markers = [];
+    let branches = [];
+    let userMarker = null;
+    let userLocation = null;
+
+    // Load Google Maps
+    const loaded = await window.googleMapsLoader.load();
+    if (!loaded) {
+        alert('❌ Không thể tải Google Maps API. Vui lòng kiểm tra cấu hình.');
+        return;
+    }
+
+    // Initialize map
+    const mapEl = document.getElementById('map');
+    map = await window.googleMapsLoader.createMap(mapEl, {
+        center: { lat: 10.762622, lng: 106.660172 },
+        zoom: 12
+    });
+
+    // Load branches
+    await loadBranches();
+
+    // Setup autocomplete
+    const searchInput = document.getElementById('searchAddress');
+    const autocomplete = await window.googleMapsLoader.createAutocomplete(searchInput);
+    
+    if (autocomplete) {
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                userLocation = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                updateUserLocation(userLocation);
+                calculateDistances();
+            }
+        });
+    }
+
+    // Use current location
+    document.getElementById('btnUseCurrentLocation').addEventListener('click', async () => {
+        const pos = await MapsUtils.getCurrentPosition();
+        if (pos) {
+            userLocation = pos;
+            updateUserLocation(userLocation);
+            calculateDistances();
+            
+            // Reverse geocode để hiển thị địa chỉ
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: pos }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    searchInput.value = results[0].formatted_address;
+                }
+            });
+        } else {
+            alert('❌ Không thể lấy vị trí hiện tại. Vui lòng bật GPS hoặc cho phép truy cập vị trí.');
+        }
+    });
+
+    // Load branches from API
+    async function loadBranches() {
+        try {
+            const res = await fetch('/alotra-website/api/public/branches/active');
+            if (!res.ok) throw new Error('Failed to load branches');
+            
+            branches = await res.json();
+            
+            // Add markers to map
+            branches.forEach((branch, index) => {
+                // Giả sử có lat/lng trong database, nếu không thì cần geocode
+                if (branch.latitude && branch.longitude) {
+                    addBranchMarker(branch, index);
+                }
+            });
+
+            // Fit bounds
+            if (markers.length > 0) {
+                MapsUtils.fitBounds(map, markers);
+            }
+
+            renderBranchList(branches);
+            document.getElementById('branchCount').textContent = branches.length;
+
+        } catch (error) {
+            console.error('❌ Error loading branches:', error);
+            document.getElementById('branchList').innerHTML = `
+                <div class="col-12 text-center text-danger py-5">
+                    Không thể tải danh sách chi nhánh
+                </div>
+            `;
+        }
+    }
+
+    function addBranchMarker(branch, index) {
+        const marker = window.googleMapsLoader.createMarker(map, {
+            position: { 
+                lat: branch.latitude, 
+                lng: branch.longitude 
+            },
+            title: branch.name,
+            label: {
+                text: (index + 1).toString(),
+                color: 'white',
+                fontWeight: 'bold'
+            }
+        });
+
+        // Info window
+        const infoContent = `
+            <div style="padding: 10px; max-width: 250px;">
+                <h6 class="text-success mb-2">${branch.name}</h6>
+                <p class="mb-1 small"><i class="fas fa-map-marker-alt me-2"></i>${branch.address}</p>
+                <p class="mb-1 small"><i class="fas fa-phone me-2"></i>${branch.phone || 'Chưa có'}</p>
+                <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}" 
+                   target="_blank" class="btn btn-sm btn-success mt-2">
+                    <i class="fas fa-directions me-1"></i>Chỉ đường
+                </a>
+            </div>
+        `;
+        
+        MapsUtils.createInfoWindow(map, marker, infoContent);
+        markers.push(marker);
+    }
+
+    function updateUserLocation(location) {
+        // Remove old user marker
+        if (userMarker) {
+            userMarker.setMap(null);
+        }
+
+        // Add new user marker
+        userMarker = window.googleMapsLoader.createMarker(map, {
+            position: location,
+            title: 'Vị trí của bạn',
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: '#4285F4',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 3,
+                scale: 12
+            },
+            animation: google.maps.Animation.DROP
+        });
+
+        // Center map
+        map.setCenter(location);
+        map.setZoom(14);
+
+        // Show stats section
+        document.getElementById('statsSection').style.display = 'flex';
+    }
+
+    function calculateDistances() {
+        if (!userLocation) return;
+
+        // Calculate distances
+        branches = branches.map(branch => ({
+            ...branch,
+            distance: window.googleMapsLoader.calculateDistance(
+                userLocation.lat,
+                userLocation.lng,
+                branch.latitude,
+                branch.longitude
+            )
+        })).sort((a, b) => a.distance - b.distance);
+
+        // Update stats
+        const nearest = branches[0];
+        const avgDistance = branches.reduce((sum, b) => sum + b.distance, 0) / branches.length;
+
+        document.getElementById('nearestDistance').textContent = 
+            MapsUtils.formatDistance(nearest.distance);
+        document.getElementById('totalBranches').textContent = branches.length;
+        document.getElementById('averageDistance').textContent = 
+            MapsUtils.formatDistance(avgDistance);
+
+        // Re-render list
+        renderBranchList(branches);
+
+        // Draw line to nearest branch
+        if (nearest.latitude && nearest.longitude) {
+            MapsUtils.drawRoute(map, userLocation, {
+                lat: nearest.latitude,
+                lng: nearest.longitude
+            }, '#28a745');
+        }
+    }
+
+    function renderBranchList(branchList) {
+        const container = document.getElementById('branchList');
+        
+        if (branchList.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    Không có chi nhánh nào
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = branchList.map((branch, index) => `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card branch-card h-100" data-index="${index}">
+                    <div class="card-body position-relative">
+                        ${branch.distance ? `
+                            <span class="badge bg-success distance-badge">
+                                ${MapsUtils.formatDistance(branch.distance)}
+                            </span>
+                        ` : ''}
+                        <h5 class="card-title text-success">
+                            <i class="fas fa-store me-2"></i>${branch.name}
+                        </h5>
+                        <p class="card-text small mb-2">
+                            <i class="fas fa-map-marker-alt me-2"></i>${branch.address}
+                        </p>
+                        <p class="card-text small mb-3">
+                            <i class="fas fa-phone me-2"></i>${branch.phone || 'Chưa cập nhật'}
+                        </p>
+                        <div class="d-flex gap-2">
+                            <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}" 
+                               target="_blank" class="btn btn-sm btn-outline-success flex-fill">
+                                <i class="fas fa-directions me-1"></i>Chỉ đường
+                            </a>
+                            <button class="btn btn-sm btn-success flex-fill btn-select-branch" 
+                                    data-index="${index}">
+                                <i class="fas fa-check me-1"></i>Chọn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers
+        container.querySelectorAll('.branch-card').forEach((card, idx) => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.btn')) {
+                    selectBranch(idx);
+                }
+            });
+        });
+
+        container.querySelectorAll('.btn-select-branch').forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                selectBranch(idx);
+                alert(`✅ Đã chọn chi nhánh: ${branchList[idx].name}`);
+            });
+        });
+    }
+
+    function selectBranch(index) {
+        // Remove previous selection
+        document.querySelectorAll('.branch-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Add new selection
+        const selectedCard = document.querySelector(`[data-index="${index}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+            selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Focus on map
+        const branch = branches[index];
+        if (branch.latitude && branch.longitude) {
+            map.setCenter({ lat: branch.latitude, lng: branch.longitude });
+            map.setZoom(16);
+            
+            // Trigger marker click
+            if (markers[index]) {
+                google.maps.event.trigger(markers[index], 'click');
+            }
+        }
+    }
+});
+</script>
+</th:block>
+</body>
+</html>

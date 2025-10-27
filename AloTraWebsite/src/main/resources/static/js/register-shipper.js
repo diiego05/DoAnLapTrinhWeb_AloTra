@@ -1,5 +1,67 @@
 "use strict";
 
+// 🗺️ Initialize autocomplete for shipper address inputs
+async function initShipperAddressAutocomplete() {
+    // Main form address search
+    await attachAutocompleteTo('#addressSearch', '#ward', '#district', '#city');
+}
+
+async function initEditModalAutocomplete() {
+    // Edit modal address search
+    await attachAutocompleteTo('#editAddressSearch', '#editWard', '#editDistrict', '#editCity');
+}
+
+async function attachAutocompleteTo(searchSelector, wardSelector, districtSelector, citySelector) {
+    const input = document.querySelector(searchSelector);
+    if (!input) {
+        console.warn(`⚠️ Input ${searchSelector} not found`);
+        return;
+    }
+
+    // Use centralized Google Maps Loader
+    const autocomplete = await window.googleMapsLoader.createAutocomplete(input, {
+        types: ['geocode']
+    });
+
+    if (!autocomplete) {
+        console.warn(`⚠️ Autocomplete initialization failed for ${searchSelector}`);
+        return;
+    }
+
+    // ✅ Handle Google Places Autocomplete
+    if (autocomplete.addListener) {
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place || !place.address_components) return;
+            
+            // Use parser from Google Maps Loader
+            const parsed = window.googleMapsLoader.parseVietnameseAddress(place.address_components);
+            
+            document.querySelector(wardSelector).value = parsed.ward;
+            document.querySelector(districtSelector).value = parsed.district;
+            document.querySelector(citySelector).value = parsed.city;
+        });
+        console.log(`✅ Google Places autocomplete initialized for ${searchSelector}`);
+    } 
+    // ✅ Handle Nominatim Autocomplete (fallback)
+    else if (autocomplete.nominatim) {
+        input.addEventListener('nominatim-select', (e) => {
+            const detail = e.detail;
+            console.log(`📍 Nominatim address selected for ${searchSelector}:`, detail.address);
+            
+            // Parse địa chỉ Nominatim theo format Việt Nam
+            const parts = detail.address.split(',').map(p => p.trim());
+            
+            if (parts.length >= 3) {
+                document.querySelector(citySelector).value = parts[parts.length - 1] || '';
+                document.querySelector(districtSelector).value = parts[parts.length - 2] || '';
+                document.querySelector(wardSelector).value = parts[parts.length - 3] || '';
+            }
+        });
+        console.log(`✅ Nominatim autocomplete initialized for ${searchSelector}`);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async function () {
     console.log("🚚 Trang đăng ký Shipper khởi chạy...");
 
@@ -9,6 +71,17 @@ document.addEventListener("DOMContentLoaded", async function () {
         window.location.href = "/alotra-website/login";
         return;
     }
+
+    // ✅ Load Google Maps using centralized loader
+    window.googleMapsLoader.load().then(loaded => {
+        if (loaded) {
+            console.log('✅ Google Maps loaded for shipper registration');
+            initShipperAddressAutocomplete();
+        } else {
+            console.log('ℹ️ Using Nominatim for shipper registration');
+            initShipperAddressAutocomplete();
+        }
+    });
 
     // ==== DOM ELEMENTS ====
     const avatarPreview = document.getElementById("avatarPreview");
@@ -23,7 +96,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     const cityInput = document.getElementById("city");
 
     // Modal edit
-    const editModal = new bootstrap.Modal(document.getElementById("editShipperModal"));
+    const editModalEl = document.getElementById("editShipperModal");
+    const editModal = new bootstrap.Modal(editModalEl);
     const editShipperId = document.getElementById("editShipperId");
     const editCarrierSelect = document.getElementById("editCarrierSelect");
     const editVehicleType = document.getElementById("editVehicleType");
@@ -32,6 +106,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     const editDistrict = document.getElementById("editDistrict");
     const editCity = document.getElementById("editCity");
     const btnSaveEditShipper = document.getElementById("btnSaveEditShipper");
+
+    // ✅ Initialize autocomplete when modal is shown
+    if (editModalEl) {
+        editModalEl.addEventListener('shown.bs.modal', async () => {
+            console.log('📝 Edit modal shown, initializing autocomplete...');
+            await initEditModalAutocomplete();
+        }, { once: false }); // Allow multiple initializations
+    }
 
     // === ẢNH ĐẠI DIỆN ===
     avatarInput?.addEventListener("change", e => {

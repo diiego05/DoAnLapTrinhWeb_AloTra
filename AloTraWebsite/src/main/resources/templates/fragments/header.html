@@ -101,10 +101,28 @@
             <div class="collapse navbar-collapse justify-content-center" id="navbarNavBottom">
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" th:href="@{/}">TRANG CHỦ</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/menu}">MENU</a></li>
+                    
+                    <!-- 🍔 MENU DROPDOWN ĐỘNG -->
+                    <li class="nav-item dropdown position-static">
+                        <a class="nav-link dropdown-toggle" th:href="@{/products}" role="button" aria-expanded="false">
+                            MENU
+                        </a>
+                        <div class="dropdown-menu mega-menu shadow-lg border-0 w-100" style="display: none;">
+                            <div class="container">
+                                <div class="row g-3" id="categoryMenuContainer">
+                                    <!-- Categories sẽ được load động bằng JavaScript -->
+                                    <div class="col-12 text-center">
+                                        <div class="spinner-border text-success" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    
                     <li class="nav-item"><a class="nav-link" th:href="@{/about}">VỀ CHÚNG TÔI</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/promotion}">KHUYẾN MÃI</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/profile}">HỘI VIÊN</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/contact}">LIÊN HỆ</a></li>
                 </ul>
             </div>
         </div>
@@ -498,6 +516,46 @@ async function loadOrders() {
         window.loadNotifications = loadNotifications;
         window.loadWishlist = loadWishlist;
         window.updateCartFloatingCount = updateCartFloatingCount;
+
+        // ======================= 📂 CATEGORY MENU =======================
+        async function loadCategoryMenu() {
+            const container = document.getElementById("categoryMenuContainer");
+            if (!container) return; // Nếu không có container thì không cần load
+            
+            container.innerHTML = ""; // Xóa nội dung cũ
+            try {
+                // ✅ SỬA: Đổi từ /api/categories sang /api/categories/tree
+                const res = await apiFetch(`/api/categories/tree`);
+                if (!res?.ok) throw new Error("Không thể tải danh mục");
+                const categories = await res.json();
+
+                // ✅ SỬA: Sử dụng đúng cấu trúc CategoryMenuDTO (title thay vì name)
+                categories.forEach(cat => {
+                    const col = document.createElement("div");
+                    col.className = "col-lg-3 col-md-4 col-sm-6";
+                    col.innerHTML = `
+                        <div class="category-item card rounded-3 shadow-sm overflow-hidden">
+                            <a href="${cat.url || '#'}" class="text-decoration-none">
+                                ${cat.icon ? `<div class="text-center mt-3"><i class="${cat.icon} fa-3x text-success"></i></div>` : ''}
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-truncate">${cat.title}</h6>
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                    container.appendChild(col);
+                });
+            } catch (error) {
+                console.error('❌ Lỗi load category menu:', error);
+                container.innerHTML = `<p class="text-center text-muted small mb-0">Không thể tải danh mục</p>`;
+            }
+        }
+
+        // ✅ CHỈ load nếu container tồn tại (tránh lỗi khi không có MegaMenu)
+        if (document.getElementById("categoryMenuContainer")) {
+            loadCategoryMenu();
+        }
+
     </script>
 
     <!-- ======================= 🌿 CSS ======================= -->
@@ -561,6 +619,28 @@ async function loadOrders() {
             100% { transform: scale(1); }
         }
         .bounce { animation: bounce 0.4s ease; }
+
+        /* Mega menu */
+        .mega-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            padding: 1.5rem 0;
+            border-radius: .375rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown:hover .mega-menu {
+            display: block;
+        }
+        .category-item {
+            transition: transform 0.3s;
+        }
+        .category-item:hover {
+            transform: translateY(-3px);
+        }
     </style>
 
 

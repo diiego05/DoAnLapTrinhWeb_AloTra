@@ -13,6 +13,10 @@ let discount = 0;
 let shippingFee = 0;
 let cartItems = [];
 
+// 🗺️ Toạ độ cho modal thêm địa chỉ (checkout)
+let newAddressLat = null;
+let newAddressLng = null;
+
 // ========================= 📥 INIT =========================
 document.addEventListener("DOMContentLoaded", async () => {
     await loadCheckoutItems();
@@ -26,6 +30,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("carrier-select").onchange = handleCarrierChange;
     document.getElementById("btn-add-address").onclick = showAddAddressModal;
     document.getElementById("btn-save-address").onclick = saveNewAddress;
+    
+    // 🗺️ Load Google Maps using centralized loader
+    window.googleMapsLoader.load();
 });
 
 // ========================= ⏳ LOADING OVERLAY =========================
@@ -93,7 +100,7 @@ function renderCheckoutItems() {
     const list = document.getElementById("checkout-item-list");
     list.innerHTML = cartItems.map(it => {
         const toppingHtml = it.toppings?.length
-            ? `<div class="small text-muted">Topping: ${it.toppings.map(t => `${t.name} (${fmt(t.price)})`).join(", ")}</div>`
+            ? `<div class="small text-muted">Topping: ${it.toppings.map(t => `${fmt(t.price)}`).join(", ")}</div>`
             : "";
         const noteHtml = it.note ? `<div class="small text-info">Ghi chú: ${it.note}</div>` : "";
         return `
@@ -133,7 +140,7 @@ async function loadAddresses() {
             <input class="form-check-input" type="radio" name="address" value="${addr.id}" ${addr.isDefault ? "checked" : ""}>
             <label class="form-check-label">
                 <strong>${addr.recipient}</strong> - ${addr.phone}<br>
-                ${addr.line1}, ${addr.ward}, ${addr.district}, ${addr.city}
+                ${addr.line1}, ${addr.ward || ''}, ${addr.city || ''}
                 ${addr.isDefault ? '<span class="badge bg-success ms-2">Mặc định</span>' : ''}
             </label>
         `;
@@ -141,13 +148,111 @@ async function loadAddresses() {
     });
 
     document.querySelectorAll("input[name='address']").forEach(r => {
-        r.onchange = e => selectedAddressId = parseInt(e.target.value);
+        r.onchange = e => { selectedAddressId = parseInt(e.target.value); suggestNearestBranch(); };
         if (r.checked) selectedAddressId = parseInt(r.value);
     });
+
+    // Gợi ý chi nhánh gần nhất khi đã có địa chỉ mặc định
+    if (selectedAddressId) suggestNearestBranch();
 }
 
 function showAddAddressModal() {
-    new bootstrap.Modal(document.getElementById("addAddressModal")).show();
+    const modalEl = document.getElementById("addAddressModal");
+    const modal = new bootstrap.Modal(modalEl);
+
+    // Reset fields and coords on open
+    ["new-recipient","new-phone","new-line1","new-ward","new-city"].forEach(id=>{
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+    newAddressLat = null;
+    newAddressLng = null;
+
+    modal.show();
+
+    // 🗺️ Initialize autocomplete when modal is shown (align with profile)
+    modalEl.addEventListener('shown.bs.modal', async () => {
+        const input = document.getElementById('new-line1');
+        if (!input) return;
+        
+        const autocomplete = await window.googleMapsLoader.createAutocomplete(input, { types: ['geocode'] });
+        if (!autocomplete) return;
+        
+        // ✅ Google Places Autocomplete — use centralized parser like profile
+        if (autocomplete.addListener) {
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (!place || !place.address_components) return;
+
+                // Clear current fields before fill
+                const wardEl = document.getElementById('new-ward');
+                const cityEl = document.getElementById('new-city');
+                if (wardEl) wardEl.value = '';
+                if (cityEl) cityEl.value = '';
+
+                const parsed = window.googleMapsLoader.parseVietnameseAddress(place.address_components);
+
+                // ✅ Only street to line1; keep ward/city identical to profile
+                document.getElementById('new-line1').value = (parsed.street || '').trim();
+                document.getElementById('new-ward').value = (parsed.ward || '').trim();
+                document.getElementById('new-city').value = (parsed.city || '').trim();
+
+                // ✅ Save coordinates if available
+                if (place.geometry && place.geometry.location) {
+                    try {
+                        newAddressLat = place.geometry.location.lat();
+                        newAddressLng = place.geometry.location.lng();
+                    } catch (_) { /* ignore */ }
+                }
+                console.log('✅ Checkout parsed address:', parsed, newAddressLat, newAddressLng);
+            });
+        } else if (autocomplete.nominatim) {
+            // ✅ Nominatim autocomplete – mirror profile.js logic
+            input.addEventListener('nominatim-select', (e) => {
+                const detail = e.detail;
+                console.log('📍 Nominatim address selected (checkout):', detail.address);
+
+                // Parse địa chỉ Nominatim theo format Việt Nam
+                const parts = detail.address.split(',').map(p => p.trim());
+
+                // ✅ Lọc bỏ postal code và 'Việt Nam'/'Vietnam'
+                const filtered = parts.filter(part => {
+                    if (/^\d{5,6}$/.test(part)) return false;
+                    const lower = part.toLowerCase();
+                    if (lower === 'việt nam' || lower === 'vietnam') return false;
+                    return true;
+                });
+
+                // ✅ Tìm index của phường/xã/thị trấn
+                const wardIndex = filtered.findIndex(p =>
+                    p.includes('Phường') ||
+                    p.includes('Xã') ||
+                    p.includes('Thị trấn')
+                );
+
+                if (wardIndex > 0) {
+                    const line1Parts = filtered.slice(0, wardIndex);
+                    document.getElementById('new-line1').value = line1Parts.join(', ');
+                    document.getElementById('new-ward').value = filtered[wardIndex] || '';
+                    document.getElementById('new-city').value = filtered[filtered.length - 1] || '';
+                } else if (wardIndex === 0) {
+                    document.getElementById('new-line1').value = '';
+                    document.getElementById('new-ward').value = filtered[0] || '';
+                    document.getElementById('new-city').value = filtered[1] || '';
+                } else {
+                    document.getElementById('new-line1').value = filtered[0] || '';
+                    document.getElementById('new-ward').value = '';
+                    document.getElementById('new-city').value = filtered[1] || '';
+                }
+
+                // ✅ Lưu toạ độ nếu có
+                if (detail && (detail.lat || detail.lon || detail.lng)) {
+                    newAddressLat = Number(detail.lat ?? detail.latitude ?? null);
+                    newAddressLng = Number(detail.lon ?? detail.lng ?? detail.longitude ?? null);
+                }
+            });
+        }
+    }, { once: true });
 }
 
 async function saveNewAddress() {
@@ -156,9 +261,11 @@ async function saveNewAddress() {
         phone: document.getElementById("new-phone").value.trim(),
         line1: document.getElementById("new-line1").value.trim(),
         ward: document.getElementById("new-ward").value.trim(),
-        district: document.getElementById("new-district").value.trim(),
         city: document.getElementById("new-city").value.trim(),
-        isDefault: document.getElementById("new-default").checked
+        isDefault: document.getElementById("new-default").checked,
+        // ✅ gửi toạ độ nếu có
+        latitude: newAddressLat,
+        longitude: newAddressLng
     };
 
     if (!body.recipient || !body.phone || !body.line1) {
@@ -167,7 +274,7 @@ async function saveNewAddress() {
     }
 
     try {
-        await api("/api/profile/addresses", "POST", body);
+        await api("/api/addresses", "POST", body);
         bootstrap.Modal.getInstance(document.getElementById("addAddressModal")).hide();
         await loadAddresses();
     } catch (e) {
@@ -192,6 +299,21 @@ async function loadBranches() {
         console.error("❌ Không thể tải danh sách chi nhánh:", e);
         select.innerHTML = `<option value="">(Không thể tải chi nhánh)</option>`;
     }
+}
+
+async function suggestNearestBranch() {
+    try {
+        if (!selectedAddressId) return;
+        const res = await fetch(`${contextPath}/api/public/branches/nearest?addressId=${selectedAddressId}`);
+        if (!res.ok) return;
+        const branch = await res.json();
+        if (branch && branch.id) {
+            const select = document.getElementById('branch-select');
+            select.value = String(branch.id);
+            // Trigger change side-effects
+            select.dispatchEvent(new Event('change'));
+        }
+    } catch (e) { /* ignore */ }
 }
 
 async function handleBranchChange(e) {

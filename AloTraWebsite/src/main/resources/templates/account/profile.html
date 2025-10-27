@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/site-layout :: ~{body(content=~{::main})}}">
-<head>
-    <title>Thông Tin Tài Khoản</title>
-</head>
+      th:replace="~{layouts/default_layout :: layout(pageTitle='Thông tin cá nhân', content=~{::content}, additionalJs=~{::additionalJs})}">
 <body>
+
+<th:block th:fragment="content">
     <main>
         <h2 class="mb-4">Tài khoản của tôi</h2>
         <div class="row">
@@ -15,14 +14,20 @@
                 </div>
             </div>
             <div class="col-md-9">
-                <div class="card">
+                <div class="card shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">Thông tin cá nhân</h5>
-                        <p>Các thông tin chi tiết của người dùng sẽ được hiển thị ở đây.</p>
+                        <p class="text-muted">Các thông tin chi tiết của người dùng sẽ được hiển thị ở đây.</p>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+    <!-- JS riêng cho trang thông tin tài khoản (nếu có) -->
+</th:block>
+
 </body>
 </html>

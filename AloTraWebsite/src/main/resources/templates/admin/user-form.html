@@ -128,17 +128,12 @@
 								<input type="text" class="form-control" name="addressLine1"
 									th:value="${defaultAddress != null ? defaultAddress.line1 : ''}">
 							</div>
-							<div class="col-md-4 mb-3">
+							<div class="col-md-6 mb-3">
 								<label class="form-label">Tỉnh / Thành phố</label>
 								<input type="text" class="form-control" name="addressCity"
 									th:value="${defaultAddress != null ? defaultAddress.city : ''}">
 							</div>
-							<div class="col-md-4 mb-3">
-								<label class="form-label">Quận / Huyện</label>
-								<input type="text" class="form-control" name="addressDistrict"
-									th:value="${defaultAddress != null ? defaultAddress.district : ''}">
-							</div>
-							<div class="col-md-4 mb-3">
+							<div class="col-md-6 mb-3">
 								<label class="form-label">Phường / Xã</label>
 								<input type="text" class="form-control" name="addressWard"
 									th:value="${defaultAddress != null ? defaultAddress.ward : ''}">

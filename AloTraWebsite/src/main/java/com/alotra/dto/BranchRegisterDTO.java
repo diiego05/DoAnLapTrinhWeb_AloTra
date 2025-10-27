@@ -27,6 +27,10 @@ public class BranchRegisterDTO {
     @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự")
     private String address;
 
+    // 🗺️ Toạ độ địa lý (từ Google/Nominatim autocomplete)
+    private Double latitude;
+    private Double longitude;
+
     // ✅ Ghi chú (tùy chọn)
     @Size(max = 255, message = "Ghi chú tối đa 255 ký tự")
     private String note;
