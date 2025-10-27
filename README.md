@@ -13,9 +13,12 @@ Một ứng dụng web được xây dựng cho môn Đồ án Lập trình Web,
 
 ## Tổng quan
 
-AloTra Website là một dự án web với nền tảng backend viết bằng Java kết hợp giao diện web HTML/CSS/JavaScript, hướng đến việc xây dựng một ứng dụng sạch, rõ ràng, dễ bảo trì và dễ phát triển thêm các tính năng mới.
+AloTra Website là ứng dụng web Java kết hợp giao diện HTML/CSS/JS, xây dựng theo định hướng “đúng — đủ — dễ hiểu”. Dự án áp dụng kiến trúc phân lớp rõ ràng, tuân thủ tiêu chuẩn clean code, tài liệu hóa các bước cài đặt/chạy để đảm bảo có thể thẩm định nhanh.
 
-- Mã nguồn: [diiego05/DoAnLapTrinhWeb_AloTra](https://github.com/diiego05/DoAnLapTrinhWeb_AloTra)
+- Mục tiêu: hoàn thiện luồng chức năng cốt lõi, đảm bảo chất lượng mã và khả năng mở rộng.
+- Phạm vi: giao diện web, xử lý nghiệp vụ cơ bản, thao tác dữ liệu (CRUD), tìm kiếm/lọc, định hướng phân quyền.
+
+- Mã nguồn: [AloTra Website](https://github.com/diiego05/DoAnLapTrinhWeb_AloTra)
 - Nhánh mặc định: `main`
 
 ---
@@ -36,24 +39,52 @@ Thư mục chính:
 
 ---
 
-## Tính năng (hiện có/định hướng)
+## Tính năng
 
-- [ ] Trang giao diện thân thiện, bố cục rõ ràng
-- [ ] Quản lý người dùng (đăng ký/đăng nhập/đăng xuất)
-- [ ] Quản lý nội dung/dữ liệu (CRUD)
-- [ ] Tìm kiếm/lọc dữ liệu
-- [ ] Phân quyền cơ bản (người dùng/quản trị)
+- [x] Trang giao diện thân thiện, bố cục rõ ràng
+- [x] Quản lý người dùng (đăng ký/đăng nhập/đăng xuất)
+- [x] Quản lý nội dung/dữ liệu (CRUD)
+- [x] Tìm kiếm/lọc dữ liệu
+- [x] Phân quyền cơ bản (người dùng/quản trị)
 
 
 ---
+## Kiến trúc và chất lượng mã
 
+- Phân lớp rõ ràng (định hướng): Controller → Service → Repository (DAO)
+- Tách bạch xử lý nghiệp vụ với giao diện
+- Quy ước đặt tên có ý nghĩa, format code nhất quán
+- Định hướng sử dụng DTO/Response thống nhất, dễ kiểm soát lỗi
+- Dễ mở rộng: tích hợp đăng nhập/phân quyền, logging, cache, JPA…
+
+
+## Sơ đồ dòng chảy (khái quát):
+
+```
+Client (HTML/CSS/JS)
+       │
+       ▼
+Controller (REST/Web) → Validation/Mapping (DTO)
+       │
+       ▼
+Service (Business Logic)
+       │
+       ▼
+Repository/DAO (Data Access)
+       │
+       ▼
+Database (SqlServer)
+```
+
+---
+  
 ## Yêu cầu hệ thống
 
 - Java Development Kit (JDK) 17 hoặc mới hơn
 - Git
 - Tùy chọn:
   - IDE (IntelliJ IDEA/Eclipse/VS Code) để phát triển
-  - Spring tool suit
+  - Spring Tool Suit
 
 ---
 
@@ -92,4 +123,4 @@ Dự án Java có thể dùng nhiều cách đóng gói/chạy khác nhau (Tomca
 - Trác Ngọc Đăng Khoa
 - Kinh Văn Việt
   
-Cảm ơn bạn đã quan tâm đến dự án! 💚
+Xin cảm ơn thầy/cô đã dành thời gian xem xét dự án. Chúng em rất mong nhận được góp ý để tiếp tục hoàn thiện! 💚
