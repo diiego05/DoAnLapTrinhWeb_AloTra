@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -20,6 +21,7 @@ public class PaymentService {
 
     /**
      * 🧾 Tạo bản ghi thanh toán khi checkout đơn hàng
+     * Nếu transactionCode đã tồn tại thì update thay vì tạo bản ghi mới
      */
     @Transactional
     public Payment createPayment(Long orderId, String gateway, BigDecimal amount, String method) {
@@ -41,12 +43,14 @@ public class PaymentService {
     }
 
     /**
-     * 💰 Đánh dấu thanh toán thành công
+     * 💰 Đánh dấu thanh toán thành công (lấy bản ghi mới nhất theo transactionCode)
      */
     @Transactional
     public void markSuccess(String transactionCode) {
-        Payment payment = paymentRepository.findByTransactionCode(transactionCode)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch thanh toán"));
+        Payment payment = getLatestPaymentByTransactionCode(transactionCode);
+        if (payment == null) {
+            throw new RuntimeException("Không tìm thấy giao dịch thanh toán");
+        }
 
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setPaidAt(LocalDateTime.now());
@@ -54,16 +58,18 @@ public class PaymentService {
     }
 
     /**
-     * ❌ Đánh dấu thanh toán thất bại
+     * ❌ Đánh dấu thanh toán thất bại (lấy bản ghi mới nhất theo transactionCode)
      */
     @Transactional
     public void markFailed(String transactionCode, String rawResponse) {
-        Payment payment = paymentRepository.findByTransactionCode(transactionCode)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch thanh toán"));
+        Payment payment = getLatestPaymentByTransactionCode(transactionCode);
+        if (payment == null) {
+            throw new RuntimeException("Không tìm thấy giao dịch thanh toán");
+        }
 
         payment.setStatus(PaymentStatus.FAILED);
         payment.setRawResponse(rawResponse);
-        payment.setRetryCount(payment.getRetryCount() + 1); // 🔁 tăng retry khi thất bại
+        payment.setRetryCount(payment.getRetryCount() + 1);
         paymentRepository.save(payment);
     }
 
@@ -122,5 +128,18 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch"));
         payment.setRetryCount(payment.getRetryCount() + 1);
         paymentRepository.save(payment);
+    }
+
+    /**
+     * 📌 Lấy bản ghi thanh toán mới nhất theo transactionCode
+     * (tránh lỗi NonUniqueResultException khi có nhiều bản ghi)
+     */
+    @Transactional(readOnly = true)
+    public Payment getLatestPaymentByTransactionCode(String transactionCode) {
+        List<Payment> payments = paymentRepository.findAllByTransactionCode(transactionCode);
+        if (payments.isEmpty()) return null;
+        return payments.stream()
+                .max(Comparator.comparing(Payment::getCreatedAt))
+                .orElse(null);
     }
 }

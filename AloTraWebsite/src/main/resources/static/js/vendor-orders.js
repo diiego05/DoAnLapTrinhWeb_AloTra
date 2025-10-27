@@ -210,12 +210,12 @@ window.vendorUpdateStatus = async function(orderId, action) {
 
     const res = await apiFetch(endpoint, { method: 'PUT' });
     if (res.ok) {
-        alert("✅ Cập nhật trạng thái thành công!");
+        showAlert("✅ Cập nhật trạng thái thành công!");
         loadVendorOrders();
         const modalInstance = bootstrap.Modal.getInstance(document.getElementById("vendorOrderModal"));
         if (modalInstance) modalInstance.hide();
     } else {
-        alert("❌ Không thể cập nhật trạng thái!");
+        showAlert("❌ Không thể cập nhật trạng thái!");
     }
 };
 

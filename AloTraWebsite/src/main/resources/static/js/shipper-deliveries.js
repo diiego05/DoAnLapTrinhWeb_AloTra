@@ -234,7 +234,7 @@ async function updateStatus(orderId, action) {
     await loadList();
     await openDetail(orderId);
   } else {
-    alert("❌ Không thể cập nhật trạng thái!");
+    showAlert("❌ Không thể cập nhật trạng thái!");
   }
 }
 

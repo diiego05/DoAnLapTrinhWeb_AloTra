@@ -93,10 +93,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const res = await apiFetch(`/api/register/admin/shipper/${id}/approve`, { method: "PUT" });
 
         if (res.ok) {
-            alert("✅ Đã duyệt yêu cầu thành công!");
+            showAlert("✅ Đã duyệt yêu cầu thành công!");
             loadShipperRequests();
         } else {
-            alert("❌ Lỗi duyệt yêu cầu.");
+            showAlert("❌ Lỗi duyệt yêu cầu.");
         }
     }
 
@@ -113,11 +113,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const res = await apiFetch(`/api/register/admin/shipper/${id}/reject?note=${note}`, { method: "PUT" });
 
         if (res.ok) {
-            alert("❌ Đã từ chối yêu cầu.");
+            showAlert("❌ Đã từ chối yêu cầu.");
             rejectModal.hide();
             loadShipperRequests();
         } else {
-            alert("❌ Lỗi từ chối yêu cầu.");
+            showAlert("❌ Lỗi từ chối yêu cầu.");
         }
     });
 

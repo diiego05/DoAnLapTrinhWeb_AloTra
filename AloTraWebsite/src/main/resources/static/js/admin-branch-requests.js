@@ -79,10 +79,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!confirm("Xác nhận duyệt yêu cầu này?")) return;
         const res = await apiFetch(`/api/register/admin/branch/${id}/approve`, { method: "PUT" });
         if (res.ok) {
-            alert("✅ Đã duyệt yêu cầu thành công!");
+            showAlert("✅ Đã duyệt yêu cầu thành công!");
             loadBranchRequests();
         } else {
-            alert("❌ Lỗi duyệt yêu cầu.");
+            showAlert("❌ Lỗi duyệt yêu cầu.");
         }
     }
 
@@ -101,11 +101,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         if (res.ok) {
-            alert("❌ Đã từ chối yêu cầu.");
+            showAlert("❌ Đã từ chối yêu cầu.");
             rejectModal.hide();
             loadBranchRequests();
         } else {
-            alert("❌ Lỗi từ chối yêu cầu.");
+            showAlert("❌ Lỗi từ chối yêu cầu.");
         }
     });
 
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function viewBranchDetail(id) {
         const res = await apiFetch(`/api/register/branch/${id}`);
         if (!res.ok) {
-            alert("❌ Không thể tải thông tin chi tiết.");
+            showAlert("❌ Không thể tải thông tin chi tiết.");
             return;
         }
 

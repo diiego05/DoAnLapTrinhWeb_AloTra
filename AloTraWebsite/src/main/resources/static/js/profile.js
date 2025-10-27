@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
     if (!token) {
-        alert("Vui lòng đăng nhập để xem hồ sơ cá nhân.");
+        showAlert("Vui lòng đăng nhập để xem hồ sơ cá nhân.");
         window.location.href = "/alotra-website/login";
         return;
     }

@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadCampaigns();
         } catch (err) {
             console.error("❌ Lỗi khi lưu chiến dịch:", err);
-            alert("Đã xảy ra lỗi khi lưu chiến dịch!");
+            showAlert("Đã xảy ra lỗi khi lưu chiến dịch!");
         }
     });
 
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadCampaigns();
         } catch (err) {
             console.error("❌ Lỗi khi xóa chiến dịch:", err);
-            alert("Không thể xóa chiến dịch!");
+            showAlert("Không thể xóa chiến dịch!");
         }
     };
 

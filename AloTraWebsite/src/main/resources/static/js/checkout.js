@@ -263,14 +263,15 @@ async function confirmOrder() {
     try {
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
 
-        if (!selectedAddressId && paymentMethod !== "PICKUP") {
-            alert("⚠️ Vui lòng chọn địa chỉ giao hàng");
-            return;
-        }
-        if (!selectedBranchId) {
-            alert("⚠️ Vui lòng chọn chi nhánh");
-            return;
-        }
+		if (!selectedAddressId && paymentMethod !== "PICKUP") {
+		    showAlert("⚠️ Vui lòng chọn địa chỉ giao hàng");
+		    return;
+		}
+		if (!selectedBranchId) {
+		    showAlert("⚠️ Vui lòng chọn chi nhánh");
+		    return;
+		}
+
 
         const unavailable = await api(`/api/public/branches/${selectedBranchId}/check-availability`, "POST",
             cartItems.map(it => it.cartItemId)

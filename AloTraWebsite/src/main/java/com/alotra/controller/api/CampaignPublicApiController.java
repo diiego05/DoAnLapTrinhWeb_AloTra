@@ -45,4 +45,8 @@ public class CampaignPublicApiController {
         return ResponseEntity.ok(campaignPublicService.getCampaignsPaged(page, size));
     }
 
+    @GetMapping("/top-discount")
+    public ResponseEntity<List<CampaignPublicDTO>> getTopActiveDiscountCampaigns() {
+        return ResponseEntity.ok(campaignPublicService.getTopActiveDiscountCampaigns());
+    }
 }

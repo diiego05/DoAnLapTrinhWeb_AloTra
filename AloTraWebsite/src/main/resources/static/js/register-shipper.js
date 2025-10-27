@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
     if (!token) {
-        alert("Vui lòng đăng nhập để sử dụng chức năng này.");
+        showAlert("Vui lòng đăng nhập để sử dụng chức năng này.");
         window.location.href = "/alotra-website/login";
         return;
     }
@@ -81,11 +81,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
 		if (res.ok) {
-		               alert("✅ Cập nhật thông tin cá nhân thành công!");
+		               showAlert("✅ Cập nhật thông tin cá nhân thành công!");
 		               await loadProfile();
 		               if (window.loadNotifications) await window.loadNotifications(); // 🔔 Cập nhật chuông
 		           } else {
-		               alert("❌ Cập nhật thất bại!");
+		               showAlert("❌ Cập nhật thất bại!");
 		           }
     });
 
@@ -103,12 +103,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     // === GỬI YÊU CẦU SHIPPER ===
     document.getElementById("btnSubmitShipper").addEventListener("click", async () => {
         if (!carrierSelect.value || !vehicleType.value.trim() || !vehiclePlate.value.trim()) {
-            alert("❌ Vui lòng nhập đầy đủ thông tin đăng ký.");
+            showAlert("❌ Vui lòng nhập đầy đủ thông tin đăng ký.");
             return;
         }
 
         if (!wardInput.value.trim() || !districtInput.value.trim() || !cityInput.value.trim()) {
-            alert("❌ Vui lòng nhập khu vực hoạt động.");
+            showAlert("❌ Vui lòng nhập khu vực hoạt động.");
             return;
         }
 
@@ -128,11 +128,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         if (res.ok) {
-            alert('✅ Gửi yêu cầu thành công!');
+            showAlert('✅ Gửi yêu cầu thành công!');
             loadHistory();
         } else {
             const text = await res.text();
-            alert(`❌ Gửi yêu cầu thất bại: ${text}`);
+            showAlert(`❌ Gửi yêu cầu thất bại: ${text}`);
         }
     });
 
@@ -222,12 +222,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         if (res.ok) {
-            alert("✅ Cập nhật yêu cầu thành công!");
+            showAlert("✅ Cập nhật yêu cầu thành công!");
             editModal.hide();
             loadHistory();
         } else {
             const text = await res.text();
-            alert(`❌ Lỗi: ${text}`);
+            showAlert(`❌ Lỗi: ${text}`);
         }
     });
 
@@ -241,11 +241,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         if (res.ok) {
-            alert("🗑️ Xóa yêu cầu thành công!");
+            showAlert("🗑️ Xóa yêu cầu thành công!");
             loadHistory();
         } else {
             const text = await res.text();
-            alert(`❌ Không thể xóa: ${text}`);
+            showAlert(`❌ Không thể xóa: ${text}`);
         }
     }
 

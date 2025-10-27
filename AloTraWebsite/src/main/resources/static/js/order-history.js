@@ -103,7 +103,10 @@ async function loadOrders(){
 }
 /* ======================= HIỂN THỊ CARD ĐƠN ======================= */
 function canShowPayButton(o){
-  return o.status === 'PENDING' && o.paymentMethod === 'BANK';
+  const paymentStatus = o.payment?.status || o.paymentStatus || null;
+  return o.status === 'PENDING'
+      && o.paymentMethod === 'BANK'
+      && paymentStatus !== 'SUCCESS';  // ✅ ẩn nút nếu đã thanh toán thành công
 }
 
 
@@ -171,7 +174,7 @@ window.redirectToPayment = async function (orderId) {
     window.location.href = paymentUrl;  // ➝ chuyển hướng trực tiếp đến trang VNPay
   } catch (e) {
     console.error("❌ Lỗi khi tạo thanh toán VNPay:", e);
-    alert("❌ Không thể tạo thanh toán VNPay. Vui lòng thử lại sau.");
+    showAlert("❌ Không thể tạo thanh toán VNPay. Vui lòng thử lại sau.");
   }
 };
 
@@ -374,10 +377,10 @@ async function uploadMediaFiles(mediaInput){
 document.getElementById("btnSubmitReview").addEventListener("click",async()=>{
   const content=document.getElementById("reviewContent").value.trim();
   const mediaInput=document.getElementById("reviewMedia");
-  if(!currentReviewOrderItemId)return alert("Thiếu orderItemId.");
-  if(!currentReviewProductId)return alert("Không xác định được sản phẩm để đánh giá.");
-  if(selectedRating===0)return alert("Vui lòng chọn số sao đánh giá.");
-  if(content.length<50)return alert("Nội dung tối thiểu 50 ký tự.");
+  if(!currentReviewOrderItemId)return showAlert("Thiếu orderItemId.");
+  if(!currentReviewProductId)return showAlert("Không xác định được sản phẩm để đánh giá.");
+  if(selectedRating===0)return showAlert("Vui lòng chọn số sao đánh giá.");
+  if(content.length<50)return showAlert("Nội dung tối thiểu 50 ký tự.");
 
   const mediaUrls=await uploadMediaFiles(mediaInput);
   const reviewDto={orderItemId:currentReviewOrderItemId,productId:currentReviewProductId,rating:selectedRating,content,mediaUrls};
@@ -392,13 +395,13 @@ document.getElementById("btnSubmitReview").addEventListener("click",async()=>{
   );
 
   if(res.ok){
-    alert(currentReviewId?"✅ Cập nhật đánh giá thành công!":"✅ Gửi đánh giá thành công!");
+    showAlert(currentReviewId?"✅ Cập nhật đánh giá thành công!":"✅ Gửi đánh giá thành công!");
     bootstrap.Modal.getInstance(document.getElementById("reviewModal")).hide();
     loadOrders();
   }else{
     const txt=await res.text();
     console.error("❌ Gửi đánh giá lỗi:",txt);
-    alert("❌ Gửi đánh giá thất bại.");
+    showAlert("❌ Gửi đánh giá thất bại.");
   }
 });
 
@@ -408,14 +411,14 @@ window.cancelOrder=async function(orderId){
   try{
     const res=await apiFetch(`/api/orders/${orderId}/cancel`,{method:"PUT"});
     if(res.ok){
-      alert("✅ Đã hủy đơn hàng thành công!");
+      showAlert("✅ Đã hủy đơn hàng thành công!");
       loadOrders();
     }else{
-      alert("❌ Không thể hủy đơn hàng.");
+      showAlert("❌ Không thể hủy đơn hàng.");
     }
   }catch(e){
     console.error("❌ Lỗi khi hủy đơn hàng:",e);
-    alert("⚠️ Đã xảy ra lỗi khi hủy đơn.");
+    showAlert("⚠️ Đã xảy ra lỗi khi hủy đơn.");
   }
 };
 

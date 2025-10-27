@@ -171,9 +171,9 @@ async function exportExcel(endpoint, filename) {
     if (!res.ok) {
       console.error(`❌ Lỗi exportExcel: ${res.status} ${res.statusText}`);
       if (res.status === 404) {
-        alert("Không tìm thấy endpoint export Excel (404)");
+        showAlert("Không tìm thấy endpoint export Excel (404)");
       } else {
-        alert("Lỗi khi xuất file Excel.");
+        showAlert("Lỗi khi xuất file Excel.");
       }
       return;
     }
@@ -193,7 +193,7 @@ async function exportExcel(endpoint, filename) {
 
   } catch (err) {
     console.error("❌ Lỗi exportExcel:", err);
-    alert("Không thể xuất file Excel. Vui lòng thử lại.");
+    showAlert("Không thể xuất file Excel. Vui lòng thử lại.");
   }
 }
 

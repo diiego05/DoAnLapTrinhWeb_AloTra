@@ -1600,6 +1600,37 @@ public class ProductService {
             branchInventoryRepository.save(inventory);
         }
     }
+    @Transactional(readOnly = true)
+    public List<ProductSummaryDTO> getTopBestSellers(int limit) {
+        List<Object[]> salesData = productRepository.findProductSalesCounts();
+
+        if (salesData == null || salesData.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, Long> salesMap = salesData.stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+        List<Product> products = productRepository.findAllByStatus("ACTIVE");
+
+        return products.stream()
+                .filter(p -> salesMap.containsKey(p.getId()))
+                .map(product -> {
+                    ProductSummaryDTO dto = new ProductSummaryDTO(product);
+                    applyPromotion(dto, product);
+                    dto.setSoldCount(salesMap.getOrDefault(product.getId(), 0L));
+                    return dto;
+                })
+                .sorted((a, b) -> Long.compare(b.getSoldCount(), a.getSoldCount()))
+                .limit(limit)
+                .toList();
+    }
+
+
+
 
 }
 

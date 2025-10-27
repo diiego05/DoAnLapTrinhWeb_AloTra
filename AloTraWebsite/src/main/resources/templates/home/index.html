@@ -51,60 +51,26 @@
     <!-- 🏆 SẢN PHẨM BÁN CHẠY -->
     <section class="container my-5" id="best-sellers">
         <h2 class="section-title">SẢN PHẨM BÁN CHẠY</h2>
-
-        <div id="product-list-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
-            <div class="col" th:each="product : ${bestSellers}">
-                <div class="card product-card h-100 shadow-sm border-0">
-                    <a th:href="@{/product/{id}(id=${product.id})}">
-                        <img th:src="@{${product.imageUrl != null ? product.imageUrl : '/images/placeholder.png'}}"
-                             class="card-img-top rounded-top"
-                             th:alt="${product.name}" />
-                    </a>
-
-                    <div class="card-body d-flex flex-column text-center">
-                        <h5 class="card-title mb-3">
-                            <a th:href="@{/product/{id}(id=${product.id})}"
-                               class="text-decoration-none text-dark fw-semibold"
-                               th:text="${product.name}">Tên sản phẩm</a>
-                        </h5>
-
-                        <p class="price mt-auto text-success fw-bold fs-5"
-                           th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
-                            Giá sản phẩm
-                        </p>
-
-                        <a href="#" class="btn btn-success btn-add-to-cart mt-2"
-                           th:data-product-id="${product.id}">
-                            <i class="fas fa-shopping-cart me-1"></i> Đặt mua
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div th:if="${#lists.isEmpty(bestSellers)}" class="col-12 text-center">
-                <p>Chưa có sản phẩm bán chạy nào.</p>
-            </div>
-        </div>
-
-        <!-- Nút xem thêm -->
-        <div class="text-center mt-5" th:if="${#lists.size(bestSellers) > 5}">
-            <th:block th:with="hiddenProductCount=${#lists.size(bestSellers) - 5}">
-                <button id="view-more-btn" class="btn btn-outline-success btn-lg"
-                        th:text="'Xem thêm ' + ${hiddenProductCount} + ' sản phẩm'"></button>
-            </th:block>
+        <div id="product-list-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4"></div>
+        <div class="text-center mt-5">
+            <button id="view-more-btn" class="btn btn-outline-success btn-lg" style="display:none;"></button>
         </div>
     </section>
 
     <!-- 🔥 SẢN PHẨM GIẢM GIÁ -->
     <section class="container my-5" id="discount-products">
-        <h2 class="section-title ">SẢN PHẨM GIẢM GIÁ</h2>
-
-        <div id="discount-product-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
-            <!-- Render bằng JS -->
-        </div>
-
+        <h2 class="section-title">SẢN PHẨM GIẢM GIÁ</h2>
+        <div id="discount-product-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4"></div>
         <div class="text-center mt-5" id="discount-view-more-container" style="display:none;">
             <button id="discount-view-more-btn" class="btn btn-outline-success btn-lg"></button>
+        </div>
+    </section>
+
+    <!-- 🪄 CHIẾN DỊCH KHUYẾN MÃI NỔI BẬT -->
+    <section class="container my-5" id="highlight-promotions">
+        <h2 class="section-title">CHIẾN DỊCH KHUYẾN MÃI NỔI BẬT</h2>
+        <div id="promotion-list-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
+            <!-- Render bằng JS -->
         </div>
     </section>
 
@@ -118,6 +84,9 @@
         <a th:href="@{/about}" class="btn btn-outline-success btn-lg mt-4">Tìm hiểu thêm</a>
     </section>
 
+    <!-- Toast -->
+    <div id="cart-toast" class="cart-toast"></div>
+
 </th:block>
 
 <!-- =================== SCRIPT =================== -->
@@ -126,48 +95,77 @@
 $(document).ready(function () {
     console.log("✅ Trang chủ đã sẵn sàng.");
 
-    // ================= 🏆 Phần bán chạy =================
-    const productContainer = $("#product-list-container");
-    const viewMoreBtn = $("#view-more-btn");
-
-    if (productContainer.length && viewMoreBtn.length) {
-        const hiddenProducts = productContainer.find(".col:gt(4)").hide();
-        if (hiddenProducts.length === 0) viewMoreBtn.hide();
-        viewMoreBtn.on('click', function () {
-            hiddenProducts.show();
-            $(this).hide();
-        });
-    }
-
-    // ================= 🔥 Phần sản phẩm giảm giá =================
-    $.get("/alotra-website/api/products/public/top-discount", function (products) {
-        const container = $("#discount-product-list");
-        const viewMoreContainer = $("#discount-view-more-container");
-        const viewMoreBtn = $("#discount-view-more-btn");
-
+    // ================= 🏆 Sản phẩm bán chạy =================
+    $.get("/alotra-website/api/products/public/top-bestsellers?limit=10", function (products) {
+        const container = $("#product-list-container");
+        const viewMoreBtn = $("#view-more-btn");
+        container.empty();
         if (!products || products.length === 0) {
-            container.html(`<div class="col-12 text-center"><p>Chưa có sản phẩm giảm giá.</p></div>`);
+            container.html(`<div class="col-12 text-center"><p>Chưa có sản phẩm bán chạy nào.</p></div>`);
+            viewMoreBtn.hide();
             return;
         }
-
         products.forEach((p, index) => {
             const originalPrice = p.originalPrice ? new Intl.NumberFormat('vi-VN').format(p.originalPrice) + " ₫" : "";
             const discountedPrice = p.discountedPrice ? new Intl.NumberFormat('vi-VN').format(p.discountedPrice) + " ₫" : "";
-
+            const img = p.imageUrl || '/alotra-website/images/placeholder.png';
             const tagSale = p.hasDiscount ? `
                 <div class="badge bg-danger position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
                     SALE -${p.discountPercent}%
                 </div>` : ``;
-
-            const priceHtml = p.hasDiscount ? `
-                <div class="mb-3">
-                    <span class="text-muted text-decoration-line-through me-2">${originalPrice}</span>
-                    <span class="text-success fw-bold fs-5">${discountedPrice}</span>
-                </div>` :
-                `<div class="mb-3">
-                    <span class="text-success fw-bold fs-5">${originalPrice}</span>
+            const priceHtml = p.hasDiscount
+                ? `<div class="mb-2"><span class="text-muted text-decoration-line-through me-2">${originalPrice}</span><span class="text-success fw-bold fs-5">${discountedPrice}</span></div>`
+                : `<div class="mb-2"><span class="text-success fw-bold fs-5">${originalPrice || p.priceRange}</span></div>`;
+            const card = `
+                <div class="col ${index >= 5 ? 'd-none extra-best' : ''}">
+                    <div class="card product-card h-100 shadow-sm border-0 position-relative">
+                        ${tagSale}
+                        <a href="/alotra-website/product/${p.id}">
+                            <img src="${img}" class="card-img-top rounded-top" alt="${p.name}">
+                        </a>
+                        <div class="card-body d-flex flex-column text-center">
+                            <h5 class="card-title mb-3">
+                                <a href="/alotra-website/product/${p.id}"
+                                   class="text-decoration-none text-dark fw-semibold">${p.name}</a>
+                            </h5>
+                            ${priceHtml}
+                            <a href="#" class="btn btn-success btn-add-to-cart mt-auto" data-product-id="${p.id}">
+                                <i class="fas fa-shopping-cart me-1"></i> Đặt mua
+                            </a>
+                        </div>
+                    </div>
                 </div>`;
+            container.append(card);
+        });
+        if (products.length > 5) {
+            const hiddenCount = products.length - 5;
+            viewMoreBtn.text(`Xem thêm ${hiddenCount} sản phẩm`);
+            viewMoreBtn.show().on("click", function () {
+                $(".extra-best").removeClass("d-none");
+                $(this).hide();
+            });
+        } else viewMoreBtn.hide();
+    });
 
+    // ================= 🔥 Sản phẩm giảm giá =================
+    $.get("/alotra-website/api/products/public/top-discount", function (products) {
+        const container = $("#discount-product-list");
+        const viewMoreContainer = $("#discount-view-more-container");
+        const viewMoreBtn = $("#discount-view-more-btn");
+        if (!products || products.length === 0) {
+            container.html(`<div class="col-12 text-center"><p>Chưa có sản phẩm giảm giá.</p></div>`);
+            return;
+        }
+        products.forEach((p, index) => {
+            const originalPrice = p.originalPrice ? new Intl.NumberFormat('vi-VN').format(p.originalPrice) + " ₫" : "";
+            const discountedPrice = p.discountedPrice ? new Intl.NumberFormat('vi-VN').format(p.discountedPrice) + " ₫" : "";
+            const tagSale = p.hasDiscount ? `
+                <div class="badge bg-danger position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
+                    SALE -${p.discountPercent}%
+                </div>` : ``;
+            const priceHtml = p.hasDiscount
+                ? `<div class="mb-3"><span class="text-muted text-decoration-line-through me-2">${originalPrice}</span><span class="text-success fw-bold fs-5">${discountedPrice}</span></div>`
+                : `<div class="mb-3"><span class="text-success fw-bold fs-5">${originalPrice}</span></div>`;
             const card = `
                 <div class="col discount-col" ${index >= 5 ? 'style="display:none;"' : ''}>
                     <div class="card product-card h-100 shadow-sm border-0 position-relative">
@@ -182,17 +180,14 @@ $(document).ready(function () {
                                    class="text-decoration-none text-dark fw-semibold">${p.name}</a>
                             </h5>
                             ${priceHtml}
-                            <a href="#" class="btn btn-success btn-add-to-cart mt-auto"
-                               data-product-id="${p.id}">
+                            <a href="#" class="btn btn-success btn-add-to-cart mt-auto" data-product-id="${p.id}">
                                <i class="fas fa-shopping-cart me-1"></i> Đặt mua
                             </a>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
             container.append(card);
         });
-
         if (products.length > 5) {
             const hiddenCount = products.length - 5;
             viewMoreBtn.text(`Xem thêm ${hiddenCount} sản phẩm`);
@@ -204,6 +199,36 @@ $(document).ready(function () {
         }
     });
 
+    // ================= 🪄 Chiến dịch khuyến mãi nổi bật =================
+    $.get("/alotra-website/api/public/promotions/top-discount", function (campaigns) {
+        const container = $("#promotion-list-container");
+        container.empty();
+        if (!campaigns || campaigns.length === 0) {
+            container.html(`<div class="col-12 text-center"><p>Chưa có chiến dịch nào đang diễn ra.</p></div>`);
+            return;
+        }
+        campaigns.forEach(c => {
+            const card = `
+                <div class="col">
+                    <div class="card product-card h-100 shadow-sm border-0">
+                        <a href="/alotra-website/promotions/${c.id}">
+                            <img src="${c.banner || '/alotra-website/images/promotion-placeholder.jpg'}" class="card-img-top rounded-top" alt="${c.name}">
+                        </a>
+                        <div class="card-body d-flex flex-column text-center">
+                            <h5 class="card-title mb-2">
+                                <a href="/alotra-website/promotions/${c.id}" class="text-decoration-none text-dark fw-semibold">${c.name}</a>
+                            </h5>
+                            <p class="text-muted small mb-2">${new Date(c.startAt).toLocaleDateString('vi-VN')} - ${new Date(c.endAt).toLocaleDateString('vi-VN')}</p>
+                            <a href="/alotra-website/promotions/${c.id}" class="btn btn-outline-success mt-auto">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>`;
+            container.append(card);
+        });
+    });
+
     // ================= 🛒 Thêm vào giỏ hàng =================
     $(document).on("click", ".btn-add-to-cart", function (e) {
         e.preventDefault();
@@ -212,13 +237,11 @@ $(document).ready(function () {
             showCartToast("⚠️ Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.", true);
             return;
         }
-
         const productId = $(this).data("product-id");
         if (!productId) {
             showCartToast("❌ Không tìm thấy ID sản phẩm.", true);
             return;
         }
-
         $.ajax({
             url: "/alotra-website/api/cart/items",
             type: "POST",

@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================== LƯU ĐỐI TƯỢNG ==========================
     btnSave.addEventListener('click', async () => {
         if (!currentCampaignId) {
-            alert('Vui lòng chọn chiến dịch trước');
+            showAlert('Vui lòng chọn chiến dịch trước');
             return;
         }
 
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'CATEGORY') {
             const categoryId = categorySelect.value;
             if (!categoryId) {
-                alert('Vui lòng chọn danh mục');
+                showAlert('Vui lòng chọn danh mục');
                 return;
             }
             body.categoryId = categoryId;
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedProducts = Array.from(productCheckboxList.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(cb => Number(cb.value));
             if (selectedProducts.length === 0) {
-                alert('Vui lòng chọn ít nhất 1 sản phẩm');
+                showAlert('Vui lòng chọn ít nhất 1 sản phẩm');
                 return;
             }
             body.productIds = selectedProducts;
@@ -103,12 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!res.ok) {
-            alert('❌ Lưu thất bại');
+            showAlert('❌ Lưu thất bại');
             return;
         }
 
         await loadTargetsForCampaign(currentCampaignId);
-        alert('✅ Lưu thành công');
+        showAlert('✅ Lưu thành công');
     });
 
     btnCancel.addEventListener('click', () => {
@@ -149,7 +149,7 @@ const res = await apiFetch(`/api/admin/promotions/targets/by-campaign/${campaign
         if (res.ok) {
             await loadTargetsForCampaign(currentCampaignId);
         } else {
-            alert('❌ Không thể xóa');
+            showAlert('❌ Không thể xóa');
         }
     };
 

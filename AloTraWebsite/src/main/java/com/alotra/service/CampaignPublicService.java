@@ -103,4 +103,24 @@ public class CampaignPublicService {
         return campaigns.map(this::convertToDTO);
     }
 
+    @Transactional(readOnly = true)
+    public List<CampaignPublicDTO> getTopActiveDiscountCampaigns() {
+        // 🔸 Lấy thời điểm hiện tại
+        var now = java.time.LocalDateTime.now();
+
+        // 🔸 Lọc các chiến dịch còn hiệu lực
+        List<PromotionalCampaign> activeCampaigns = campaignRepo.findAll().stream()
+                .filter(c -> c.getStartAt() != null && c.getEndAt() != null)
+                .filter(c -> !now.isBefore(c.getStartAt()) && !now.isAfter(c.getEndAt()))
+                .sorted(Comparator.comparingInt(PromotionalCampaign::getViewCount).reversed())
+                .limit(5)
+                .toList();
+
+        // 🔸 Map sang DTO
+        return activeCampaigns.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+
 }

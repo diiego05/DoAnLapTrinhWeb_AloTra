@@ -70,11 +70,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
 		if (res.ok) {
-		               alert("✅ Cập nhật thông tin cá nhân thành công!");
+		               showAlert("✅ Cập nhật thông tin cá nhân thành công!");
 		               await loadProfile();
 		               if (window.loadNotifications) await window.loadNotifications(); // 🔔 Cập nhật chuông
 		           } else {
-		               alert("❌ Cập nhật thất bại!");
+		               showAlert("❌ Cập nhật thất bại!");
 		           }
     });
 
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 	    if (payload.type === 'JOIN') {
 	        if (!branchSelect.value) {
-	            alert('⚠️ Vui lòng chọn chi nhánh muốn tham gia.');
+	            showAlert('⚠️ Vui lòng chọn chi nhánh muốn tham gia.');
 	            return;
 	        }
 	        payload.branchId = branchSelect.value;
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	        const address = document.getElementById('address').value.trim();
 
 	        if (!name || !phone || !address) {
-	            alert('⚠️ Vui lòng nhập đầy đủ thông tin chi nhánh.');
+	            showAlert('⚠️ Vui lòng nhập đầy đủ thông tin chi nhánh.');
 	            return;
 	        }
 
@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	        });
 
 	        if (res.ok) {
-	            alert('✅ Gửi yêu cầu thành công!');
+	            showAlert('✅ Gửi yêu cầu thành công!');
 	            loadHistory();
 	        } else {
 	            const text = await res.text();
@@ -141,10 +141,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 	                const json = JSON.parse(text);
 	                message = json.message || json.error || 'Có lỗi xảy ra.';
 	            } catch (_) {}
-	            alert(`❌ ${message}`);
+	            showAlert(`❌ ${message}`);
 	        }
 	    } catch (err) {
-	        alert('❌ Không thể kết nối tới máy chủ.');
+	        showAlert('❌ Không thể kết nối tới máy chủ.');
 	        console.error(err);
 	    }
 	});
@@ -178,10 +178,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (confirm('⚠️ Bạn có chắc muốn xóa yêu cầu này?')) {
                 const res = await apiFetch(`/api/register/branch/${id}`, { method: 'DELETE' });
                 if (res.ok) {
-                    alert('🗑️ Xóa yêu cầu thành công!');
+                    showAlert('🗑️ Xóa yêu cầu thành công!');
                     loadHistory();
                 } else {
-                    alert('❌ Xóa thất bại.');
+                    showAlert('❌ Xóa thất bại.');
                 }
             }
         }
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 	    };
 
 	    if (!payload.name || !payload.phone || !payload.address) {
-	        alert('⚠️ Vui lòng nhập đầy đủ thông tin.');
+	        showAlert('⚠️ Vui lòng nhập đầy đủ thông tin.');
 	        return;
 	    }
 
@@ -208,11 +208,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 	    });
 
 	    if (res.ok) {
-	        alert('✅ Cập nhật yêu cầu thành công!');
+	        showAlert('✅ Cập nhật yêu cầu thành công!');
 	        editModal.hide();
 	        loadHistory();
 	    } else {
-	        alert('❌ Cập nhật thất bại.');
+	        showAlert('❌ Cập nhật thất bại.');
 	    }
 	});
 

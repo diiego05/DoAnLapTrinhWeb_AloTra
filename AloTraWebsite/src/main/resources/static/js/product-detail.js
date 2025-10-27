@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateWishlistIcon();
             if (window.loadWishlist) window.loadWishlist();
         } catch {
-            alert("Lỗi khi cập nhật danh mục yêu thích!");
+            showAlert("Lỗi khi cập nhật danh mục yêu thích!");
         }
     });
 

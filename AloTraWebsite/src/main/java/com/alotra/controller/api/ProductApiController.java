@@ -184,4 +184,19 @@ public class ProductApiController {
         }
     }
 
+ @GetMapping("/public/top-bestsellers")
+ public ResponseEntity<?> getTopBestSellers(
+	        @RequestParam(defaultValue = "10") int limit) {
+	    try {
+	        List<ProductSummaryDTO> topBestSellers = productService.getTopBestSellers(limit);
+	        return ResponseEntity.ok(topBestSellers);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity
+	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Lỗi khi lấy danh sách sản phẩm bán chạy: " + e.getMessage());
+	    }
+	}
+
+
 }

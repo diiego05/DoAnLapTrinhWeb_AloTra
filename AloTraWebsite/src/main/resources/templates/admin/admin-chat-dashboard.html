@@ -202,9 +202,19 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 
     <script>
-        const API_URL = 'http://localhost:8080/alotra-website/api/chat';
-        const USER_API_URL = 'http://localhost:8080/alotra-website/api/users';
-        const WS_URL = 'http://localhost:8080/alotra-website/ws/chat';
+        // derive base path from current location so admin UI works in any host/context
+        function _deriveBase() {
+            try {
+                const origin = window.location.origin;
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                const context = pathParts.length > 0 ? `/${pathParts[0]}` : '';
+                return origin + context;
+            } catch (e) { return ''; }
+        }
+
+        const API_URL = _deriveBase() + '/api/chat';
+        const USER_API_URL = _deriveBase() + '/api/users';
+        const WS_URL = _deriveBase() + '/ws/chat';
 
         let stompClient = null;
         let currentRoomId = null;
@@ -461,28 +471,49 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
-            stompClient.connect({}, function() {
-                console.log('✅ Admin WebSocket Connected');
+            // If admin uses JWT in localStorage/sessionStorage, attach it; otherwise rely on session cookie
+            const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
 
-                // Subscribe to all room messages
-                allRooms.forEach(room => {
-                    stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
-                        const msg = JSON.parse(message.body);
-                        console.log('📥 Message received:', msg);
+            let attempts = 0;
+            const doConnect = () => {
+                stompClient.connect(headers, function() {
+                    attempts = 0;
+                    console.log('✅ Admin WebSocket Connected');
 
-                        if (msg.id && currentRoomId === msg.roomId) {
-                            displayMessage(msg);
-                            document.getElementById('messagesContainer').scrollTop =
-                                document.getElementById('messagesContainer').scrollHeight;
-                        }
+                    // Subscribe to all room messages
+                    allRooms.forEach(room => {
+                        stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
+                            const msg = JSON.parse(message.body);
+                            console.log('📥 Message received:', msg);
 
-                        // Reload rooms to update unread count
-                        loadRooms();
+                            if (msg.id && currentRoomId === msg.roomId) {
+                                displayMessage(msg);
+                                document.getElementById('messagesContainer').scrollTop =
+                                    document.getElementById('messagesContainer').scrollHeight;
+                            }
+
+                            // Reload rooms to update unread count
+                            loadRooms();
+                        });
                     });
+                }, function(error) {
+                    console.error('❌ WebSocket connection error:', error);
+                    attempts++;
+                    const backoff = Math.min(30000, 1000 * Math.pow(2, attempts));
+                    setTimeout(() => {
+                        try {
+                            const sock = new SockJS(WS_URL);
+                            stompClient = Stomp.over(sock);
+                            stompClient.debug = null;
+                        } catch (e) { console.warn('Error recreating SockJS client', e); }
+                        doConnect();
+                    }, backoff);
                 });
-            }, function(error) {
-                console.error('❌ WebSocket connection error:', error);
-            });
+            };
+
+            doConnect();
         }
 
         // Search Rooms

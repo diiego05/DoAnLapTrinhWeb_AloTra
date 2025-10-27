@@ -27,7 +27,7 @@ public class ProductSummaryDTO {
     private BigDecimal originalPrice;        // Giá gốc
     private BigDecimal discountedPrice;      // Giá sau giảm
     private int discountPercent;             // % giảm
-
+    private long soldCount;
     public ProductSummaryDTO(Product product) {
         this.id = product.getId();
         this.slug = product.getSlug();

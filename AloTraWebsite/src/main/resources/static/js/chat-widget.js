@@ -1,12 +1,29 @@
 // ===== CHAT WIDGET CONFIGURATION =====
 const ChatWidget = {
-  WS_URL: 'http://localhost:8080/alotra-website/ws/chat',
-  API_URL: 'http://localhost:8080/alotra-website/api/chat',
+  // Derive application base from current location so widget works in any host/context path
+  _deriveBase() {
+    try {
+      const origin = window.location.origin;
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      // If app deployed under a context path (e.g. /alotra-website), use the first segment
+      const context = pathParts.length > 0 ? `/${pathParts[0]}` : '';
+      return origin + context;
+    } catch (e) {
+      return '';
+    }
+  },
+
+  // WebSocket and API base (will be built from derived base)
+  get WS_URL() { return this._deriveBase() + '/ws/chat'; },
+  get API_BASE() { return this._deriveBase() + '/api'; },
+  get API_URL() { return this.API_BASE + '/chat'; },
 
   stompClient: null,
   roomId: null,
   userId: null,
   lastUserId: null,
+  // Pending echo resolvers waiting for server-broadcasted messages
+  pendingEchoResolvers: [],
   menuListenersAdded: false, // ✅ THÊM: Track đã gắn event chưa
 
   init() {
@@ -370,30 +387,73 @@ const ChatWidget = {
     console.log('🎯 Handling action:', action);
 
     if (action === 'track-order') {
-      // ✅ LOAD ĐƠN HÀNG
+      // Gửi thông báo cho admin rồi load đơn hàng
+      await this.sendAutoMessage('📦 Tôi muốn kiểm tra trạng thái đơn hàng', { waitForEcho: true, timeout: 4000 }).catch(() => {});
       await this.loadUserOrders();
     } else if (action === 'promotion') {
-      // ✅ LOAD KHUYẾN MÃI
+      // Gửi thông báo cho admin rồi load khuyến mãi
+      await this.sendAutoMessage('🎁 Tôi muốn xem khuyến mãi', { waitForEcho: true, timeout: 4000 }).catch(() => {});
       await this.loadPromotions();
     } else {
-      // ✅ GỬI TIN NHẮN CHO ADMIN
-      const messages = {
-        'consult-tea': '🍵 Tôi cần tư vấn loại trà sữa phù hợp',
-        'contact-admin': '📞 Tôi cần hỗ trợ từ tư vấn viên'
-      };
+      // ✅ GỬI TIN NHẮN CHO ADMIN & XỬ LÝ TỰ ĐỘNG
+      if (action === 'consult-tea') {
+        // Gửi thông báo cho admin rằng user cần tư vấn (KHÔNG hiển thị gợi ý tự động)
+        await this.sendAutoMessage('🍵 Tôi cần tư vấn loại trà sữa phù hợp', { waitForEcho: true, timeout: 4000 });
+        // (Không hiển thị danh sách tự động theo yêu cầu)
+      } else if (action === 'contact-admin') {
+        // Gửi thông báo cho admin và chờ server echo trước khi hiển thị lời cảm ơn
+        await this.sendAutoMessage('📞 Tôi cần hỗ trợ từ tư vấn viên', { waitForEcho: true, timeout: 4000 });
+        // Hiển thị lời cảm ơn và thông báo chuyển tiếp SAU KHI server đã nhận và broadcast tin nhắn người dùng
+        this.displayContactAcknowledgement();
+      } else {
+        const messages = {
+            'consult-tea': '🍵 Tôi cần tư vấn loại trà sữa phù hợp',
+            'contact-admin': '📞 Tôi cần hỗ trợ từ tư vấn viên',
+            'track-order': '📦 Tôi muốn kiểm tra trạng thái đơn hàng',
+            'promotion': '🎁 Tôi muốn xem khuyến mãi'
+          };
 
-      const content = messages[action];
-      if (content) {
-        this.sendAutoMessage(content);
+          const content = messages[action];
+          if (content) await this.sendAutoMessage(content, { waitForEcho: true, timeout: 4000 });
       }
     }
+  },
+
+  // === HIỂN THỊ 5 MÓN TRÀ SỮA BEST SELLER ===
+  async displayTeaRecommendations(limit = 5) {
+    try {
+      const res = await fetch(`${this.API_URL.replace('/api/chat','')}/products/public/top-bestsellers?limit=${limit}`);
+      if (!res.ok) throw new Error('Không lấy được best sellers');
+      const items = await res.json();
+
+      if (!Array.isArray(items) || items.length === 0) {
+        this.displayMessage({ id: Date.now(), senderId: 1, content: '🍵 Hiện chưa có sản phẩm bán chạy để gợi ý.', timestamp: new Date().toISOString() });
+        return;
+      }
+
+      const listHtml = items.slice(0, limit).map(p => `- ${p.name} (${p.price ? p.price.toLocaleString('vi-VN') + ' ₫' : 'Giá liên hệ'})`).join('\n');
+
+      this.displayMessage({ id: Date.now(), senderId: 1, content: `🍵 Gợi ý ${items.length >= limit ? limit : items.length} món bán chạy:\n${listHtml}`, timestamp: new Date().toISOString() });
+      this.scrollToBottom(true);
+
+    } catch (err) {
+      console.error('Error fetching best sellers', err);
+      this.displayMessage({ id: Date.now(), senderId: 1, content: '❌ Không thể lấy danh sách gợi ý. Vui lòng thử lại sau.', timestamp: new Date().toISOString() });
+    }
+  },
+
+  // === HIỂN THỊ LỜI CẢM ƠN KHI LIÊN HỆ TƯ VẤN VIÊN ===
+  displayContactAcknowledgement() {
+    const content = 'Cảm ơn bạn đã liên hệ, tôi sẽ chuyển cho nhân viên gần nhất.';
+    this.displayMessage({ id: Date.now(), senderId: 1, content, timestamp: new Date().toISOString() });
+    this.scrollToBottom(true);
   },
 
   // ✅ LOAD ĐƠN HÀNG
   async loadUserOrders() {
     try {
       const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
-      const res = await fetch('http://localhost:8080/alotra-website/api/orders', {
+      const res = await fetch(`${this.API_BASE}/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -422,7 +482,7 @@ const ChatWidget = {
         return;
       }
 
-      this.displayOrders(pendingOrders);
+  await this.displayOrders(pendingOrders);
 
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -440,7 +500,7 @@ const ChatWidget = {
   async loadPromotions() {
     try {
       const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
-      const res = await fetch('http://localhost:8080/alotra-website/api/admin/promotions/campaigns', {
+      const res = await fetch(`${this.API_BASE}/admin/promotions/campaigns`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -459,7 +519,7 @@ const ChatWidget = {
         return;
       }
 
-      this.displayPromotions(activePromotions);
+  await this.displayPromotions(activePromotions);
 
     } catch (error) {
       console.error('Error loading promotions:', error);
@@ -472,7 +532,7 @@ const ChatWidget = {
     }
   },
 
-  displayPromotions(promotions) {
+  async displayPromotions(promotions) {
     const container = document.getElementById('chatMessagesContainer');
 
     const promoCards = promotions.map(promo => {
@@ -495,7 +555,7 @@ const ChatWidget = {
       return `
         <div class="promo-card"
              style="cursor:pointer"
-             onclick="window.location.href='http://localhost:8080/alotra-website/promotions/${promo.id}'">
+             onclick="window.location.href='${this._deriveBase()}/promotions/${promo.id}'">
           <div class="promo-header">
             <strong>🎁 ${promo.name}</strong>
           </div>
@@ -522,11 +582,12 @@ const ChatWidget = {
 
     container.insertAdjacentHTML('beforeend', promoMessage);
     this.scrollToBottom(true);
+    // (No server notification for promotions — decided to keep promotions as client-only UI)
   }
 
 ,
 
-  displayOrders(orders) {
+  async displayOrders(orders) {
     const container = document.getElementById('chatMessagesContainer');
 
     const statusText = {
@@ -570,7 +631,7 @@ const ChatWidget = {
             <p><i class="fas fa-credit-card"></i> ${paymentMethod}</p>
             <p><i class="fas fa-map-marker-alt"></i> ${deliveryAddress}</p>
           </div>
-          <a href="/alotra-website/orders" class="order-link">Xem chi tiết →</a>
+          <a href="${this._deriveBase()}/orders" class="order-link">Xem chi tiết →</a>
         </div>
       `;
     }).join('');
@@ -589,13 +650,31 @@ const ChatWidget = {
 
     container.insertAdjacentHTML('beforeend', orderMessage);
     this.scrollToBottom(true);
+    // Notify admin/server so the orders reply also appears in admin chat
+    try {
+      await this.sendSystemNotification(`Người dùng đã xem ${orders.length} đơn hàng (chưa hoàn thành).`);
+    } catch (err) {
+      console.warn('Không thể gửi thông báo đơn hàng cho server', err);
+    }
   },
 
   // ✅ GỬI TIN NHẮN TỰ ĐỘNG (CHỈ 1 LẦN)
-  async sendAutoMessage(content) {
-    if (!this.roomId || !this.stompClient || !this.stompClient.connected) {
-      console.warn('⚠️ Cannot send message: not connected');
+  async sendAutoMessage(content, options = {}) {
+    if (!this.roomId) {
+      console.warn('⚠️ Cannot send message: no roomId');
       return;
+    }
+
+    // Ensure WebSocket is connected. If not, attempt to connect and wait.
+    if (!this.stompClient || !this.stompClient.connected) {
+      console.log('⏳ WebSocket not connected yet - attempting to connect...');
+      try {
+        this.connectWebSocket();
+        await this.ensureConnected(5000); // wait up to 5s
+      } catch (err) {
+        console.warn('⚠️ Failed to establish WebSocket connection:', err);
+        return;
+      }
     }
 
     const message = {
@@ -606,7 +685,97 @@ const ChatWidget = {
     };
 
     console.log('📤 Sending message:', content);
-    this.stompClient.send('/app/chat/send', {}, JSON.stringify(message));
+    try {
+      this.stompClient.send('/app/chat/send', {}, JSON.stringify(message));
+    } catch (err) {
+      console.error('❌ Error sending STOMP message', err);
+      throw err;
+    }
+
+  // If caller wants to wait for the server broadcast (echo), support that
+  if (options && options.waitForEcho) {
+      return new Promise((resolve, reject) => {
+        const match = content;
+        const timeoutMs = options.timeout || 3000;
+
+        const resolver = {
+          match,
+          userId: this.userId,
+          resolve: (msg) => {
+            clearTimeout(resolver._timeoutId);
+            resolve(msg);
+          },
+          reject: (err) => {
+            clearTimeout(resolver._timeoutId);
+            reject(err);
+          }
+        };
+
+        // timeout
+        resolver._timeoutId = setTimeout(() => {
+          // remove resolver
+          this.pendingEchoResolvers = this.pendingEchoResolvers.filter(r => r !== resolver);
+          resolver.reject(new Error('Timeout waiting for server echo'));
+        }, timeoutMs);
+
+        this.pendingEchoResolvers.push(resolver);
+      });
+    }
+
+    return Promise.resolve();
+  },
+
+  // Gửi thông báo dạng "hệ thống" tới server để admin cũng nhìn thấy
+  async sendSystemNotification(content, options = {}) {
+    if (!this.roomId) {
+      console.warn('⚠️ Cannot send system notification: no roomId');
+      return;
+    }
+
+    if (!this.stompClient || !this.stompClient.connected) {
+      try {
+        this.connectWebSocket();
+        await this.ensureConnected(3000);
+      } catch (err) {
+        console.warn('⚠️ Failed to connect before sending system notification', err);
+        return;
+      }
+    }
+
+    const message = {
+      roomId: this.roomId,
+      senderId: this.userId,
+      content,
+      senderType: options.type || 'SYSTEM'
+    };
+
+    try {
+      this.stompClient.send('/app/chat/send', {}, JSON.stringify(message));
+      console.log('🔔 System notification sent to server:', content);
+    } catch (err) {
+      console.error('❌ Error sending system notification', err);
+    }
+  },
+
+  // Ensure stomp client is connected with a timeout
+  ensureConnected(timeoutMs = 3000) {
+    return new Promise((resolve, reject) => {
+      const interval = 100;
+      let waited = 0;
+
+      const check = () => {
+        if (this.stompClient && this.stompClient.connected) {
+          return resolve(true);
+        }
+        waited += interval;
+        if (waited >= timeoutMs) {
+          return reject(new Error('Timeout waiting for STOMP connection'));
+        }
+        setTimeout(check, interval);
+      };
+
+      check();
+    });
   },
 
   connectWebSocket() {
@@ -620,23 +789,60 @@ const ChatWidget = {
     this.stompClient = Stomp.over(socket);
     this.stompClient.debug = null;
 
-    this.stompClient.connect({}, () => {
-      console.log('✅ Chat WebSocket Connected');
+    // Include JWT token in CONNECT headers so server can authenticate WebSocket session
+    const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+    const connectHeaders = {};
+    if (token) connectHeaders['Authorization'] = `Bearer ${token}`;
 
-      this.stompClient.subscribe(`/topic/chat/room/${this.roomId}`, (message) => {
-        const msg = JSON.parse(message.body);
-        if (msg?.id) {
-          console.log('📨 Received message:', msg.content);
-          this.displayMessage(msg);
-          this.scrollToBottom();
-        }
+    // track reconnect attempts for exponential backoff (client-side)
+    let reconnectAttempts = 0;
+
+    const doConnect = () => {
+      this.stompClient.connect(connectHeaders, () => {
+        reconnectAttempts = 0;
+        console.log('✅ Chat WebSocket Connected');
+
+        this.stompClient.subscribe(`/topic/chat/room/${this.roomId}`, (message) => {
+          try {
+            const msg = JSON.parse(message.body);
+            if (msg?.id) {
+              // If there are pending echo resolvers, try to resolve matching ones
+              if (Array.isArray(this.pendingEchoResolvers) && this.pendingEchoResolvers.length > 0) {
+                const resolvers = this.pendingEchoResolvers.slice();
+                resolvers.forEach(res => {
+                  try {
+                    if (res.userId && String(msg.senderId) !== String(res.userId)) return;
+                    if (res.match && msg.content === res.match) {
+                      res.resolve(msg);
+                      this.pendingEchoResolvers = this.pendingEchoResolvers.filter(r => r !== res);
+                    }
+                  } catch (e) { console.warn('Error checking pending echo resolver', e); }
+                });
+              }
+
+              this.displayMessage(msg);
+              this.scrollToBottom();
+            }
+          } catch (e) { console.warn('Error parsing STOMP message', e); }
+        });
+      }, (err) => {
+        console.warn('❌ STOMP connection error or disconnected', err);
+        reconnectAttempts++;
+        const backoff = Math.min(30000, 1000 * Math.pow(2, reconnectAttempts));
+        setTimeout(() => {
+          try {
+            // recreate socket and stomp client to avoid stale state
+            const sock = new SockJS(this.WS_URL);
+            this.stompClient = Stomp.over(sock);
+            this.stompClient.debug = null;
+          } catch (e) { console.warn('Error recreating SockJS client', e); }
+          doConnect();
+        }, backoff);
       });
-    }, () => {
-      console.log('❌ WebSocket disconnected, reconnecting...');
-      setTimeout(() => this.connectWebSocket(), 3000);
-    });
+    };
 
-    this.stompClient.reconnect_delay = 5000;
+    doConnect();
+    this.stompClient.reconnect_delay = 0; // handled by our backoff
   },
 
   disconnectWebSocket() {
@@ -679,9 +885,11 @@ const ChatWidget = {
       ? new Date(msg.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
       : '';
 
+    // Preserve newlines in messages by replacing them with <br>
+    const escaped = this.escapeHtml(msg.content).replace(/\n/g, '<br>');
     messageDiv.innerHTML = `
       <div>
-        <div class="chat-message-bubble">${this.escapeHtml(msg.content)}</div>
+        <div class="chat-message-bubble">${escaped}</div>
         <div class="chat-message-time">${time}</div>
       </div>
     `;

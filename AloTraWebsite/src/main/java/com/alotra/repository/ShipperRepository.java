@@ -31,5 +31,6 @@ public interface ShipperRepository extends JpaRepository<Shipper, Long> {
             AND s.status = 'APPROVED'
         """)
         Long findIdByUserId(@Param("userId") Long userId);
+    List<Shipper> findByCarrierIdAndStatusAndIsDeletedFalse(Long carrierId, String status);
 
 }

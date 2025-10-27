@@ -1,18 +1,18 @@
 package com.alotra.controller.api;
 
 import com.alotra.entity.Order;
-import com.alotra.enums.PaymentStatus;
 import com.alotra.service.OrderService;
 import com.alotra.service.PaymentService;
 import com.alotra.service.VnPayService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/payment/vnpay")
 @RequiredArgsConstructor
 public class VnPayController {
@@ -25,13 +25,14 @@ public class VnPayController {
      * 🧾 1️⃣ Tạo link thanh toán VNPay cho đơn hàng
      */
     @PostMapping("/create")
+    @ResponseBody // 👈 chỉ phương thức này trả JSON
     public ResponseEntity<String> createPayment(@RequestParam Long orderId, HttpServletRequest request) {
         Order order = orderService.findOrderById(orderId);
         if (order == null) {
             return ResponseEntity.badRequest().body("Đơn hàng không tồn tại");
         }
 
-        // 💰 Tạo bản ghi thanh toán trước khi redirect sang VNPay
+        // 💰 Tạo bản ghi thanh toán
         var payment = paymentService.createPayment(
                 order.getId(),
                 "VNPAY",
@@ -46,7 +47,7 @@ public class VnPayController {
                 order.getCode()
         );
 
-        // 🏷️ Gắn transactionCode vào payment (ở đây chính là orderCode hoặc response từ VNPay callback)
+        // 🏷️ Gắn transactionCode vào payment
         paymentService.updateTransactionCode(payment.getId(), order.getCode());
 
         return ResponseEntity.ok(paymentUrl);
@@ -54,21 +55,20 @@ public class VnPayController {
 
     /**
      * 🪙 2️⃣ Xử lý callback từ VNPay
-     * (Sau khi người dùng thanh toán xong)
      */
     @GetMapping("/return")
     public String handleReturn(@RequestParam Map<String, String> params) {
         boolean valid = vnPayService.validateSignature(params);
         String orderCode = params.get("vnp_TxnRef");
-        String transactionStatus = params.get("vnp_TransactionStatus");
+        String status = params.get("vnp_TransactionStatus");
 
-        if (valid && "00".equals(transactionStatus)) {
-            // ✅ Cập nhật trạng thái thanh toán
+        if (valid && "00".equals(status)) {
             paymentService.markSuccess(orderCode);
-            return "Thanh toán thành công đơn hàng #" + orderCode;
         } else {
             paymentService.markFailed(orderCode, params.toString());
-            return "Thanh toán thất bại!";
         }
+
+        // ✅ Redirect thật sự về trang orders
+        return "redirect:/orders";
     }
 }

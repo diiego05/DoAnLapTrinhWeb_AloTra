@@ -141,7 +141,7 @@ $(document).ready(function() {
         },
         error: function(xhr) {
             if (xhr.status === 401 || xhr.status === 403) {
-                alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+                showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
                 localStorage.removeItem("jwtToken");
                 sessionStorage.removeItem("jwtToken");
                 window.location.href = "/alotra-website/login";

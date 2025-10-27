@@ -211,7 +211,7 @@ async function exportExcel(from, to) {
 
   } catch (err) {
     console.error("❌ Lỗi exportExcel:", err);
-    alert("Không thể xuất file Excel.");
+    showAlert("Không thể xuất file Excel.");
   }
 }
 

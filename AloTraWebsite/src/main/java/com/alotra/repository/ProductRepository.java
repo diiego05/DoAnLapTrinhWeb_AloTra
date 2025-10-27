@@ -1,8 +1,10 @@
 package com.alotra.repository;
 
+import com.alotra.dto.ProductSummaryDTO;
 import com.alotra.entity.Product;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -42,5 +44,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategory_Id(Long categoryId);
 
     // 🟢 (Tuỳ chọn) Tìm theo tên hoặc từ khoá nếu cần
+
+
+
+
+    @Query(value = """
+    	    SELECT oi.ProductId, SUM(oi.Quantity)
+    	    FROM OrderItems oi
+    	    JOIN Orders o ON oi.OrderId = o.Id
+    	    WHERE o.Status = 'COMPLETED'
+    	    GROUP BY oi.ProductId
+    	""", nativeQuery = true)
+    	List<Object[]> findProductSalesCounts();
+
+
+
 
 }

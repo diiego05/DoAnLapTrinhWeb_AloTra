@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.editCoupon = (id) => {
         const c = couponCache.find(x => x.id === id);
         if (!c) {
-            alert('Không tìm thấy coupon để sửa. Vui lòng tải lại trang.');
+            showAlert('Không tìm thấy coupon để sửa. Vui lòng tải lại trang.');
             return;
         }
 
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         if (!campaignSelect.value) {
-            alert('Vui lòng chọn chiến dịch trước khi lưu.');
+            showAlert('Vui lòng chọn chiến dịch trước khi lưu.');
             return;
         }
 
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadCoupons();
         } catch (err) {
             console.error('❌ Lỗi khi lưu coupon:', err);
-            alert(`Không thể lưu: ${err.message}`);
+            showAlert(`Không thể lưu: ${err.message}`);
         } finally {
             btnSave.disabled = false;
             btnSave.innerHTML = originalText;
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             couponCache = couponCache.filter(c => c.id !== id);
         } catch (err) {
             console.error("❌ Lỗi xóa coupon:", err);
-            alert(`Không thể xóa mã: ${err.message}`);
+            showAlert(`Không thể xóa mã: ${err.message}`);
             deleteButton.disabled = false;
         }
     };
