@@ -12,6 +12,14 @@ body {
     flex-wrap: nowrap;
 }
 
+#product-table-body td:nth-child(5),
+table thead th:nth-child(5) {
+    width: 250px;              /* hoặc nhỏ hơn nếu bạn muốn */
+    white-space: nowrap;       /* tránh xuống dòng */
+    text-align: center;        /* căn giữa nội dung */
+}
+
+
 /* ======================== */
 /* 🧭 SIDEBAR               */
 /* ======================== */

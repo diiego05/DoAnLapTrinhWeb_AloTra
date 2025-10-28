@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("carrier-select").onchange = handleCarrierChange;
     document.getElementById("btn-add-address").onclick = showAddAddressModal;
     document.getElementById("btn-save-address").onclick = saveNewAddress;
-    
+
     // 🗺️ Load Google Maps using centralized loader
     window.googleMapsLoader.load();
 });
@@ -100,7 +100,9 @@ function renderCheckoutItems() {
     const list = document.getElementById("checkout-item-list");
     list.innerHTML = cartItems.map(it => {
         const toppingHtml = it.toppings?.length
-            ? `<div class="small text-muted">Topping: ${it.toppings.map(t => `${fmt(t.price)}`).join(", ")}</div>`
+            ? `<div class="small text-muted">
+                   Topping: ${it.toppings.map(t => `${t.name} (${fmt(t.price)})`).join(", ")}
+               </div>`
             : "";
         const noteHtml = it.note ? `<div class="small text-info">Ghi chú: ${it.note}</div>` : "";
         return `
@@ -174,10 +176,10 @@ function showAddAddressModal() {
     modalEl.addEventListener('shown.bs.modal', async () => {
         const input = document.getElementById('new-line1');
         if (!input) return;
-        
+
         const autocomplete = await window.googleMapsLoader.createAutocomplete(input, { types: ['geocode'] });
         if (!autocomplete) return;
-        
+
         // ✅ Google Places Autocomplete — use centralized parser like profile
         if (autocomplete.addListener) {
             autocomplete.addListener('place_changed', () => {

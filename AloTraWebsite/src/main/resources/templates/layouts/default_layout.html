@@ -14,7 +14,7 @@
     <!-- Chat Widget CSS -->
     <link rel="stylesheet" th:href="@{/css/chat-widget.css}">
     <link rel="stylesheet" th:href="@{/css/order-history.css}">
-    
+
     <!-- Dynamic Menu CSS -->
     <link rel="stylesheet" th:href="@{/css/dynamic-menu.css}">
 </head>
@@ -29,10 +29,11 @@
     <div class="container">
         <div th:replace="${content}"></div>
     </div>
+ <footer th:replace="~{fragments/footer :: footer}"></footer>
+
 </main>
 
 <!-- Footer -->
-<footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <!-- Cart Floating Button -->
 <div id="floating-cart">

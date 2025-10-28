@@ -1,107 +1,176 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-	th:replace="~{layouts/admin-layout :: layout(
+      th:replace="~{layouts/admin-layout :: layout(
         pageTitle='Quản lý Người dùng',
         pageContent=~{::pageContent},
         additionalJs=~{::additionalJs}
     )}">
 
 <body>
-	<div class="page-content" th:fragment="pageContent">
-		<div th:if="${message}" class="alert alert-success" role="alert" th:text="${message}"></div>
-		<div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+<div class="page-content" th:fragment="pageContent">
+    <!-- ✅ Thông báo -->
+    <div th:if="${message}" class="alert alert-success" role="alert" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
-		<div class="card">
-			<div class="card-header d-flex justify-content-between align-items-center">
-				<h5 class="mb-0">Danh sách Người dùng</h5>
-				<a th:href="@{/admin/users/add}" class="btn btn-primary btn-sm">
-					<i class="fas fa-plus me-1"></i> Thêm mới
-				</a>
-			</div>
+    <div class="card">
+        <!-- ❌ Không còn nút thêm mới -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Danh sách Người dùng</h5>
+        </div>
 
-			<div class="card-body">
-				<!-- 🔍 Bộ lọc -->
-				<form th:action="@{/admin/users}" method="get" class="mb-4">
-					<div class="row g-3">
-						<div class="col-md-5">
-							<input type="text" class="form-control" name="keyword"
-								th:value="${keyword}" placeholder="Tìm theo tên hoặc email...">
-						</div>
-						<div class="col-md-3">
-							<select name="roleId" class="form-select">
-								<option value="">-- Lọc theo vai trò --</option>
-								<option th:each="role : ${roleList}" th:value="${role.id}"
-									th:text="${role.name}" th:selected="${role.id == roleId}"></option>
-							</select>
-						</div>
-						<div class="col-md-2">
-							<select name="status" class="form-select">
-								<option value="">-- Lọc theo trạng thái --</option>
-								<option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Hoạt động</option>
-								<option value="BANNED" th:selected="${status == 'BANNED'}">Bị khóa</option>
-							</select>
-						</div>
-						<div class="col-md-2 d-flex">
-							<button class="btn btn-primary w-100 me-2" type="submit">Lọc</button>
-							<a th:href="@{/admin/users}" class="btn btn-outline-secondary">
-								<i class="fas fa-sync-alt"></i>
-							</a>
-						</div>
-					</div>
-				</form>
+        <div class="card-body">
+            <!-- 🔍 Bộ lọc -->
+            <form th:action="@{/admin/users}" method="get" class="mb-4">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <input type="text" class="form-control" name="keyword"
+                               th:value="${keyword}" placeholder="Tìm theo tên hoặc email...">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="roleId" class="form-select">
+                            <option value="">-- Lọc theo vai trò --</option>
+                            <option th:each="role : ${roleList}" th:value="${role.id}"
+                                    th:text="${role.name}" th:selected="${role.id == roleId}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="status" class="form-select">
+                            <option value="">-- Lọc theo trạng thái --</option>
+                            <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Hoạt động</option>
+                            <option value="BANNED" th:selected="${status == 'BANNED'}">Bị khóa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex">
+                        <button class="btn btn-primary w-100 me-2" type="submit">Lọc</button>
+                        <a th:href="@{/admin/users}" class="btn btn-outline-secondary">
+                            <i class="fas fa-sync-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
 
-				<!-- 🧑 Bảng danh sách -->
-				<table class="table table-striped table-hover">
-					<thead>
-						<tr>
-							<th>Họ tên</th>
-							<th>Email / SĐT</th>
-							<th>Vai trò</th>
-							<th>Trạng thái</th>
-							<th>Hành động</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr th:each="user : ${userList}">
-							<td>
-								<div class="d-flex align-items-center">
-									<img th:src="@{${user.avatarUrl} ?: '/images/avatar-default.jpg'}"
-										alt="Avatar" class="rounded-circle me-2" width="40" height="40">
-									<span th:text="${user.fullName}"></span>
-								</div>
-							</td>
-							<td>
-								<div th:text="${user.email}"></div>
-								<small class="text-muted" th:text="${user.phone}"></small>
-							</td>
-							<td th:text="${user.role.name}"></td>
-							<td>
-								<span class="badge"
-									th:text="${user.status == 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}"
-									th:classappend="${user.status == 'ACTIVE' ? 'bg-success' : 'bg-danger'}">
-								</span>
-							</td>
-							<td>
-								<a th:href="@{/admin/users/details/{id}(id=${user.id})}" class="btn btn-success btn-sm">Xem</a>
-								<a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-info btn-sm">Sửa</a>
-								<a th:href="@{/admin/users/delete/{id}(id=${user.id})}"
-								   class="btn btn-danger btn-sm"
-								   onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
-							</td>
-						</tr>
-						<tr th:if="${#lists.isEmpty(userList)}">
-							<td colspan="5" class="text-center">Không tìm thấy người dùng nào.</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+            <!-- 🧑 Bảng danh sách -->
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th>Họ tên</th>
+                    <th>Email / SĐT</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${userList}">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img th:src="@{${user.avatarUrl} ?: '/images/avatar-default.jpg'}"
+                                 alt="Avatar" class="rounded-circle me-2" width="40" height="40">
+                            <span th:text="${user.fullName}"></span>
+                        </div>
+                    </td>
+                    <td>
+                        <div th:text="${user.email}"></div>
+                        <small class="text-muted" th:text="${user.phone}"></small>
+                    </td>
+                    <td th:text="${user.role.name}"></td>
+                    <td>
+                        <span class="badge"
+                              th:text="${user.status == 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}"
+                              th:classappend="${user.status == 'ACTIVE' ? 'bg-success' : 'bg-danger'}">
+                        </span>
+                    </td>
+                    <td>
+                        <!-- ✅ Chỉ còn Xem và Xóa -->
+                        <a th:href="@{/admin/users/details/{id}(id=${user.id})}" class="btn btn-success btn-sm">Xem</a>
+                        <a th:href="@{/admin/users/delete/{id}(id=${user.id})}"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(userList)}">
+                    <td colspan="5" class="text-center">Không tìm thấy người dùng nào.</td>
+                </tr>
+                </tbody>
+            </table>
 
-	<!-- ✅ Fragment bổ sung JS để tránh lỗi Thymeleaf -->
-	<th:block th:fragment="additionalJs">
-		<!-- Bạn có thể thêm JS lọc nâng cao, pagination hoặc sự kiện ở đây -->
-		<!-- <script>console.log('Trang quản lý người dùng đã load');</script> -->
-	</th:block>
+            <!-- 📄 Phân trang -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-3" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ JS Phân trang phía front-end -->
+<th:block th:fragment="additionalJs">
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const rowsPerPage = 5;
+    const tableBody = document.querySelector("table tbody");
+    const rows = Array.from(tableBody.querySelectorAll("tr")).filter(row => !row.querySelector("td[colspan]"));
+    const pagination = document.getElementById("pagination");
+    const totalRows = rows.length;
+    const totalPages = Math.ceil(totalRows / rowsPerPage);
+    let currentPage = 1;
+
+    function displayPage(page) {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        rows.forEach((row, index) => {
+            row.style.display = (index >= start && index < end) ? "" : "none";
+        });
+    }
+
+    function updatePagination() {
+        pagination.innerHTML = "";
+
+        const prevItem = document.createElement("li");
+        prevItem.className = "page-item" + (currentPage === 1 ? " disabled" : "");
+        prevItem.innerHTML = `<a class="page-link" href="#">&laquo;</a>`;
+        prevItem.addEventListener("click", e => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                displayPage(currentPage);
+                updatePagination();
+            }
+        });
+        pagination.appendChild(prevItem);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageItem = document.createElement("li");
+            pageItem.className = "page-item" + (i === currentPage ? " active" : "");
+            pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            pageItem.addEventListener("click", e => {
+                e.preventDefault();
+                currentPage = i;
+                displayPage(currentPage);
+                updatePagination();
+            });
+            pagination.appendChild(pageItem);
+        }
+
+        const nextItem = document.createElement("li");
+        nextItem.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
+        nextItem.innerHTML = `<a class="page-link" href="#">&raquo;</a>`;
+        nextItem.addEventListener("click", e => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayPage(currentPage);
+                updatePagination();
+            }
+        });
+        pagination.appendChild(nextItem);
+    }
+
+    if (totalRows > 0) {
+        displayPage(currentPage);
+        updatePagination();
+    }
+});
+</script>
+</th:block>
 </body>
 </html>

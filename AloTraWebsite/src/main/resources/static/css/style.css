@@ -4,7 +4,17 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f8f9fa;
-    padding-top: 130px; /* chừa khoảng cho header cố định */
+    padding-top: 70px; /* chừa khoảng cho header cố định */
+}
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+main.flex-shrink-0 {
+    height: calc(100vh - 70px); /* chiều cao màn hình trừ phần header */
+    overflow-y: auto;          /* cho phép cuộn dọc bên trong main */
+    padding-top: 20px;         /* tùy chọn, tạo khoảng cách trên */
+    padding-bottom: 20px;      /* tùy chọn */
 }
 .cart-toast {
     position: fixed;
@@ -237,7 +247,7 @@ body {
     width: 100%;
     padding-top: 75%; /* Tỷ lệ 4:3 */
     overflow: hidden;
-    background: #f5f5f5;
+
 }
 
 .product-card img {
@@ -357,11 +367,11 @@ body {
         font-size: 0.95rem;
         min-height: 40px;
     }
-    
+
     .product-card .text-success.fw-bold {
         font-size: 1.1rem;
     }
-    
+
     .product-card .btn-add-to-cart {
         padding: 8px 16px;
         font-size: 0.9rem;

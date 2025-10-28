@@ -5,10 +5,12 @@ const filterButtons = document.querySelectorAll('#adminStatusFilter [data-status
 const branchFilter = document.getElementById('adminBranchFilter');
 const searchInput = document.getElementById('adminOrderSearch');
 const reloadBtn = document.getElementById('adminOrderReload');
+const paginationEl = document.getElementById('orderPagination');
 
 let currentStatus = '';
 let currentBranch = '';
 let searchKeyword = '';
+let paginator = null;
 
 const fmtVND = v => (Number(v) || 0).toLocaleString('vi-VN') + ' ₫';
 
@@ -78,6 +80,9 @@ reloadBtn.addEventListener('click', () => {
     searchInput.value = '';
     branchFilter.value = '';
     currentBranch = '';
+    currentStatus = '';
+    filterButtons.forEach(b => b.classList.remove('active'));
+    filterButtons[0].classList.add('active');
     loadAdminOrders();
 });
 
@@ -111,6 +116,7 @@ async function loadAdminOrders() {
             ordersList.innerHTML = `
                 <tr><td colspan="8" class="text-center text-muted py-4">Không có đơn hàng</td></tr>
             `;
+            paginationEl.innerHTML = '';
             return;
         }
 
@@ -119,7 +125,6 @@ async function loadAdminOrders() {
                 <td class="fw-bold">#${o.code}</td>
                 <td>${new Date(o.createdAt).toLocaleString('vi-VN')}</td>
                 <td>${o.branchName || '(Không có)'}</td>
-
                 <td class="text-success fw-bold">${fmtVND(o.total)}</td>
                 <td>${o.paymentMethod}</td>
                 <td><span class="badge bg-${mapStatusColor(o.status)}">${mapStatusText(o.status)}</span></td>
@@ -130,12 +135,88 @@ async function loadAdminOrders() {
                 </td>
             </tr>
         `).join('');
+
+        if (paginator) paginator.refresh();
     } catch (err) {
         console.error(err);
         ordersList.innerHTML = `
             <tr><td colspan="8" class="text-center text-danger py-4">Lỗi tải đơn hàng</td></tr>
         `;
+        paginationEl.innerHTML = '';
     }
+}
+
+// =================== 🧭 Phân trang front-end ===================
+function initPaginator() {
+    const rowsPerPage = 10;
+    const tbody = ordersList;
+
+    function getRows() {
+        return Array.from(tbody.querySelectorAll('tr')).filter(r => !r.querySelector('td[colspan]'));
+    }
+
+    function renderPagination(page, totalPages) {
+        paginationEl.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const makeItem = (label, disabled, onClick, active = false) => {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.textContent = label;
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                if (!disabled) onClick();
+            });
+            li.appendChild(a);
+            return li;
+        };
+
+        paginationEl.appendChild(makeItem('«', page === 1, () => showPage(page - 1)));
+
+        const maxButtons = 7;
+        let start = Math.max(1, page - 3);
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        start = Math.max(1, end - maxButtons + 1);
+
+        if (start > 1) {
+            paginationEl.appendChild(makeItem('1', false, () => showPage(1)));
+            if (start > 2) paginationEl.appendChild(makeItem('...', true, () => {}));
+        }
+
+        for (let i = start; i <= end; i++) {
+            paginationEl.appendChild(makeItem(i, false, () => showPage(i), i === page));
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) paginationEl.appendChild(makeItem('...', true, () => {}));
+            paginationEl.appendChild(makeItem(totalPages, false, () => showPage(totalPages)));
+        }
+
+        paginationEl.appendChild(makeItem('»', page === totalPages, () => showPage(page + 1)));
+    }
+
+    function showPage(page) {
+        const rows = getRows();
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+        const currentPage = Math.min(Math.max(1, page), totalPages);
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? '' : 'none';
+        });
+
+        renderPagination(currentPage, totalPages);
+    }
+
+    function refresh() {
+        showPage(1);
+    }
+
+    return { refresh };
 }
 
 // =================== 📜 Modal chi tiết ===================
@@ -197,6 +278,7 @@ window.showAdminOrderDetail = async function(orderId) {
 };
 
 // =================== 🚀 Khởi chạy ===================
+paginator = initPaginator();
 loadBranches();
 loadAdminOrders();
 

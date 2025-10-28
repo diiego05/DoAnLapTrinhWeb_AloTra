@@ -77,7 +77,19 @@ async function loadOrderStatusChart() {
     if (!res.ok) throw new Error("Không thể tải Order Status Chart");
     const data = await res.json();
 
-    const labels = data.map(i => i.status);
+    // 🌐 Ánh xạ trạng thái sang tiếng Việt
+    const statusMap = {
+        PENDING: "Chờ xác nhận",
+        CONFIRMED: "Đã xác nhận",
+        WAITING_FOR_PICKUP: "Chờ lấy hàng",
+        SHIPPING: "Đang giao",
+        COMPLETED: "Hoàn thành",
+        CANCELED: "Đã hủy",
+        CANCELLED: "Đã hủy", // đề phòng API trả CANCELLED
+        DELIVERED: "Đã giao"
+    };
+
+    const labels = data.map(i => statusMap[i.status] || i.status);
     const counts = data.map(i => i.count);
 
     const ctx = document.getElementById("orderStatusChart").getContext("2d");
@@ -88,17 +100,25 @@ async function loadOrderStatusChart() {
             datasets: [{
                 data: counts,
                 backgroundColor: [
-                    "#28a745",
-                    "#0dcaf0",
-                    "#ffc107",
-                    "#dc3545",
-                    "#6c757d"
+                    "#ffc107", // PENDING
+                    "#0d6efd", // CONFIRMED
+                    "#0dcaf0", // WAITING_FOR_PICKUP
+                    "#17a2b8", // SHIPPING
+                    "#28a745", // COMPLETED
+                    "#dc3545"  // CANCELED
                 ]
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: "bottom" } },
+            plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.label}: ${ctx.parsed}`
+                    }
+                }
+            },
             cutout: "70%"
         }
     });

@@ -5,9 +5,7 @@
 <th:block th:fragment="content">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-success">
-            🚚 Yêu cầu Shipper
-        </h3>
+        <h3 class="fw-bold text-success">🚚 Yêu cầu Shipper</h3>
         <div>
             <select id="shipperStatusFilter" class="form-select form-select-sm d-inline-block w-auto">
                 <option value="">Tất cả trạng thái</option>
@@ -45,6 +43,11 @@
         </div>
     </div>
 
+    <!-- 📄 Thanh phân trang -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mt-3" id="shipperPagination"></ul>
+    </nav>
+
     <!-- 📌 Modal Từ chối -->
     <div class="modal fade" id="rejectShipperModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -69,74 +72,147 @@
     </div>
 
     <!-- 📄 Modal Xem chi tiết yêu cầu Shipper -->
-<div class="modal fade" id="shipperDetailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">📄 Chi tiết yêu cầu Shipper</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+    <div class="modal fade" id="shipperDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">📄 Chi tiết yêu cầu Shipper</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-      <div class="modal-body">
-        <div class="row g-3">
-          <!-- 🧍 Thông tin người dùng -->
-          <div class="col-md-6">
-            <h6 class="fw-bold text-success mb-2">🧍 Thông tin cá nhân</h6>
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item"><strong>Họ và tên:</strong> <span id="detailUserName"></span></li>
-              <li class="list-group-item"><strong>Email:</strong> <span id="detailUserEmail"></span></li>
-              <li class="list-group-item"><strong>Số điện thoại:</strong> <span id="detailUserPhone"></span></li>
-              <li class="list-group-item"><strong>CCCD:</strong> <span id="detailUserIdCard"></span></li>
-              <li class="list-group-item"><strong>Giới tính:</strong> <span id="detailUserGender"></span></li>
-              <li class="list-group-item"><strong>Ngày sinh:</strong> <span id="detailUserDob"></span></li>
-            </ul>
-          </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- 🧍 Thông tin người dùng -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success mb-2">🧍 Thông tin cá nhân</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Họ và tên:</strong> <span id="detailUserName"></span></li>
+                                <li class="list-group-item"><strong>Email:</strong> <span id="detailUserEmail"></span></li>
+                                <li class="list-group-item"><strong>Số điện thoại:</strong> <span id="detailUserPhone"></span></li>
+                                <li class="list-group-item"><strong>CCCD:</strong> <span id="detailUserIdCard"></span></li>
+                                <li class="list-group-item"><strong>Giới tính:</strong> <span id="detailUserGender"></span></li>
+                                <li class="list-group-item"><strong>Ngày sinh:</strong> <span id="detailUserDob"></span></li>
+                            </ul>
+                        </div>
 
-          <!-- 🗺️ Khu vực hoạt động -->
-          <div class="col-md-6">
-            <h6 class="fw-bold text-success mb-2">🗺️ Khu vực hoạt động</h6>
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item"><strong>Phường/Xã:</strong> <span id="detailWard"></span></li>
-              <li class="list-group-item"><strong>Quận/Huyện:</strong> <span id="detailDistrict"></span></li>
-              <li class="list-group-item"><strong>Tỉnh/Thành phố:</strong> <span id="detailCity"></span></li>
-            </ul>
-          </div>
+                        <!-- 🗺️ Khu vực hoạt động -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success mb-2">🗺️ Khu vực hoạt động</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Phường/Xã:</strong> <span id="detailWard"></span></li>
+                                <li class="list-group-item"><strong>Quận/Huyện:</strong> <span id="detailDistrict"></span></li>
+                                <li class="list-group-item"><strong>Tỉnh/Thành phố:</strong> <span id="detailCity"></span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 🚚 Thông tin đăng ký -->
+                    <h6 class="fw-bold text-success mb-2">🚚 Thông tin đăng ký Shipper</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item"><strong>Nhà vận chuyển:</strong> <span id="detailCarrier"></span></li>
+                        <li class="list-group-item"><strong>Phương tiện:</strong> <span id="detailVehicle"></span></li>
+                        <li class="list-group-item"><strong>Biển số xe:</strong> <span id="detailPlate"></span></li>
+                    </ul>
+
+                    <!-- 📜 Trạng thái & ghi chú -->
+                    <h6 class="fw-bold text-success mb-2">📜 Trạng thái & ghi chú</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Trạng thái:</strong> <span id="detailStatus" class="badge"></span></li>
+                        <li class="list-group-item"><strong>Ghi chú (Admin):</strong> <span id="detailNote"></span></li>
+                        <li class="list-group-item"><strong>Ngày tạo:</strong> <span id="detailCreated"></span></li>
+                        <li class="list-group-item"><strong>Ngày cập nhật:</strong> <span id="detailUpdated"></span></li>
+                    </ul>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
         </div>
-
-        <hr>
-
-        <!-- 🚚 Thông tin đăng ký -->
-        <h6 class="fw-bold text-success mb-2">🚚 Thông tin đăng ký Shipper</h6>
-        <ul class="list-group list-group-flush mb-3">
-          <li class="list-group-item"><strong>Nhà vận chuyển:</strong> <span id="detailCarrier"></span></li>
-          <li class="list-group-item"><strong>Phương tiện:</strong> <span id="detailVehicle"></span></li>
-          <li class="list-group-item"><strong>Biển số xe:</strong> <span id="detailPlate"></span></li>
-        </ul>
-
-        <!-- 📜 Trạng thái & ghi chú -->
-        <h6 class="fw-bold text-success mb-2">📜 Trạng thái & ghi chú</h6>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">
-            <strong>Trạng thái:</strong>
-            <span id="detailStatus" class="badge"></span>
-          </li>
-          <li class="list-group-item"><strong>Ghi chú (Admin):</strong> <span id="detailNote"></span></li>
-          <li class="list-group-item"><strong>Ngày tạo:</strong> <span id="detailCreated"></span></li>
-          <li class="list-group-item"><strong>Ngày cập nhật:</strong> <span id="detailUpdated"></span></li>
-        </ul>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-      </div>
     </div>
-  </div>
-</div>
 
 </th:block>
 
 <th:block th:fragment="additionalJs">
 <script type="module" src="/alotra-website/js/admin-shipper-requests.js"></script>
+
+<!-- 📜 Phân trang front-end -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rowsPerPage = 5;
+    const pagination = document.getElementById("shipperPagination");
+
+    function paginateShipper() {
+        const tableBody = document.getElementById("shipperRequestsTableBody");
+        const rows = Array.from(tableBody.querySelectorAll("tr")).filter(r => !r.querySelector("td[colspan]"));
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        let currentPage = 1;
+
+        function displayPage(page) {
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            rows.forEach((row, i) => {
+                row.style.display = (i >= start && i < end) ? "" : "none";
+            });
+        }
+
+        function renderPagination() {
+            pagination.innerHTML = "";
+            if (totalPages <= 1) return;
+
+            const prev = document.createElement("li");
+            prev.className = "page-item" + (currentPage === 1 ? " disabled" : "");
+            prev.innerHTML = `<a class="page-link" href="#">&laquo;</a>`;
+            prev.addEventListener("click", e => {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayPage(currentPage);
+                    renderPagination();
+                }
+            });
+            pagination.appendChild(prev);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageItem = document.createElement("li");
+                pageItem.className = "page-item" + (i === currentPage ? " active" : "");
+                pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                pageItem.addEventListener("click", e => {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayPage(currentPage);
+                    renderPagination();
+                });
+                pagination.appendChild(pageItem);
+            }
+
+            const next = document.createElement("li");
+            next.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
+            next.innerHTML = `<a class="page-link" href="#">&raquo;</a>`;
+            next.addEventListener("click", e => {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayPage(currentPage);
+                    renderPagination();
+                }
+            });
+            pagination.appendChild(next);
+        }
+
+        if (totalRows > 0) {
+            displayPage(currentPage);
+            renderPagination();
+        }
+    }
+
+    // Delay để đảm bảo dữ liệu đã render xong từ AJAX
+    setTimeout(paginateShipper, 500);
+});
+</script>
 </th:block>
 </body>
 </html>

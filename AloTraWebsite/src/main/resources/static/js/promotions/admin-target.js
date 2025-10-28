@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const categorySelect = document.getElementById('categorySelect');
     const productCheckboxList = document.getElementById('productCheckboxList');
     const targetTableBody = document.getElementById('targetTableBody');
+    const paginationContainer = document.getElementById('targetPagination');
 
     const categorySelectWrapper = document.getElementById('categorySelectWrapper');
     const productSelectWrapper = document.getElementById('productSelectWrapper');
@@ -22,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let productCache = [];
     let categoryCache = [];
     let currentCampaignId = null;
+    let targetData = [];
+
+    const rowsPerPage = 5;
+    let currentPage = 1;
 
     // ========================== LOAD DỮ LIỆU ==========================
     async function loadCampaigns() {
@@ -70,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================== LƯU ĐỐI TƯỢNG ==========================
     btnSave.addEventListener('click', async () => {
         if (!currentCampaignId) {
-            showAlert('Vui lòng chọn chiến dịch trước');
+            showAlert('⚠️ Vui lòng chọn chiến dịch trước');
             return;
         }
 
@@ -80,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'CATEGORY') {
             const categoryId = categorySelect.value;
             if (!categoryId) {
-                showAlert('Vui lòng chọn danh mục');
+                showAlert('⚠️ Vui lòng chọn danh mục');
                 return;
             }
             body.categoryId = categoryId;
@@ -90,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedProducts = Array.from(productCheckboxList.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(cb => Number(cb.value));
             if (selectedProducts.length === 0) {
-                showAlert('Vui lòng chọn ít nhất 1 sản phẩm');
+                showAlert('⚠️ Vui lòng chọn ít nhất 1 sản phẩm');
                 return;
             }
             body.productIds = selectedProducts;
@@ -114,20 +119,34 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancel.addEventListener('click', () => {
         campaignSelect.value = '';
         targetTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Vui lòng chọn chiến dịch để xem đối tượng áp dụng</td></tr>`;
+        paginationContainer.innerHTML = '';
         currentCampaignId = null;
+        targetData = [];
     });
 
     // ========================== LOAD TARGET TABLE ==========================
     async function loadTargetsForCampaign(campaignId) {
-const res = await apiFetch(`/api/admin/promotions/targets/by-campaign/${campaignId}`);
-        const data = await res.json();
+        const res = await apiFetch(`/api/admin/promotions/targets/by-campaign/${campaignId}`);
+        targetData = await res.json();
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (!Array.isArray(targetData) || targetData.length === 0) {
             targetTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Chưa có đối tượng áp dụng nào</td></tr>`;
+            paginationContainer.innerHTML = '';
             return;
         }
 
-        targetTableBody.innerHTML = data.map(t => `
+        currentPage = 1;
+        renderTargetTable();
+        renderPagination();
+    }
+
+    // ========================== HIỂN THỊ BẢNG + PHÂN TRANG ==========================
+    function renderTargetTable() {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = targetData.slice(start, end);
+
+        targetTableBody.innerHTML = pageData.map(t => `
             <tr>
                 <td>${t.id}</td>
                 <td>${t.campaignName || '(Không có tên chiến dịch)'}</td>
@@ -140,6 +159,72 @@ const res = await apiFetch(`/api/admin/promotions/targets/by-campaign/${campaign
                 </td>
             </tr>
         `).join('');
+    }
+
+    function renderPagination() {
+        paginationContainer.innerHTML = '';
+
+        const totalPages = Math.ceil(targetData.length / rowsPerPage);
+        if (totalPages <= 1) return;
+
+        const makeItem = (label, disabled, active, onClick) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+            const btn = document.createElement('button');
+            btn.className = 'page-link';
+            btn.textContent = label;
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                if (!disabled) onClick();
+            });
+            li.appendChild(btn);
+            return li;
+        };
+
+        // Prev
+        paginationContainer.appendChild(makeItem('«', currentPage === 1, false, () => {
+            currentPage--;
+            renderTargetTable();
+            renderPagination();
+        }));
+
+        const maxButtons = 5;
+        let start = Math.max(1, currentPage - 2);
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+        if (start > 1) {
+            paginationContainer.appendChild(makeItem('1', false, currentPage === 1, () => {
+                currentPage = 1;
+                renderTargetTable();
+                renderPagination();
+            }));
+            if (start > 2) paginationContainer.appendChild(makeItem('...', true, false, () => {}));
+        }
+
+        for (let i = start; i <= end; i++) {
+            paginationContainer.appendChild(makeItem(i, false, i === currentPage, () => {
+                currentPage = i;
+                renderTargetTable();
+                renderPagination();
+            }));
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) paginationContainer.appendChild(makeItem('...', true, false, () => {}));
+            paginationContainer.appendChild(makeItem(totalPages, false, currentPage === totalPages, () => {
+                currentPage = totalPages;
+                renderTargetTable();
+                renderPagination();
+            }));
+        }
+
+        // Next
+        paginationContainer.appendChild(makeItem('»', currentPage === totalPages, false, () => {
+            currentPage++;
+            renderTargetTable();
+            renderPagination();
+        }));
     }
 
     // ========================== XOÁ ==========================

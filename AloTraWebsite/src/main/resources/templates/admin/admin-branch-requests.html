@@ -5,9 +5,7 @@
 <th:block th:fragment="content">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-success">
-            🏪 Yêu cầu Chi nhánh
-        </h3>
+        <h3 class="fw-bold text-success">🏪 Yêu cầu Chi nhánh</h3>
         <div>
             <select id="branchStatusFilter" class="form-select form-select-sm d-inline-block w-auto">
                 <option value="">Tất cả trạng thái</option>
@@ -42,6 +40,11 @@
             </table>
         </div>
     </div>
+
+    <!-- 📄 Thanh phân trang -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mt-3" id="branchPagination"></ul>
+    </nav>
 
     <!-- ❌ Modal Từ chối -->
     <div class="modal fade" id="rejectBranchModal" tabindex="-1" aria-hidden="true">
@@ -105,6 +108,82 @@
 
 <th:block th:fragment="additionalJs">
 <script type="module" src="/alotra-website/js/admin-branch-requests.js"></script>
+
+<!-- 📜 Phân trang front-end -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rowsPerPage = 5; // số dòng mỗi trang
+    const pagination = document.getElementById("branchPagination");
+
+    function paginate() {
+        const tableBody = document.getElementById("branchRequestsTableBody");
+        const rows = Array.from(tableBody.querySelectorAll("tr")).filter(row => !row.querySelector("td[colspan]"));
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        let currentPage = 1;
+
+        function displayPage(page) {
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            rows.forEach((row, index) => {
+                row.style.display = (index >= start && index < end) ? "" : "none";
+            });
+        }
+
+        function renderPagination() {
+            pagination.innerHTML = "";
+            if (totalPages <= 1) return;
+
+            const prev = document.createElement("li");
+            prev.className = "page-item" + (currentPage === 1 ? " disabled" : "");
+            prev.innerHTML = `<a class="page-link" href="#">&laquo;</a>`;
+            prev.addEventListener("click", e => {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayPage(currentPage);
+                    renderPagination();
+                }
+            });
+            pagination.appendChild(prev);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageItem = document.createElement("li");
+                pageItem.className = "page-item" + (i === currentPage ? " active" : "");
+                pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                pageItem.addEventListener("click", e => {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayPage(currentPage);
+                    renderPagination();
+                });
+                pagination.appendChild(pageItem);
+            }
+
+            const next = document.createElement("li");
+            next.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
+            next.innerHTML = `<a class="page-link" href="#">&raquo;</a>`;
+            next.addEventListener("click", e => {
+                e.preventDefault();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayPage(currentPage);
+                    renderPagination();
+                }
+            });
+            pagination.appendChild(next);
+        }
+
+        if (totalRows > 0) {
+            displayPage(currentPage);
+            renderPagination();
+        }
+    }
+
+    // Gọi paginate sau khi bảng được render xong (có thể sau khi load Ajax)
+    setTimeout(paginate, 500);
+});
+</script>
 </th:block>
 </body>
 </html>

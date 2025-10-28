@@ -122,11 +122,7 @@
 							🪄 Đối tượng áp dụng </a>
 					</div>
 				</div>
-				<a th:href="@{/admin/marketing}"
-					class="list-group-item list-group-item-action"
-					th:classappend="${currentPage == 'marketing'} ? 'active-custom' : ''">
-					<i class="fas fa-bullhorn me-2"></i> Marketing
-				</a>
+
 
 				 <a th:href="@{/admin/chat}"
 					class="list-group-item list-group-item-action"
@@ -134,11 +130,7 @@
 					<i class="fas fa-comments me-2"></i> Quản lý Chat
 				</a>
 
-				<a th:href="@{/admin/settings}"
-					class="list-group-item list-group-item-action"
-					th:classappend="${currentPage == 'settings'} ? 'active-custom' : ''">
-					<i class="fas fa-cog me-2"></i> Cài đặt
-				</a>
+
 			</div>
 		</div>
 
@@ -219,8 +211,11 @@
 							th:text="${pageTitle}"></li>
 					</ol>
 				</nav>
+
 				<div class="page-content" th:replace="${pageContent}"></div>
 			</div>
+
+
 		</div>
 	</div>
 

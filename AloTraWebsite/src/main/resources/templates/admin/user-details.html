@@ -26,8 +26,12 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item"><strong>Email:</strong> <span th:text="${user.email}"></span></li>
                         <li class="list-group-item"><strong>SĐT:</strong> <span th:text="${user.phone}"></span></li>
-                        <li class="list-group-item"><strong>Số CCCD:</strong> <span th:text="${user.idCardNumber != null ? user.idCardNumber : 'Chưa cập nhật'}"></span></li>
-                        <li class="list-group-item"><strong>Giới tính:</strong> <span th:text="${user.gender != null ? user.gender.toString() : 'Chưa cập nhật'}"></span></li>
+                        <li class="list-group-item"><strong>Số CCCD:</strong>
+                            <span th:text="${user.idCardNumber != null ? user.idCardNumber : 'Chưa cập nhật'}"></span>
+                        </li>
+                        <li class="list-group-item"><strong>Giới tính:</strong>
+                            <span th:text="${user.gender != null ? user.gender.toString() : 'Chưa cập nhật'}"></span>
+                        </li>
                         <li class="list-group-item"><strong>Ngày sinh:</strong>
                             <span th:if="${user.dateOfBirth}" th:text="${#temporals.format(user.dateOfBirth, 'dd/MM/yyyy')}"></span>
                             <span th:unless="${user.dateOfBirth}">Chưa cập nhật</span>
@@ -39,9 +43,12 @@
                         </li>
                         <li class="list-group-item"><strong>Xác thực Email:</strong>
                             <span th:if="${user.emailVerifiedAt != null}" class="badge bg-success">
-                                Đã xác thực lúc <span th:text="${#temporals.format(user.emailVerifiedAt, 'HH:mm dd/MM/yyyy')}"></span>
+                                Đã xác thực lúc
+                                <span th:text="${#temporals.format(user.emailVerifiedAt, 'HH:mm dd/MM/yyyy')}"></span>
                             </span>
-                            <span th:unless="${user.emailVerifiedAt != null}" class="badge bg-secondary">Chưa xác thực</span>
+                            <span th:unless="${user.emailVerifiedAt != null}" class="badge bg-secondary">
+                                Chưa xác thực
+                            </span>
                         </li>
                         <li class="list-group-item"><strong>Ngày tạo:</strong>
                             <span th:if="${user.createdAt}" th:text="${#temporals.format(user.createdAt, 'HH:mm dd/MM/yyyy')}"></span>
@@ -50,9 +57,12 @@
                             <span th:if="${user.updatedAt}" th:text="${#temporals.format(user.updatedAt, 'HH:mm dd/MM/yyyy')}"></span>
                         </li>
                     </ul>
+                    <!-- ❌ Đã xóa nút Chỉnh sửa -->
+                    <!--
                     <div class="card-body">
                         <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-primary w-100">Chỉnh sửa</a>
                     </div>
+                    -->
                 </div>
             </div>
 
@@ -75,7 +85,9 @@
                                             <p class="mb-1" th:text="${address.getFullAddress()}"></p>
                                             <small class="text-muted" th:text="'SĐT: ' + ${address.phone}"></small>
                                         </div>
-                                        <span th:if="${address.isDefault}" class="badge bg-primary rounded-pill">Mặc định</span>
+                                        <span th:if="${address.isDefault}" class="badge bg-primary rounded-pill">
+                                            Mặc định
+                                        </span>
                                     </div>
                                 </li>
                             </ul>
@@ -88,8 +100,7 @@
 
     <!-- ✅ Bổ sung fragment additionalJs -->
     <th:block th:fragment="additionalJs">
-        <!-- Nếu sau này bạn cần JS cho trang chi tiết user thì đặt vào đây -->
-        <!-- <script>console.log("Trang chi tiết người dùng đã load");</script> -->
+        <!-- Có thể thêm JS nếu cần sau này -->
     </th:block>
 </body>
 </html>

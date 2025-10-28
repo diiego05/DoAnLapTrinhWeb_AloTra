@@ -1,6 +1,10 @@
+"use strict";
+
 import { apiFetch } from '/alotra-website/js/auth-helper.js';
 
 const ordersList = document.getElementById('vendorOrdersList');
+const paginationContainer = document.getElementById('vendorOrdersPagination');
+
 const filterButtons = document.querySelectorAll('[data-status]');
 const searchInput = document.getElementById('vendorOrderSearch');
 const reloadBtn = document.getElementById('vendorOrderReload');
@@ -9,6 +13,9 @@ const fromInput = document.getElementById('vendorOrderFrom');
 const toInput = document.getElementById('vendorOrderTo');
 
 let currentStatus = '';
+let allOrders = [];
+let currentPage = 1;
+const rowsPerPage = 5;
 
 const fmtVND = v => (Number(v) || 0).toLocaleString('vi-VN') + ' ₫';
 
@@ -57,99 +64,161 @@ filterButtons.forEach(btn => {
     });
 });
 
-if (applyBtn) {
-    applyBtn.addEventListener('click', () => {
-        loadVendorOrders();
-    });
-}
+applyBtn?.addEventListener('click', () => loadVendorOrders());
 
-if (searchInput) {
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            loadVendorOrders();
-        }
-    });
-}
-
-if (reloadBtn) {
-    reloadBtn.addEventListener('click', () => {
-        // reset filters
-        currentStatus = '';
-        filterButtons.forEach(b => b.classList.remove('active'));
-        const allBtn = Array.from(filterButtons).find(b => b.dataset.status === '');
-        if (allBtn) allBtn.classList.add('active');
-        if (searchInput) searchInput.value = '';
-        if (fromInput) fromInput.value = '';
-        if (toInput) toInput.value = '';
+searchInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
         loadVendorOrders();
-    });
-}
+    }
+});
+
+reloadBtn?.addEventListener('click', () => {
+    currentStatus = '';
+    filterButtons.forEach(b => b.classList.remove('active'));
+    const allBtn = Array.from(filterButtons).find(b => b.dataset.status === '');
+    if (allBtn) allBtn.classList.add('active');
+    if (searchInput) searchInput.value = '';
+    if (fromInput) fromInput.value = '';
+    if (toInput) toInput.value = '';
+    loadVendorOrders();
+});
 
 // =================== 📜 Load danh sách đơn hàng ===================
 async function loadVendorOrders() {
     ordersList.innerHTML = `<div class="text-center text-muted py-4">
         <div class="spinner-border spinner-border-sm me-2"></div>Đang tải dữ liệu...
     </div>`;
+    paginationContainer.innerHTML = '';
 
     try {
         const url = buildApiUrl();
         const res = await apiFetch(url);
         if (!res.ok) throw new Error();
-        const data = await res.json();
+        allOrders = await res.json();
 
-        if (!data || data.length === 0) {
+        if (!allOrders || allOrders.length === 0) {
             ordersList.innerHTML = `<div class="text-center text-muted py-4">Không có đơn hàng</div>`;
             return;
         }
 
-        ordersList.innerHTML = data.map(o => `
-            <div class="card shadow-sm border-0 order-card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="fw-bold fs-5">#${o.code}</div>
-                            <small class="text-muted">${new Date(o.createdAt).toLocaleString('vi-VN')}</small>
-                        </div>
-                        <span class="badge bg-${mapStatusColor(o.status)}">${mapStatusText(o.status)}</span>
-                    </div>
-                    <div class="mt-2">
-                        <strong>Tổng tiền:</strong> <span class="text-success fw-bold">${fmtVND(o.total)}</span>
-                    </div>
-                    <div class="mt-2 border-top pt-2">
-                        ${o.items.map(it => `
-                            <div class="d-flex justify-content-between small mb-1">
-                                <div>${it.productName} (${it.sizeName || '-'}) x ${it.quantity}</div>
-                                <div>${fmtVND(it.lineTotal)}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="mt-3 d-flex gap-2 justify-content-end flex-wrap">
-                        ${o.status === 'PENDING' ? `
-                            <button class="btn btn-sm btn-success" onclick="vendorUpdateStatus(${o.id}, 'confirm')">
-                                <i class="fas fa-check"></i> Duyệt
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="vendorUpdateStatus(${o.id}, 'cancel')">
-                                <i class="fas fa-times"></i> Hủy
-                            </button>
-                        ` : ''}
-                        ${o.status === 'CONFIRMED' ? `
-                            <button class="btn btn-sm btn-primary" onclick="vendorUpdateStatus(${o.id}, 'ship')">
-                                <i class="fas fa-truck"></i> Giao hàng
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-outline-secondary" onclick="showVendorOrderDetail(${o.id})">
-                            <i class="fas fa-eye"></i> Chi tiết
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        currentPage = 1;
+        renderOrders();
+        renderPagination();
 
     } catch (e) {
         console.error(e);
         ordersList.innerHTML = `<div class="text-center text-danger py-4">⚠️ Lỗi tải đơn hàng</div>`;
     }
+}
+
+function renderOrders() {
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageOrders = allOrders.slice(start, end);
+
+    ordersList.innerHTML = pageOrders.map(o => `
+        <div class="card shadow-sm border-0 order-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fw-bold fs-5">#${o.code}</div>
+                        <small class="text-muted">${new Date(o.createdAt).toLocaleString('vi-VN')}</small>
+                    </div>
+                    <span class="badge bg-${mapStatusColor(o.status)}">${mapStatusText(o.status)}</span>
+                </div>
+                <div class="mt-2">
+                    <strong>Tổng tiền:</strong> <span class="text-success fw-bold">${fmtVND(o.total)}</span>
+                </div>
+                <div class="mt-2 border-top pt-2">
+                    ${o.items.map(it => `
+                        <div class="d-flex justify-content-between small mb-1">
+                            <div>${it.productName} (${it.sizeName || '-'}) x ${it.quantity}</div>
+                            <div>${fmtVND(it.lineTotal)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-3 d-flex gap-2 justify-content-end flex-wrap">
+                    ${o.status === 'PENDING' ? `
+                        <button class="btn btn-sm btn-success" onclick="vendorUpdateStatus(${o.id}, 'confirm')">
+                            <i class="fas fa-check"></i> Duyệt
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="vendorUpdateStatus(${o.id}, 'cancel')">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                    ` : ''}
+                    ${o.status === 'CONFIRMED' ? `
+                        <button class="btn btn-sm btn-primary" onclick="vendorUpdateStatus(${o.id}, 'ship')">
+                            <i class="fas fa-truck"></i> Giao hàng
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="showVendorOrderDetail(${o.id})">
+                        <i class="fas fa-eye"></i> Chi tiết
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// =================== 📑 Thanh phân trang ===================
+function renderPagination() {
+    paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(allOrders.length / rowsPerPage);
+    if (totalPages <= 1) return;
+
+    const makeItem = (label, disabled, active, onClick) => {
+        const li = document.createElement('li');
+        li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+        const btn = document.createElement('button');
+        btn.className = 'page-link';
+        btn.textContent = label;
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            if (!disabled) onClick();
+        });
+        li.appendChild(btn);
+        return li;
+    };
+
+    paginationContainer.appendChild(makeItem('«', currentPage === 1, false, () => {
+        currentPage--;
+        renderOrders();
+        renderPagination();
+    }));
+
+    const maxButtons = 5;
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxButtons - 1);
+    if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+    if (start > 1) {
+        paginationContainer.appendChild(makeItem('1', false, currentPage === 1, () => { currentPage = 1; renderOrders(); renderPagination(); }));
+        if (start > 2) paginationContainer.appendChild(makeItem('...', true, false, () => {}));
+    }
+
+    for (let i = start; i <= end; i++) {
+        paginationContainer.appendChild(makeItem(i, false, i === currentPage, () => {
+            currentPage = i;
+            renderOrders();
+            renderPagination();
+        }));
+    }
+
+    if (end < totalPages) {
+        if (end < totalPages - 1) paginationContainer.appendChild(makeItem('...', true, false, () => {}));
+        paginationContainer.appendChild(makeItem(totalPages, false, currentPage === totalPages, () => {
+            currentPage = totalPages;
+            renderOrders();
+            renderPagination();
+        }));
+    }
+
+    paginationContainer.appendChild(makeItem('»', currentPage === totalPages, false, () => {
+        currentPage++;
+        renderOrders();
+        renderPagination();
+    }));
 }
 
 // =================== 📜 Modal chi tiết ===================
@@ -212,7 +281,6 @@ window.showVendorOrderDetail = async function(orderId) {
         `).join('')
         : '<li class="text-muted">Không có lịch sử</li>';
 
-    // Nút hành động modal
     if (order.status === 'PENDING') {
         btnCancel.classList.remove('d-none');
         btnConfirm.classList.remove('d-none');
