@@ -4,14 +4,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.alotra.validator.StrongPassword;
-
+import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -51,9 +49,10 @@ public class User implements UserDetails {
     @Column(name = "Gender")
     private String gender;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "DateOfBirth")
     private LocalDate dateOfBirth;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
 
     @Column(name = "IdCardNumber", unique = true)
     private String idCardNumber;

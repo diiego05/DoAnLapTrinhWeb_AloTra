@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
+       th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
 <body>
 
 <th:block th:fragment="content">
@@ -9,8 +9,9 @@
             <div class="list-group">
                 <a th:href="@{/account/profile}" class="list-group-item list-group-item-action">Thông tin cá nhân</a>
                 <a th:href="@{/account/orders}" class="list-group-item list-group-item-action active">Lịch sử đơn hàng</a>
+
             </div>
-        </div>
+            </div>
         <div class="col-md-9">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -27,6 +28,5 @@
 <th:block th:fragment="additionalJs">
     <!-- JS riêng cho trang đơn hàng (nếu có) -->
 </th:block>
-
 </body>
 </html>

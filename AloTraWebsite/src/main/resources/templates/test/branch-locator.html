@@ -50,7 +50,7 @@
                     <label class="form-label fw-bold">
                         <i class="fas fa-search me-2"></i>Nhập địa chỉ của bạn
                     </label>
-                    <input type="text" id="searchAddress" class="form-control form-control-lg" 
+                    <input type="text" id="searchAddress" class="form-control form-control-lg"
                            placeholder="Nhập địa chỉ để tìm chi nhánh gần nhất...">
                     <div class="form-text">
                         Hoặc nhấn nút bên phải để sử dụng vị trí hiện tại của bạn
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup autocomplete
     const searchInput = document.getElementById('searchAddress');
     const autocomplete = await window.googleMapsLoader.createAutocomplete(searchInput);
-    
+
     if (autocomplete) {
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             userLocation = pos;
             updateUserLocation(userLocation);
             calculateDistances();
-            
+
             // Reverse geocode để hiển thị địa chỉ
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: pos }, (results, status) => {
@@ -193,9 +193,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const res = await fetch('/alotra-website/api/public/branches/active');
             if (!res.ok) throw new Error('Failed to load branches');
-            
+
             branches = await res.json();
-            
+
             // Add markers to map
             branches.forEach((branch, index) => {
                 // Giả sử có lat/lng trong database, nếu không thì cần geocode
@@ -224,9 +224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function addBranchMarker(branch, index) {
         const marker = window.googleMapsLoader.createMarker(map, {
-            position: { 
-                lat: branch.latitude, 
-                lng: branch.longitude 
+            position: {
+                lat: branch.latitude,
+                lng: branch.longitude
             },
             title: branch.name,
             label: {
@@ -242,13 +242,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <h6 class="text-success mb-2">${branch.name}</h6>
                 <p class="mb-1 small"><i class="fas fa-map-marker-alt me-2"></i>${branch.address}</p>
                 <p class="mb-1 small"><i class="fas fa-phone me-2"></i>${branch.phone || 'Chưa có'}</p>
-                <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}" 
+                <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}"
                    target="_blank" class="btn btn-sm btn-success mt-2">
                     <i class="fas fa-directions me-1"></i>Chỉ đường
                 </a>
             </div>
         `;
-        
+
         MapsUtils.createInfoWindow(map, marker, infoContent);
         markers.push(marker);
     }
@@ -300,10 +300,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const nearest = branches[0];
         const avgDistance = branches.reduce((sum, b) => sum + b.distance, 0) / branches.length;
 
-        document.getElementById('nearestDistance').textContent = 
+        document.getElementById('nearestDistance').textContent =
             MapsUtils.formatDistance(nearest.distance);
         document.getElementById('totalBranches').textContent = branches.length;
-        document.getElementById('averageDistance').textContent = 
+        document.getElementById('averageDistance').textContent =
             MapsUtils.formatDistance(avgDistance);
 
         // Re-render list
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderBranchList(branchList) {
         const container = document.getElementById('branchList');
-        
+
         if (branchList.length === 0) {
             container.innerHTML = `
                 <div class="col-12 text-center text-muted py-5">
@@ -349,11 +349,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <i class="fas fa-phone me-2"></i>${branch.phone || 'Chưa cập nhật'}
                         </p>
                         <div class="d-flex gap-2">
-                            <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}" 
+                            <a href="https://www.google.com/maps?q=${branch.latitude},${branch.longitude}"
                                target="_blank" class="btn btn-sm btn-outline-success flex-fill">
                                 <i class="fas fa-directions me-1"></i>Chỉ đường
                             </a>
-                            <button class="btn btn-sm btn-success flex-fill btn-select-branch" 
+                            <button class="btn btn-sm btn-success flex-fill btn-select-branch"
                                     data-index="${index}">
                                 <i class="fas fa-check me-1"></i>Chọn
                             </button>
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (branch.latitude && branch.longitude) {
             map.setCenter({ lat: branch.latitude, lng: branch.longitude });
             map.setZoom(16);
-            
+
             // Trigger marker click
             if (markers[index]) {
                 google.maps.event.trigger(markers[index], 'click');

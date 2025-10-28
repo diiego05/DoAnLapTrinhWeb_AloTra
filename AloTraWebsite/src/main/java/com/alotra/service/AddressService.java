@@ -8,9 +8,8 @@ import com.alotra.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +18,6 @@ public class AddressService {
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final GeocodingService geocodingService;
-
     /**
      * 📦 Lấy danh sách địa chỉ của user, địa chỉ mặc định sẽ lên đầu.
      */
@@ -53,7 +51,6 @@ public class AddressService {
         address.setCity(dto.city());
         address.setDefault(dto.isDefault());
 
-        // ✅ Ưu tiên toạ độ client cung cấp (từ Google/Nominatim Autocomplete)
         boolean setFromClient = setIfValidCoordinates(address, dto.latitude(), dto.longitude());
 
         // 🌐 Nếu client không gửi hoặc không hợp lệ -> geocode server-side
@@ -67,7 +64,7 @@ public class AddressService {
                         address.setLatitude(ll.latitude());
                         address.setLongitude(ll.longitude());
                     });
-            
+
             if (address.getLatitude() == null || address.getLongitude() == null) {
                 System.out.println("⚠️ [AddressService] Geocoding failed for: " + fullAddress);
             }
@@ -77,10 +74,9 @@ public class AddressService {
 
         Address saved = addressRepository.save(address);
         System.out.println("💾 [AddressService] Saved address ID=" + saved.getId() + " with coords: (" + saved.getLatitude() + ", " + saved.getLongitude() + ")");
-        
+
         return AddressDTO.from(saved);
     }
-
     @Transactional
     public AddressDTO updateAddress(Long userId, Long addressId, AddressDTO dto) {
         Address address = addressRepository.findByIdAndUser_Id(addressId, userId)
@@ -100,8 +96,6 @@ public class AddressService {
         } else if (!dto.isDefault() && address.isDefault()) {
             address.setDefault(false);
         }
-
-        // ✅ Ưu tiên toạ độ client cung cấp
         boolean setFromClient = setIfValidCoordinates(address, dto.latitude(), dto.longitude());
 
         // 🌐 Nếu client không gửi hoặc không hợp lệ -> geocode lại với địa chỉ đầy đủ kèm "Vietnam"
@@ -116,10 +110,8 @@ public class AddressService {
                         address.setLongitude(ll.longitude());
                     });
         }
-
         return AddressDTO.from(addressRepository.save(address));
     }
-
     /**
      * 🌟 Đặt địa chỉ mặc định cho user.
      * Nếu địa chỉ không thuộc user -> không thực hiện.
@@ -145,7 +137,7 @@ public class AddressService {
 
     /**
      * 📌 Snapshot địa chỉ: dùng khi lưu vào Order
-     * Trả về chuỗi đầy đủ: "line1, ward, city (Recipient - Phone)"
+     * Trả về chuỗi đầy đủ: "line1, ward, district, city (Recipient - Phone)"
      */
     @Transactional(readOnly = true)
     public String snapshotAddress(Long addressId, Long userId, String paymentMethod) {
@@ -153,9 +145,10 @@ public class AddressService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy địa chỉ hợp lệ"));
 
         return String.format(
-                "%s, %s, %s (%s - %s)",
+        		"%s, %s, %s (%s - %s)",
                 address.getLine1(),
                 address.getWard(),
+
                 address.getCity(),
                 address.getRecipient(),
                 address.getPhone()
@@ -173,8 +166,6 @@ public class AddressService {
                 .map(AddressDTO::from)
                 .orElse(null);
     }
-
-    // 🧭 Toạ độ từ addressId cho OrderService
     @Transactional(readOnly = true)
     public Optional<GeocodingService.LatLng> getCoordinates(Long userId, Long addressId) {
         // ✅ Nếu có userId, kiểm tra quyền sở hữu
@@ -217,4 +208,5 @@ public class AddressService {
     private boolean isValidVietnameseCoordinates(double lat, double lng) {
         return lat >= 8.0 && lat <= 24.5 && lng >= 102.0 && lng <= 110.5;
     }
+
 }

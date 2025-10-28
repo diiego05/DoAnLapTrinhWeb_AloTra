@@ -1,8 +1,4 @@
-/* =====================================================
-   🛒 CHECKOUT PAGE STYLES
-===================================================== */
-
-/* Success Modal */
+@charset "UTF-8";
 .success-modal-overlay {
     position: fixed;
     inset: 0;

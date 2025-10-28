@@ -13,7 +13,6 @@ import com.alotra.repository.UserRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -52,11 +51,10 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
-    @Transactional
+    @Transactional // Đảm bảo tất cả các thao tác DB thành công hoặc thất bại cùng nhau
     public void save(User userFromForm, MultipartFile avatarFile,
                      String addressLine1, String addressCity, String addressWard) {
-
-        Logger log = LoggerFactory.getLogger(getClass());
+    	Logger log = LoggerFactory.getLogger(getClass());
         log.info("🟢 [SERVICE] Bắt đầu lưu người dùng...");
         log.info("👉 ID: {}", userFromForm.getId());
         log.info("👉 FullName: {}", userFromForm.getFullName());
@@ -65,24 +63,24 @@ public class UserService {
         log.info("👉 Role ID: {}", userFromForm.getRole() != null ? userFromForm.getRole().getId() : null);
         log.info("👉 Raw Password: {}", userFromForm.getRawPassword());
         log.info("👉 Address nhập: {} - {} - {}", addressLine1, addressWard, addressCity);
-
         User userInDb;
+        // Kiểm tra là Sửa hay Thêm mới
         if (userFromForm.getId() != null) {
-            userInDb = userRepository.findById(userFromForm.getId())
+        	userInDb = userRepository.findById(userFromForm.getId())
                     .orElseThrow(() -> new RuntimeException("❌ Không tìm thấy người dùng để cập nhật"));
             log.info("✏️ [SERVICE] Cập nhật người dùng hiện có ID = {}", userInDb.getId());
         } else {
-            userInDb = new User();
+        	userInDb = new User();
             log.info("➕ [SERVICE] Tạo mới người dùng");
         }
 
         // 1. Xử lý mật khẩu
         if (StringUtils.hasText(userFromForm.getRawPassword())) {
-            String encoded = passwordEncoder.encode(userFromForm.getRawPassword());
-            userInDb.setPasswordHash(encoded);
-            log.info("✅ Mật khẩu đã encode");
-        } else {
-            log.info("⚠️ Không nhập mật khẩu (giữ nguyên nếu sửa)");
+        	 String encoded = passwordEncoder.encode(userFromForm.getRawPassword());
+             userInDb.setPasswordHash(encoded);
+             log.info("✅ Mật khẩu đã encode");
+         } else {
+             log.info("⚠️ Không nhập mật khẩu (giữ nguyên nếu sửa)");
         }
 
         // 2. Xử lý ảnh đại diện
@@ -92,16 +90,15 @@ public class UserService {
             log.info("✅ Ảnh đại diện đã upload: {}", avatarUrl);
         }
 
-        // 3. Gán thông tin cơ bản
+        // 3. Cập nhật các trường thông tin khác
         userInDb.setFullName(userFromForm.getFullName());
         userInDb.setEmail(userFromForm.getEmail());
         userInDb.setPhone(userFromForm.getPhone());
         userInDb.setGender(userFromForm.getGender());
         userInDb.setDateOfBirth(userFromForm.getDateOfBirth());
         userInDb.setIdCardNumber(userFromForm.getIdCardNumber());
-        userInDb.setStatus(userFromForm.getStatus());
 
-        // 🧠 FIX QUAN TRỌNG: Load Role từ DB trước khi set
+        userInDb.setStatus(userFromForm.getStatus());
         if (userFromForm.getRole() != null && userFromForm.getRole().getId() != null) {
             Role role = roleRepository.findById(userFromForm.getRole().getId())
                     .orElseThrow(() -> new RuntimeException("❌ Không tìm thấy Role ID: " + userFromForm.getRole().getId()));
@@ -110,8 +107,7 @@ public class UserService {
         } else {
             log.warn("⚠️ Role không hợp lệ (null hoặc không có ID)");
         }
-
-        // 4. Lưu User
+        // 4. Lưu User để có ID (quan trọng cho việc tạo địa chỉ mới)
         User savedUser = userRepository.save(userInDb);
         log.info("💾 [SERVICE] User đã lưu thành công — ID = {}", savedUser.getId());
 
@@ -126,18 +122,18 @@ public class UserService {
             newAddress.setRecipient(savedUser.getFullName());
             newAddress.setPhone(savedUser.getPhone());
             newAddress.setLine1(addressLine1);
-            newAddress.setWard(addressWard);
             newAddress.setCity(addressCity);
-            newAddress.setDefault(true);
+            newAddress.setWard(addressWard);
+            newAddress.setDefault(true); // Tạm thời gán địa chỉ đầu tiên là mặc định
 
             addressRepository.save(newAddress);
             log.info("✅ Đã lưu địa chỉ mặc định cho user ID = {}", savedUser.getId());
         } else {
             log.info("⚠️ Không thêm địa chỉ (không phải USER hoặc không nhập địa chỉ)");
         }
-
         log.info("🎯 [SERVICE] Hoàn tất xử lý lưu người dùng.");
     }
+
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }

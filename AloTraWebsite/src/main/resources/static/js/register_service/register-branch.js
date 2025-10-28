@@ -81,10 +81,10 @@ async function attachAutocompleteTo(selector) {
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             if (!place || !place.address_components) return;
-            
+
             // Parse địa chỉ sử dụng parser từ Google Maps Loader
             const parsed = window.googleMapsLoader.parseVietnameseAddress(place.address_components);
-            
+
             // ✅ Kết hợp street + ward + district + city thành địa chỉ đầy đủ cho chi nhánh
             const fullAddress = [
                 parsed.street,
@@ -92,7 +92,7 @@ async function attachAutocompleteTo(selector) {
                 parsed.district,
                 parsed.city
             ].filter(Boolean).join(', ');
-            
+
             input.value = fullAddress;
 
             // 📍 Lưu toạ độ nếu có
@@ -107,13 +107,13 @@ async function attachAutocompleteTo(selector) {
             console.log(`✅ Branch address filled for ${selector}:`, fullAddress, input.dataset.lat, input.dataset.lng);
         });
         console.log(`✅ Google Places autocomplete initialized for ${selector}`);
-    } 
+    }
     // ✅ Handle Nominatim Autocomplete (fallback)
     else if (autocomplete.nominatim) {
         input.addEventListener('nominatim-select', (e) => {
             const detail = e.detail;
             console.log(`📍 Nominatim address selected for ${selector}:`, detail.address);
-            
+
             // Set the full address cho chi nhánh
             input.value = detail.address;
 

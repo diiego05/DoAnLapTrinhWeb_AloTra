@@ -124,11 +124,11 @@ class MapsUtils {
                 (result, status) => {
                     if (status === 'OK') {
                         directionsRenderer.setDirections(result);
-                        
+
                         // Lấy thông tin khoảng cách và thời gian
                         const route = result.routes[0];
                         const leg = route.legs[0];
-                        
+
                         resolve({
                             distance: leg.distance.text,
                             duration: leg.duration.text,
@@ -197,12 +197,12 @@ class MapsUtils {
      */
     static isPointInCircle(point, circle) {
         if (!window.google || !window.google.maps) return false;
-        
+
         const distance = google.maps.geometry.spherical.computeDistanceBetween(
             new google.maps.LatLng(point.lat, point.lng),
             circle.getCenter()
         );
-        
+
         return distance <= circle.getRadius();
     }
 

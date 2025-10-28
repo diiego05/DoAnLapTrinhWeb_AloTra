@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: layout(content=~{::content}, additionalJs=~{::additionalJs}, pageTitle=${product != null ? product.name : 'Chi tiết sản phẩm'})}">
+       th:replace="~{layouts/default_layout :: layout(content=~{::content}, additionalJs=~{::additionalJs}, pageTitle=${product != null ? product.name : 'Chi tiết sản phẩm'})}">
 <body>
 <th:block th:fragment="content">
     <div class="container my-5">
@@ -98,7 +98,6 @@
         </div>
     </div>
 </div>
-
 <!-- 📝 ĐÁNH GIÁ SẢN PHẨM -->
 <div class="row mt-5">
     <div class="col-12">
@@ -126,7 +125,7 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-    <script type="module" th:src="@{/js/product-detail.js}" defer></script>
+    <script type="module" th:src="@{/js/product/product-detail.js}" defer></script>
 
     <style>
         .cart-toast {

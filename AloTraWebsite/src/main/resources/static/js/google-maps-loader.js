@@ -180,7 +180,7 @@ class GoogleMapsLoader {
                 div.onmouseout = () => div.style.background = 'white';
                 div.onclick = () => {
                     input.value = item.display_name;
-                    
+
                     // Trigger custom event để các handler khác xử lý
                     const event = new CustomEvent('nominatim-select', {
                         detail: {
@@ -190,7 +190,7 @@ class GoogleMapsLoader {
                         }
                     });
                     input.dispatchEvent(event);
-                    
+
                     hideDropdown(); // ✅ Gọi trực tiếp hideDropdown
                 };
                 dropdown.appendChild(div);
@@ -260,7 +260,7 @@ class GoogleMapsLoader {
                 });
             });
         });
-        
+
         if (input.parentNode) {
             observer.observe(input.parentNode, { childList: true, subtree: true });
         }
@@ -349,7 +349,7 @@ class GoogleMapsLoader {
             if (types.includes('street_number')) {
                 result.street = longName + (result.street ? ' ' : '');
                 console.log('🏠 Street number:', longName);
-            } 
+            }
             else if (types.includes('route')) {
                 result.street = (result.street || '') + longName;
                 console.log('🛣️ Route:', longName);
@@ -393,7 +393,7 @@ class GoogleMapsLoader {
         }
 
         // 🔧 Bước 5: Post-processing & validation
-        
+
         // ❌ Loại bỏ postal code nếu nhầm vào ward/district/city
         [result.ward, result.district, result.city].forEach((value, idx) => {
             const field = ['ward', 'district', 'city'][idx];
@@ -447,7 +447,7 @@ class GoogleMapsLoader {
         if (!result.ward) warnings.push('ward');
         if (!result.district) warnings.push('district');
         if (!result.city) warnings.push('city');
-        
+
         if (warnings.length > 0) {
             console.warn('⚠️ [WARNING] Missing address components:', warnings.join(', '));
         }
@@ -463,21 +463,21 @@ class GoogleMapsLoader {
 
     /**
      * Tính khoảng cách giữa 2 điểm (Haversine formula)
-     * @param {number} lat1 
-     * @param {number} lng1 
-     * @param {number} lat2 
-     * @param {number} lng2 
+     * @param {number} lat1
+     * @param {number} lng1
+     * @param {number} lat2
+     * @param {number} lng2
      * @returns {number} Khoảng cách tính bằng km
      */
     calculateDistance(lat1, lng1, lat2, lng2) {
         const R = 6371; // Bán kính trái đất (km)
         const dLat = this._toRad(lat2 - lat1);
         const dLng = this._toRad(lng2 - lng1);
-        
+
         const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                   Math.cos(this._toRad(lat1)) * Math.cos(this._toRad(lat2)) *
                   Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        
+
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
@@ -488,8 +488,8 @@ class GoogleMapsLoader {
 
     /**
      * Hiển thị bản đồ trên element
-     * @param {HTMLElement} element 
-     * @param {Object} options 
+     * @param {HTMLElement} element
+     * @param {Object} options
      * @returns {Promise<google.maps.Map|null>}
      */
     async createMap(element, options = {}) {
@@ -510,8 +510,8 @@ class GoogleMapsLoader {
 
     /**
      * Thêm marker vào bản đồ
-     * @param {google.maps.Map} map 
-     * @param {Object} options 
+     * @param {google.maps.Map} map
+     * @param {Object} options
      * @returns {google.maps.Marker|null}
      */
     createMarker(map, options = {}) {

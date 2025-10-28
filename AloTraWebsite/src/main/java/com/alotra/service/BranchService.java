@@ -17,11 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.text.Normalizer;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @Service
 public class BranchService {
@@ -38,8 +38,7 @@ public class BranchService {
 	@Autowired
 	private BranchInventoryRepository branchInventoryRepository;
 
-    // 🗺️ Geocoding
-    @Autowired
+	@Autowired
     private GeocodingService geocodingService;
 
 	private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
@@ -58,10 +57,7 @@ public class BranchService {
 		return slug.toLowerCase(Locale.ENGLISH);
 	}
 
-    /**
-     * ✅ Kiểm tra tọa độ có nằm trong phạm vi Việt Nam không
-     */
-    private boolean isValidVietnameseCoordinates(Double lat, Double lng) {
+	private boolean isValidVietnameseCoordinates(Double lat, Double lng) {
         if (lat == null || lng == null) return false;
         if (!Double.isFinite(lat) || !Double.isFinite(lng)) return false;
         return lat >= 8.0 && lat <= 24.5 && lng >= 102.0 && lng <= 110.5;
@@ -75,7 +71,7 @@ public class BranchService {
     public int backfillCoordinatesForAllBranches() {
         int updated = 0;
         List<Branch> branches = branchRepository.findAll();
-        
+
         for (Branch b : branches) {
             if (!isValidVietnameseCoordinates(b.getLatitude(), b.getLongitude())) {
                 boolean success = geocodeBranch(b);
@@ -84,12 +80,12 @@ public class BranchService {
                 }
             }
         }
-        
+
         if (updated > 0) {
             branchRepository.saveAll(branches);
             System.out.println("✅ [BranchService] Backfilled coordinates for " + updated + " branches");
         }
-        
+
         return updated;
     }
 
@@ -105,11 +101,11 @@ public class BranchService {
 
         // Thử 1: Địa chỉ gốc
         var llOpt = geocodingService.geocodeAddress(addr.trim());
-        
+
         // Thử 2: Thêm ", Vietnam" nếu chưa có
         if (llOpt.isEmpty()) {
             String q = addr.trim();
-            if (!q.toLowerCase(Locale.ROOT).contains("vietnam") && 
+            if (!q.toLowerCase(Locale.ROOT).contains("vietnam") &&
                 !q.toLowerCase(Locale.ROOT).contains("việt nam")) {
                 q = q + ", Vietnam";
                 llOpt = geocodingService.geocodeAddress(q);
@@ -121,43 +117,38 @@ public class BranchService {
             if (isValidVietnameseCoordinates(ll.latitude(), ll.longitude())) {
                 branch.setLatitude(ll.latitude());
                 branch.setLongitude(ll.longitude());
-                System.out.println("✅ [BranchService] Geocoded branch " + branch.getId() + ": " + 
+                System.out.println("✅ [BranchService] Geocoded branch " + branch.getId() + ": " +
                                  ll.latitude() + ", " + ll.longitude());
                 return true;
             } else {
-                System.out.println("⚠️ [BranchService] Invalid coordinates for branch " + branch.getId() + 
+                System.out.println("⚠️ [BranchService] Invalid coordinates for branch " + branch.getId() +
                                  ": " + ll.latitude() + ", " + ll.longitude());
             }
         } else {
-            System.out.println("❌ [BranchService] Failed to geocode branch " + branch.getId() + 
+            System.out.println("❌ [BranchService] Failed to geocode branch " + branch.getId() +
                              " with address: " + addr);
         }
-        
+
         return false;
     }
-
-	/**
-	 * Lấy chi nhánh theo ID
-	 */
 	public Branch findById(Long id) {
 		return branchRepository.findById(id).orElse(null);
 	}
 
 	/**
-	 * Thêm mới chi nhánh + tự động tạo tồn kho mặc định cho tất cả biến thể sản phẩm
+	 * Thêm mới chi nhánh + tự động tạo tồn kho mặc định cho tất cả biến thể sản
+	 * phẩm
 	 */
 	public void save(Branch branch) {
 		// Tạo slug
 		branch.setSlug(generateSlug(branch.getName()));
-
-        // 📍 Tính toạ độ cho địa chỉ chi nhánh nếu chưa có hoặc không hợp lệ
+		// 📍 Tính toạ độ cho địa chỉ chi nhánh nếu chưa có hoặc không hợp lệ
         if (!isValidVietnameseCoordinates(branch.getLatitude(), branch.getLongitude())) {
             geocodeBranch(branch);
         } else {
-            System.out.println("✅ [BranchService] Branch already has valid coordinates: " + 
+            System.out.println("✅ [BranchService] Branch already has valid coordinates: " +
                              branch.getLatitude() + ", " + branch.getLongitude());
         }
-
 		Branch savedBranch = branchRepository.save(branch);
 
 		// Tạo tồn kho cho tất cả variant hiện có
@@ -167,6 +158,7 @@ public class BranchService {
 			inventory.setBranchId(savedBranch.getId());
 			inventory.setVariantId(variant.getId());
 			inventory.setStatus(INVENTORY_STATUS);
+
 			branchInventoryRepository.save(inventory);
 		}
 	}
@@ -270,35 +262,31 @@ public class BranchService {
         return new BranchDTO(branch.getId(), branch.getName(), branch.getSlug(),
                 branch.getAddress(), branch.getPhone(), branch.getStatus());
     }
-
-	/**
-	 * 📍 Tìm chi nhánh ACTIVE gần nhất theo toạ độ (lat/lng)
-	 */
-	@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
 	public BranchDTO findNearestActiveBranch(double lat, double lng) {
 		// Validate input coordinates - CHẤP NHẬN phạm vi rộng hơn cho VN
 		if (!Double.isFinite(lat) || !Double.isFinite(lng)) {
 			System.out.println("⚠️ [BranchService] Invalid coordinates (NaN/Infinity): lat=" + lat + ", lng=" + lng);
 			return null;
 		}
-		
+
 		// Kiểm tra phạm vi Việt Nam với tolerance
 		if (lat < 7.5 || lat > 24.5 || lng < 101.5 || lng > 110.5) {
 			System.out.println("⚠️ [BranchService] Coordinates outside Vietnam bounds: lat=" + lat + ", lng=" + lng);
 			// Vẫn tiếp tục tìm kiếm thay vì return null
 		}
-		
+
 		System.out.println("🗺️ [BranchService] Finding nearest ACTIVE branch:");
 		System.out.println("   📍 User Location: lat=" + lat + ", lng=" + lng);
-		
+
 		var branches = branchRepository.findByStatusAndLatitudeIsNotNullAndLongitudeIsNotNull("ACTIVE");
 		System.out.println("   🏪 Found " + branches.size() + " ACTIVE branches with coordinates");
-		
+
 		if (branches.isEmpty()) {
 			System.out.println("   ⚠️ No ACTIVE branches with coordinates found!");
 			return null;
 		}
-		
+
 		// ✅ KHÔNG filter theo validation - chỉ log warning
 		var branchesWithDistance = branches.stream()
 			.filter(b -> {
@@ -318,7 +306,7 @@ public class BranchService {
 				System.out.println("      📍 Address: " + b.getAddress());
 				System.out.println("      📊 Coords: (" + b.getLatitude() + ", " + b.getLongitude() + ")");
 				System.out.println("      📏 Distance: " + String.format("%.2f km", distance));
-				
+
 				return new Object() {
 					final Branch branch = b;
 					final double dist = distance;
@@ -326,29 +314,29 @@ public class BranchService {
 			})
 			.sorted((a, b) -> Double.compare(a.dist, b.dist))
 			.toList();
-		
+
 		if (branchesWithDistance.isEmpty()) {
 			System.out.println("   ⚠️ No valid branches after filtering!");
 			return null;
 		}
-		
+
 		var nearest = branchesWithDistance.get(0);
-		System.out.println("   ✅ Selected nearest: " + nearest.branch.getName() + 
+		System.out.println("   ✅ Selected nearest: " + nearest.branch.getName() +
 						 " (" + String.format("%.2f km", nearest.dist) + ")");
-		
+
 		// Log top 3 để debug
 		System.out.println("   📋 Top 3 nearest branches:");
 		branchesWithDistance.stream().limit(3).forEach(item -> {
-			System.out.println("      - " + item.branch.getName() + ": " + 
+			System.out.println("      - " + item.branch.getName() + ": " +
 							 String.format("%.2f km", item.dist));
 		});
-		
+
 		return new BranchDTO(
-			nearest.branch.getId(), 
-			nearest.branch.getName(), 
-			nearest.branch.getSlug(), 
-			nearest.branch.getAddress(), 
-			nearest.branch.getPhone(), 
+			nearest.branch.getId(),
+			nearest.branch.getName(),
+			nearest.branch.getSlug(),
+			nearest.branch.getAddress(),
+			nearest.branch.getPhone(),
 			nearest.branch.getStatus()
 		);
 	}
@@ -361,51 +349,51 @@ public class BranchService {
 	@Transactional(readOnly = true)
 	public List<BranchDTO> findBranchesWithProduct(Long productId) {
 		System.out.println("🔍 [BranchService] Finding branches with product ID: " + productId);
-		
+
 		// ✅ Sửa: Sử dụng method đúng từ repository
 		List<ProductVariant> variants = productVariantRepository.findByProductId(productId);
 		if (variants.isEmpty()) {
 			System.out.println("⚠️ [BranchService] No variants found for product " + productId);
 			return List.of();
 		}
-		
+
 		List<Long> variantIds = variants.stream()
 			.map(ProductVariant::getId)
 			.collect(Collectors.toList());
-		
+
 		System.out.println("📦 [BranchService] Found " + variantIds.size() + " variants: " + variantIds);
-		
+
 		// Lấy tất cả chi nhánh ACTIVE
 		List<Branch> activeBranches = branchRepository.findByStatus("ACTIVE");
 		System.out.println("🏪 [BranchService] Found " + activeBranches.size() + " ACTIVE branches");
-		
+
 		// Lọc chi nhánh có ít nhất 1 variant của sản phẩm này
 		List<BranchDTO> result = activeBranches.stream()
 			.filter(branch -> {
 				// Kiểm tra xem chi nhánh có ít nhất 1 variant của sản phẩm này không
 				boolean hasProduct = variantIds.stream()
-					.anyMatch(variantId -> 
+					.anyMatch(variantId ->
 						branchInventoryRepository.existsByBranchIdAndVariantIdAndStatus(
 							branch.getId(), variantId, INVENTORY_STATUS
 						)
 					);
-				
+
 				if (hasProduct) {
 					System.out.println("✅ [BranchService] Branch " + branch.getName() + " has this product");
 				}
-				
+
 				return hasProduct;
 			})
 			.map(b -> new BranchDTO(
-				b.getId(), 
-				b.getName(), 
-				b.getSlug(), 
-				b.getAddress(), 
-				b.getPhone(), 
+				b.getId(),
+				b.getName(),
+				b.getSlug(),
+				b.getAddress(),
+				b.getPhone(),
 				b.getStatus()
 			))
 			.collect(Collectors.toList());
-		
+
 		System.out.println("✅ [BranchService] Found " + result.size() + " branches with product " + productId);
 		return result;
 	}

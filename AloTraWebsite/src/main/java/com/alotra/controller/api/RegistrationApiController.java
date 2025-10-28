@@ -13,8 +13,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/register")
@@ -113,7 +113,7 @@ public class RegistrationApiController {
         return ResponseEntity.ok("❌ Yêu cầu đã bị từ chối.");
     }
 
-    // 🧹 Admin: backfill toạ độ cho các chi nhánh chưa có
+
     @PutMapping("/admin/branches/backfill-coords")
     public ResponseEntity<Map<String, Object>> backfillBranchCoordinates() {
         int updated = branchService.backfillCoordinatesForAllBranches();

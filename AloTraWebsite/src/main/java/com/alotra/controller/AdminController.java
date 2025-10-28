@@ -1,6 +1,5 @@
 package com.alotra.controller;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.FieldError;
+
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,7 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.util.StringUtils;
-
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
 import com.alotra.entity.Address;
 import com.alotra.entity.Branch;
 import com.alotra.entity.Category;
@@ -142,10 +142,11 @@ public class AdminController {
 	        model.addAttribute("user", user);
 
 	        Address defaultAddress = user.getAddresses()
-	                .stream()
+	        		.stream()
 	                .filter(Address::isDefault)
 	                .findFirst()
 	                .orElse(null);
+
 	        model.addAttribute("defaultAddress", defaultAddress);
 
 	        model.addAttribute("pageTitle", "Chỉnh Sửa");
@@ -155,6 +156,9 @@ public class AdminController {
 
 	        return "admin/user-form";
 	    }
+
+
+	 // Vị trí: trong file com.alotra.controller.AdminController.java
 
 	    @PostMapping("/users/save")
 	    public String saveUser(
@@ -179,13 +183,10 @@ public class AdminController {
 	        System.out.println("👉 Raw Password: " + user.getRawPassword());
 	        System.out.println("👉 Địa chỉ nhập: " + addressLine1 + " - " + addressWard + " - " + addressCity);
 
-	        // ⚠️ Nếu là tạo mới mà không nhập mật khẩu => báo lỗi
+	        // Yêu cầu mật khẩu khi tạo mới
 	        if (user.getId() == null && !StringUtils.hasText(user.getRawPassword())) {
-	            System.out.println("❌ [DEBUG] Mật khẩu bị bỏ trống khi tạo mới");
 	            bindingResult.rejectValue("rawPassword", "error.user", "Mật khẩu là bắt buộc khi tạo mới");
 	        }
-
-	        // ⚠️ Nếu là chỉnh sửa mà mật khẩu trống => bỏ qua validate mật khẩu
 	        if (user.getId() != null && !StringUtils.hasText(user.getRawPassword())) {
 	            System.out.println("🧹 [DEBUG] Bỏ qua lỗi mật khẩu khi chỉnh sửa người dùng");
 
@@ -205,10 +206,10 @@ public class AdminController {
 	        }
 
 	        // 🧭 Nếu còn lỗi sau xử lý => trả về form
+	        // Nếu có lỗi validation ban đầu, trả về ngay
 	        if (bindingResult.hasErrors()) {
-	            System.out.println("❌ [DEBUG] Có lỗi BindingResult:");
-	            bindingResult.getAllErrors().forEach(err -> System.out.println("   ⚠️ " + err));
-
+	        	 System.out.println("❌ [DEBUG] Có lỗi BindingResult:");
+		            bindingResult.getAllErrors().forEach(err -> System.out.println("   ⚠️ " + err));
 	            model.addAttribute("roleList", userService.findAllRoles());
 	            model.addAttribute("pageTitle", user.getId() == null ? "Thêm Mới" : "Chỉnh Sửa");
 	            model.addAttribute("parentPageTitle", "Quản lý Người dùng");
@@ -218,25 +219,28 @@ public class AdminController {
 	        }
 
 	        try {
-	            System.out.println("🧾 [DEBUG] Gọi userService.save(...)");
 	            userService.save(user, avatarFile, addressLine1, addressCity, addressWard);
-	            System.out.println("✅ [DEBUG] Lưu người dùng thành công — ID mới: " + user.getId());
-	            redirectAttributes.addFlashAttribute("message", "✅ Lưu người dùng thành công!");
+	            redirectAttributes.addFlashAttribute("message", "Lưu người dùng thành công!");
+
 	        } catch (DataIntegrityViolationException e) {
-	            System.out.println("❌ [DEBUG] DataIntegrityViolationException: " + e.getMessage());
+	            // --- PHẦN XỬ LÝ LỖI TRÙNG LẶP ---
+	        	System.out.println("❌ [DEBUG] DataIntegrityViolationException: " + e.getMessage());
 	            e.printStackTrace();
 	            String errorMessage = e.getMostSpecificCause().getMessage();
 
+	            // Kiểm tra xem lỗi là do email, phone hay cccd
 	            if (errorMessage.toLowerCase().contains("email")) {
 	                bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
 	            } else if (errorMessage.toLowerCase().contains("phone")) {
 	                bindingResult.rejectValue("phone", "error.user", "Số điện thoại này đã được sử dụng.");
 	            } else if (errorMessage.toLowerCase().contains("idcardnumber")) {
-	                bindingResult.rejectValue("idCardNumber", "error.user", "Số CCCD này đã được sử dụng.");
+	                 bindingResult.rejectValue("idCardNumber", "error.user", "Số CCCD này đã được sử dụng.");
 	            } else {
+	                // Lỗi trùng lặp chung
 	                model.addAttribute("error", "Lỗi: Dữ liệu bị trùng lặp, vui lòng kiểm tra lại.");
 	            }
 
+	            // Chuẩn bị dữ liệu để hiển thị lại form với lỗi đỏ
 	            model.addAttribute("roleList", userService.findAllRoles());
 	            model.addAttribute("pageTitle", user.getId() == null ? "Thêm Mới" : "Chỉnh Sửa");
 	            model.addAttribute("parentPageTitle", "Quản lý Người dùng");
@@ -250,7 +254,6 @@ public class AdminController {
 
 	        return "redirect:/admin/users";
 	    }
-
 	    @GetMapping("/users/delete/{id}")
 	    public String deleteUser(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
 	        try {

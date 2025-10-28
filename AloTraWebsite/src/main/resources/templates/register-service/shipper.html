@@ -145,10 +145,10 @@
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">✏️ Cập nhật yêu cầu Shipper</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="editShipperId">
+  	<input type="hidden" id="editShipperId">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Nhà vận chuyển</label>
                         <select id="editCarrierSelect" class="form-select"></select>
@@ -162,16 +162,7 @@
                         <input type="text" id="editVehiclePlate" class="form-control">
                     </div>
                     <!-- 🆕 Thêm input tìm kiếm địa chỉ trong modal -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Tìm kiếm địa chỉ <span class="text-danger">*</span></label>
-                        <div class="address-input-enhanced">
-                            <input type="text" id="editAddressSearch" class="form-control" placeholder="Nhập địa chỉ (có hỗ trợ gợi ý)">
-                            <i class="fas fa-map-marker-alt address-input-icon"></i>
-                        </div>
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle"></i> Bắt đầu nhập để xem gợi ý địa chỉ
-                        </small>
-                    </div>
+
                     <!-- 🗺️ Khu vực hoạt động -->
                     <div class="row g-2">
                         <div class="col-md-4">
@@ -199,7 +190,7 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-<script type="module" src="/alotra-website/js/register-shipper.js"></script>
+<script type="module" src="/alotra-website/js/register_service/register-shipper.js"></script>
 </th:block>
 
 </body>

@@ -46,6 +46,7 @@
                         <th>Mã đơn</th>
                         <th>Ngày đặt</th>
                         <th>Chi nhánh</th>
+
                         <th>Tổng tiền</th>
                         <th>Thanh toán</th>
                         <th>Trạng thái</th>
@@ -59,8 +60,7 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- 📄 Thanh phân trang -->
+         <!-- 📄 Thanh phân trang -->
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mt-3" id="orderPagination"></ul>
         </nav>
@@ -134,9 +134,7 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-    <script type="module" src="/alotra-website/js/admin-orders.js"></script>
-
-
+    <script type="module" src="/alotra-website/js/admin/admin-orders.js"></script>
 </th:block>
 </body>
 </html>

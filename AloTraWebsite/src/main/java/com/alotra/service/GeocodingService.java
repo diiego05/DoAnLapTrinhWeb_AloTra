@@ -58,7 +58,7 @@ public class GeocodingService {
 
             // 2️⃣ Fallback: OpenStreetMap Nominatim (miễn phí)
             return geocodeViaNominatimWithRetry(address);
-            
+
         } catch (Exception e) {
             logger.error("❌ Unexpected error geocoding address='{}': {}", address, e.getMessage());
             return Optional.empty();
@@ -75,7 +75,7 @@ public class GeocodingService {
                 if (result.isPresent()) {
                     return result;
                 }
-                
+
                 if (attempt < MAX_RETRIES) {
                     logger.debug("Retry {}/{} for Google geocoding: {}", attempt, MAX_RETRIES, address);
                     TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS * attempt);
@@ -101,15 +101,15 @@ public class GeocodingService {
                 URLEncoder.encode(address, StandardCharsets.UTF_8),
                 apiKey
             );
-            
+
             logger.debug("📡 Calling Google Geocoding API");
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("Accept", "application/json");
             HttpEntity<Void> entity = new HttpEntity<>(headers);
-            
+
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-            
+
             if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
                 logger.warn("⚠️ Google API returned non-2xx status: {}", resp.getStatusCode());
                 return Optional.empty();
@@ -117,7 +117,7 @@ public class GeocodingService {
 
             JsonNode root = objectMapper.readTree(resp.getBody());
             String status = root.path("status").asText("");
-            
+
             // Xử lý các trạng thái của Google API
             switch (status) {
                 case "OK":
@@ -139,7 +139,7 @@ public class GeocodingService {
                     logger.warn("⚠️ Unexpected status from Google API: {}", status);
                     return Optional.empty();
             }
-            
+
         } catch (RestClientException e) {
             logger.error("❌ Network error calling Google API: {}", e.getMessage());
             return Optional.empty();
@@ -159,26 +159,26 @@ public class GeocodingService {
                 logger.info("ℹ️ Empty results array from Google");
                 return Optional.empty();
             }
-            
+
             JsonNode firstResult = results.get(0);
             JsonNode location = firstResult.path("geometry").path("location");
-            
+
             if (!location.has("lat") || !location.has("lng")) {
                 logger.warn("⚠️ Missing lat/lng in Google response");
                 return Optional.empty();
             }
-            
+
             double lat = location.get("lat").asDouble();
             double lng = location.get("lng").asDouble();
-            
+
             // Validate coordinates are in Vietnam bounds
             if (!isValidVietnameseCoordinates(lat, lng)) {
                 logger.warn("⚠️ Coordinates outside Vietnam: lat={}, lng={}", lat, lng);
             }
-            
+
             logger.debug("✅ Google geocode: {} -> lat={}, lng={}", address, lat, lng);
             return Optional.of(new LatLng(lat, lng));
-            
+
         } catch (Exception e) {
             logger.error("❌ Error extracting coordinates: {}", e.getMessage());
             return Optional.empty();
@@ -191,10 +191,10 @@ public class GeocodingService {
     private Optional<LatLng> geocodeViaNominatimWithRetry(String address) {
         // Tạo nhiều biến thể của địa chỉ để tăng khả năng tìm thấy
         List<String> addressVariants = generateAddressVariants(address);
-        
+
         for (String variant : addressVariants) {
             logger.debug("🔍 Trying Nominatim with variant: {}", variant);
-            
+
             for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
                 try {
                     Optional<LatLng> result = geocodeViaNominatim(variant);
@@ -202,7 +202,7 @@ public class GeocodingService {
                         logger.info("✅ Nominatim success with variant: {}", variant);
                         return result;
                     }
-                    
+
                     if (attempt < MAX_RETRIES) {
                         logger.debug("Retry {}/{} for Nominatim", attempt, MAX_RETRIES);
                         TimeUnit.MILLISECONDS.sleep(NOMINATIM_DELAY_MS);
@@ -215,7 +215,7 @@ public class GeocodingService {
                     logger.warn("Nominatim attempt {}/{} failed: {}", attempt, MAX_RETRIES, e.getMessage());
                 }
             }
-            
+
             // Delay giữa các variant để tránh rate limit
             try {
                 TimeUnit.MILLISECONDS.sleep(NOMINATIM_DELAY_MS);
@@ -224,7 +224,7 @@ public class GeocodingService {
                 break;
             }
         }
-        
+
         logger.warn("❌ All Nominatim attempts failed for address: {}", address);
         return Optional.empty();
     }
@@ -234,16 +234,16 @@ public class GeocodingService {
      */
     private List<String> generateAddressVariants(String address) {
         List<String> variants = new ArrayList<>();
-        
+
         // 1. Địa chỉ gốc
         variants.add(address);
-        
+
         // 2. Thêm "Vietnam" nếu chưa có
         if (!address.toLowerCase().contains("việt nam") && !address.toLowerCase().contains("vietnam")) {
             variants.add(address + ", Vietnam");
             variants.add(address + ", Việt Nam");
         }
-        
+
         // 3. Thử format ngắn gọn hơn (bỏ số nhà nếu có)
         String[] parts = address.split(",");
         if (parts.length > 2) {
@@ -256,7 +256,7 @@ public class GeocodingService {
                 }
             }
         }
-        
+
         // 4. Thử chỉ với thành phố cuối cùng
         if (parts.length >= 2) {
             String cityOnly = parts[parts.length - 1].trim();
@@ -264,7 +264,7 @@ public class GeocodingService {
                 variants.add(cityOnly + ", Vietnam");
             }
         }
-        
+
         // Loại bỏ duplicate
         return variants.stream().distinct().toList();
     }
@@ -276,22 +276,22 @@ public class GeocodingService {
         try {
             // ✅ Delay để tránh rate limit
             Thread.sleep(NOMINATIM_DELAY_MS);
-            
+
             String url = String.format(
                 "https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1&countrycodes=vn&addressdetails=1",
                 URLEncoder.encode(address, StandardCharsets.UTF_8)
             );
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("User-Agent", "AloTraWebsite/1.0 (support@alotra.vn)");
             headers.set("Accept", "application/json");
             headers.set("Accept-Language", "vi,en");
-            
+
             logger.debug("📡 Calling Nominatim API for: {}", address);
-            
+
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-            
+
             if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
                 logger.warn("⚠️ Nominatim returned status: {}", resp.getStatusCode());
                 return Optional.empty();
@@ -304,25 +304,25 @@ public class GeocodingService {
                 logger.debug("⚠️ Nominatim: No results for '{}'", address);
                 return Optional.empty();
             }
-            
+
             JsonNode first = arr.get(0);
             if (!first.has("lat") || !first.has("lon")) {
                 logger.warn("⚠️ Nominatim result missing coordinates");
                 return Optional.empty();
             }
-            
+
             double lat = first.get("lat").asDouble();
             double lon = first.get("lon").asDouble();
-            
+
             // Validate coordinates
             if (!isValidVietnameseCoordinates(lat, lon)) {
                 logger.warn("⚠️ Coordinates outside Vietnam bounds: lat={}, lng={}", lat, lon);
                 // Vẫn return vì có thể là khu vực biên giới
             }
-            
+
             logger.info("✅ Nominatim SUCCESS: {} -> lat={}, lng={}", address, lat, lon);
             return Optional.of(new LatLng(lat, lon));
-            
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.error("❌ Thread interrupted during Nominatim call");
@@ -360,14 +360,14 @@ public class GeocodingService {
 
             logger.debug("[DEBUG] Google API URL: {}", url.replaceAll("key=[^&]+", "key=***"));
             ResponseEntity<String> resp = restTemplate.getForEntity(url, String.class);
-            
+
             if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
                 logger.warn("[DEBUG] HTTP error: {}", resp.getStatusCode());
                 return Optional.empty();
             }
-            
+
             return Optional.of(resp.getBody());
-            
+
         } catch (Exception e) {
             logger.error("[DEBUG] Error: {}", e.getMessage());
             return Optional.empty();

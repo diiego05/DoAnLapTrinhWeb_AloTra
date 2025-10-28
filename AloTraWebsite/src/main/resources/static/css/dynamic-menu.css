@@ -1,8 +1,4 @@
-/* =====================================================
-   🍔 DYNAMIC MEGA MENU STYLES
-===================================================== */
-
-/* Mega Menu Container */
+@charset "UTF-8";
 .mega-menu {
     width: 100%;
     left: 0 !important;
@@ -217,20 +213,20 @@
         padding: 15px;
         animation: none;
     }
-    
+
     .mega-menu-title {
         font-size: 1rem;
     }
-    
+
     .mega-menu-item {
         padding: 8px 10px !important;
         margin-bottom: 5px;
     }
-    
+
     .navbar-bottom .nav-link {
         padding: 10px 15px;
     }
-    
+
     .mega-menu-item:hover {
         transform: translateX(0);
     }

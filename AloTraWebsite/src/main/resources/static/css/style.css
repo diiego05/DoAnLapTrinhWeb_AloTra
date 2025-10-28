@@ -6,6 +6,7 @@ body {
     background-color: #f8f9fa;
     padding-top: 70px; /* chừa khoảng cho header cố định */
 }
+
 html, body {
     height: 100%;
     overflow: hidden;
@@ -239,8 +240,6 @@ main.flex-shrink-0 {
     transform: translateY(-8px);
     box-shadow: 0 12px 24px rgba(0, 102, 51, 0.15);
 }
-
-/* ✅ Container ảnh với tỷ lệ chuẩn 4:3 */
 .product-card a {
     position: relative;
     display: block;
@@ -249,7 +248,6 @@ main.flex-shrink-0 {
     overflow: hidden;
 
 }
-
 .product-card img {
     position: absolute;
     top: 0;
@@ -259,7 +257,6 @@ main.flex-shrink-0 {
     object-fit: cover;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .product-card:hover img {
     transform: scale(1.1);
 }
@@ -283,7 +280,6 @@ main.flex-shrink-0 {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.05); }
 }
-
 .product-card .card-body {
     padding: 16px;
     text-align: center;
@@ -292,7 +288,6 @@ main.flex-shrink-0 {
     flex-direction: column;
     justify-content: space-between;
 }
-
 .product-card .card-title {
     font-size: 1rem;
     font-weight: 600;
@@ -306,6 +301,11 @@ main.flex-shrink-0 {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.product-card .price {
+
+    color: #006633;
+    margin-bottom: 15px;
+}
 
 .product-card .card-title a {
     position: static;
@@ -315,11 +315,11 @@ main.flex-shrink-0 {
     transition: color 0.3s ease;
 }
 
-.product-card .card-title a:hover {
-    color: #006633;
+.product-card .card-title a:hover{
+	color: #006633;
 }
 
-/* Giá sản phẩm */
+
 .product-card .price,
 .product-card .mb-2,
 .product-card .mb-3 {
@@ -337,7 +337,6 @@ main.flex-shrink-0 {
     font-weight: 700 !important;
 }
 
-/* Nút thêm giỏ hàng */
 .product-card .btn-add-to-cart {
     background: linear-gradient(135deg, #006633 0%, #009944 100%);
     color: white;
@@ -350,8 +349,24 @@ main.flex-shrink-0 {
     box-shadow: 0 4px 12px rgba(0, 102, 51, 0.2);
     margin-top: auto;
 }
-
 .product-card .btn-add-to-cart:hover {
+    background: linear-gradient(135deg, #004d26 0%, #006633 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 102, 51, 0.3);
+}
+
+.product-card .btn-view-promotion {
+    background: linear-gradient(135deg, #006633 0%, #009944 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 102, 51, 0.2);
+}
+.product-card .btn-view-promotion:hover {
     background: linear-gradient(135deg, #004d26 0%, #006633 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 102, 51, 0.3);
@@ -361,7 +376,6 @@ main.flex-shrink-0 {
     transform: translateY(0);
 }
 
-/* ✅ Responsive cho các kích thước màn hình */
 @media (max-width: 575.98px) {
     .product-card .card-title {
         font-size: 0.95rem;

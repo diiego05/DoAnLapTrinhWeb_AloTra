@@ -2,6 +2,17 @@
 
 const contextPath = "/alotra-website";
 
+// 🔸 Ánh xạ trạng thái tiếng Anh → tiếng Việt
+const orderStatusLabel = {
+    "CANCELED": "Đã hủy",
+    "COMPLETED": "Hoàn tất",
+    "PENDING": "Chờ xác nhận",
+    "SHIPPING": "Đang giao",
+    "WAITING_FOR_PICKUP": "Chờ lấy hàng",
+    "CONFIRMED": "Đã xác nhận",
+    "REFUNDED": "Đã hoàn tiền"
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     loadSummary();
     loadRevenueChart();
@@ -68,7 +79,8 @@ async function loadOrderStatusChart() {
     const res = await fetch(`${contextPath}/api/admin/dashboard/order-status-chart?from=${yearStart}&to=${today}`);
     const data = await res.json();
 
-    const labels = data.map(d => d.status);
+    // 🔸 Đổi nhãn sang tiếng Việt nhưng giữ nguyên màu
+    const labels = data.map(d => orderStatusLabel[d.status] || d.status);
     const values = data.map(d => d.count);
 
     new Chart(document.getElementById("orderStatusChart"), {
@@ -77,12 +89,23 @@ async function loadOrderStatusChart() {
             labels,
             datasets: [{
                 data: values,
-                backgroundColor: ["#0d6efd", "#198754", "#dc3545", "#ffc107", "#6c757d"]
+                backgroundColor: ["#dc3545", "#198754", "#ffc107", "#0d6efd", "#6c757d", "#0dcaf0", "#6610f2"]
             }]
         },
         options: {
             responsive: true,
-            plugins: { legend: { position: "bottom" } }
+            plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                    callbacks: {
+                        label: context => {
+                            const label = context.label || "";
+                            const value = context.parsed || 0;
+                            return `${label}: ${value} đơn`;
+                        }
+                    }
+                }
+            }
         }
     });
 }
@@ -130,7 +153,7 @@ async function loadTopCampaigns() {
     list.innerHTML = data.map(c => `
         <li class="list-group-item d-flex justify-content-between">
             <span>${c.name}</span>
-            <span class="fw-bold">${c.viewCount} view</span>
+            <span class="fw-bold">${c.viewCount} lượt xem</span>
         </li>
     `).join("");
 }
@@ -146,7 +169,7 @@ async function loadLatestOrders() {
             <td>${o.code}</td>
             <td>${o.customerName}</td>
             <td>${fmt(o.total)}</td>
-            <td><span class="badge bg-secondary">${o.status}</span></td>
+            <td><span class="badge bg-secondary">${orderStatusLabel[o.status] || o.status}</span></td>
             <td>${o.createdAt.replace("T", " ")}</td>
         </tr>
     `).join("");

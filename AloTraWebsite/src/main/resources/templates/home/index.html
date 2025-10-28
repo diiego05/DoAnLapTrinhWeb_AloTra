@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: layout(pageTitle='Trang chủ', content=~{::content}, additionalJs=~{::additionalJs})}">
+       th:replace="~{layouts/default_layout :: layout(pageTitle='Trang chủ', content=~{::content}, additionalJs=~{::additionalJs})}">
 <head>
     <th:block th:fragment="additionalCss"></th:block>
     <style>
@@ -29,8 +29,7 @@
             pointer-events: none;
             z-index: 9999;
         }
-
-.promo-btn {
+        .promo-btn {
   background: #198754;
   color: white;
   padding: 6px 14px;
@@ -51,10 +50,6 @@
 .card-body .promo-btn {
   flex-shrink: 0 !important;   /* 👈 ngăn bị flex kéo dãn */
 }
-
-
-
-
 
         .cart-toast.show { opacity: 1; transform: translateY(0); }
         @keyframes bounce {
@@ -226,7 +221,7 @@ $(document).ready(function () {
         }
     });
 
- // ================= 🪄 Chiến dịch khuyến mãi nổi bật =================
+    // ================= 🪄 Chiến dịch khuyến mãi nổi bật =================
     $.get("/alotra-website/api/public/promotions/top-discount", function (campaigns) {
         const container = $("#promotion-list-container");
         container.empty();
@@ -239,9 +234,9 @@ $(document).ready(function () {
                 <div class="col">
                     <div class="card product-card h-100 shadow-sm border-0">
                         <a href="/alotra-website/promotions/${c.id}">
-                            <img src="${c.banner || '/alotra-website/images/promotion-placeholder.jpg'}"
-                                 class="card-img-top rounded-top"
-                                 alt="${c.name}">
+                        <img src="${c.banner || '/alotra-website/images/promotion-placeholder.jpg'}"
+                            class="card-img-top rounded-top"
+                            alt="${c.name}">
                         </a>
                         <div class="card-body text-center">
                         <h5 class="card-title mb-2">
@@ -249,23 +244,21 @@ $(document).ready(function () {
                                class="text-decoration-none text-dark fw-semibold">
                                ${c.name}
                             </a>
-                        </h5>
-                        <p class="text-muted small mb-2">
-                            ${new Date(c.startAt).toLocaleDateString('vi-VN')} -
-                            ${new Date(c.endAt).toLocaleDateString('vi-VN')}
-                        </p>
-                        <a href="/alotra-website/promotions/${c.id}"
-                            class="btn btn-sm btn-add-to-cart btn-primary pt-3">
-                            <i class="fas fa-tags me-1"></i> Xem chi tiết
-                         </a>
-                    </div>
-
+                            </h5>
+                            <p class="text-muted small mb-2">
+                                ${new Date(c.startAt).toLocaleDateString('vi-VN')} -
+                                ${new Date(c.endAt).toLocaleDateString('vi-VN')}
+                            </p>
+                            <a href="/alotra-website/promotions/${c.id}"
+                                class="btn btn-sm btn-view-promotion btn-primary pt-3">
+                                <i class="fas fa-tags me-1"></i> Xem chi tiết
+                             </a>
+                        </div>
                     </div>
                 </div>`;
             container.append(card);
         });
     });
-
 
     // ================= 🛒 Thêm vào giỏ hàng =================
     $(document).on("click", ".btn-add-to-cart", function (e) {

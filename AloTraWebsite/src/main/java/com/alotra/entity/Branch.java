@@ -47,14 +47,14 @@ public class Branch {
     @Column(name = "Status", nullable = false, length = 20)
     private String status;
 
-    // 🆕 Tọa độ địa lý
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ManagerId")
+    private User manager;
+
+
     @Column(name = "Latitude")
     private Double latitude;
 
     @Column(name = "Longitude")
     private Double longitude;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ManagerId")
-    private User manager;
 }

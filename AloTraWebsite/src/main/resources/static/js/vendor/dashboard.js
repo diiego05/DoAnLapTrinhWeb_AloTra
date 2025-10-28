@@ -8,7 +8,6 @@ const DEFAULT_TO = "2030-12-31";
 // 🔹 Biến giữ instance chart để tránh vẽ chồng
 let revenueChartInstance = null;
 let orderStatusChartInstance = null;
-
 const STATUS_MAP = {
     PENDING: "Chờ xác nhận",
     CONFIRMED: "Đã xác nhận",
@@ -19,7 +18,6 @@ const STATUS_MAP = {
     CANCELLED: "Đã hủy",
     DELIVERED: "Đã giao"
 };
-
 document.addEventListener("DOMContentLoaded", async () => {
     showLoadingState(true);
     try {
@@ -154,6 +152,7 @@ async function loadOrderStatusChart() {
         const canvas = document.getElementById("orderStatusChart");
         const ctx = canvas.getContext("2d");
 
+        // ✅ Nếu không có dữ liệu
         if (!data || data.length === 0) {
             if (orderStatusChartInstance) orderStatusChartInstance.destroy();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -180,14 +179,14 @@ async function loadOrderStatusChart() {
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { position: "bottom" },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.label}: ${ctx.parsed}`
-                        }
-                    }
-                },
+				plugins: {
+				                   legend: { position: "bottom" },
+				                   tooltip: {
+				                       callbacks: {
+				                           label: ctx => `${ctx.label}: ${ctx.parsed}`
+				                       }
+				                   }
+				               },
                 cutout: "70%"
             }
         });

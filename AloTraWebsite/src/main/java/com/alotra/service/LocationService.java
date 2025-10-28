@@ -68,7 +68,7 @@ public class LocationService {
                     System.out.println("      📍 Address: " + b.getAddress());
                     System.out.println("      📊 Coords: (" + b.getLatitude() + ", " + b.getLongitude() + ")");
                     System.out.println("      📏 Distance: " + String.format("%.2f km", distance));
-                    
+
                     return BranchDistanceDTO.builder()
                             .id(b.getId())
                             .name(b.getName())
@@ -85,13 +85,13 @@ public class LocationService {
                 .toList();
 
         if (!result.isEmpty()) {
-            System.out.println("   ✅ Nearest branch: " + result.get(0).getName() + 
+            System.out.println("   ✅ Nearest branch: " + result.get(0).getName() +
                              " (" + String.format("%.2f km", result.get(0).getDistanceKm()) + ")");
-            
+
             // Log top 3 để debug
             System.out.println("   📋 Top " + Math.min(3, result.size()) + " nearest branches:");
             result.stream().limit(3).forEach(item -> {
-                System.out.println("      - " + item.getName() + ": " + 
+                System.out.println("      - " + item.getName() + ": " +
                                  String.format("%.2f km", item.getDistanceKm()));
             });
         } else {

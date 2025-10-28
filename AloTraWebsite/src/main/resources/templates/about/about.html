@@ -23,15 +23,15 @@
 				<div class="col-md-3">
 					<div class="list-group shadow-sm sticky-top" style="top: 20px;"
 						id="about-sidebar">
-						<a data-bs-toggle="collapse" data-bs-target="#gioi-thieu" role="button"
-							aria-expanded="true"
-							href="javascript:void(0)"
+						<a data-bs-toggle="collapse" data-bs-target="#gioi-thieu"
+							role="button" aria-expanded="true" href="javascript:void(0)"
 							class="list-group-item list-group-item-action active"> Giới
-							thiệu công ty </a> <a data-bs-toggle="collapse" data-bs-target="#lien-he"
-							role="button" href="javascript:void(0)"
-							class="list-group-item list-group-item-action">
-							Thông tin liên hệ </a> <a data-bs-toggle="collapse"
-							data-bs-target="#hinh-anh-menu" role="button" href="javascript:void(0)"
+							thiệu công ty </a> <a data-bs-toggle="collapse"
+							data-bs-target="#lien-he" role="button" href="javascript:void(0)"
+							class="list-group-item list-group-item-action"> Thông tin
+							liên hệ </a> <a data-bs-toggle="collapse"
+							data-bs-target="#hinh-anh-menu" role="button"
+							href="javascript:void(0)"
 							class="list-group-item list-group-item-action"> Hình ảnh Menu
 						</a>
 					</div>
@@ -68,7 +68,7 @@
 										Việt Nam.</li>
 									<li class="list-group-item">2️⃣ Tạo nên thương hiệu Việt
 										đẳng cấp và chất lượng, khẳng định vị thế trên thị trường quốc
-										 tế.</li>
+										tế.</li>
 								</ul>
 
 								<!-- Sứ mệnh -->
@@ -164,7 +164,10 @@
 .menu-section img:hover {
 	transform: scale(1.03);
 }
-.text-justify { text-align: justify; }
+
+.text-justify {
+	text-align: justify;
+}
 </style>
 
 							</section>
@@ -188,17 +191,15 @@
                 const link = document.querySelector(`#about-sidebar a[data-bs-target="${targetId}"]`);
                 if(link) link.classList.add('active');
             }
-
             links.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    // Ngăn cuộn đến anchor/hash
-                    e.preventDefault();
+            	 link.addEventListener('click', function(e) {
+                     // Ngăn cuộn đến anchor/hash
+                     e.preventDefault();
                     links.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
-
-            // Đồng bộ khi đổi section bằng Bootstrap collapse
+         // Đồng bộ khi đổi section bằng Bootstrap collapse
             collapses.forEach(c => {
                 c.addEventListener('show.bs.collapse', function(){
                     setActiveByTarget('#' + this.id);

@@ -24,7 +24,7 @@ public class MenuItemDTO {
 
     public static MenuItemDTO from(Category category) {
         if (category == null) return null;
-        
+
         return MenuItemDTO.builder()
                 .id(category.getId())
                 .title(category.getName())
@@ -32,7 +32,7 @@ public class MenuItemDTO {
                 .slug(category.getSlug())
                 .sortOrder(category.getSortOrder())
                 .hasChildren(category.getChildren() != null && !category.getChildren().isEmpty())
-                .children(category.getChildren() != null 
+                .children(category.getChildren() != null
                         ? category.getChildren().stream()
                                 .map(MenuItemDTO::from)
                                 .collect(Collectors.toList())

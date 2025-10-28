@@ -1,5 +1,6 @@
 package com.alotra.controller.api;
 
+
 import com.alotra.service.GeocodingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

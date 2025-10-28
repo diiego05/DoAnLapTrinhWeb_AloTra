@@ -3,7 +3,19 @@ const contextPath = window.location.pathname.split("/")[1]
     : "";
 
 export function getJwtToken() {
-    return localStorage.getItem("jwtToken");
+  // Nếu localStorage chưa có token, kiểm tra cookie jwtToken (được OAuth2 đặt)
+  let token = localStorage.getItem("jwtToken");
+  if (!token) {
+    const match = document.cookie.match(new RegExp('(^| )' + 'jwtToken' + '=([^;]+)'));
+    if (match) {
+      token = decodeURIComponent(match[2]);
+      // copy vào localStorage để frontend sử dụng
+      try { localStorage.setItem('jwtToken', token); } catch(e) { /* ignore */ }
+      // xóa cookie phía client để không lộ token lâu dài
+      document.cookie = 'jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+  }
+  return token;
 }
 
 export async function apiFetch(url, options = {}) {

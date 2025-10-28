@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableAsync
-@EnableCaching  // 🆕 Bật cache cho geocoding
+@EnableCaching
 
 public class AloTraApplication {
 

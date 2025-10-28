@@ -34,7 +34,6 @@
             pointer-events: none;
             z-index: 9999;
         }
-
         .cart-toast.show { opacity: 1; transform: translateY(0); }
         @keyframes bounce {
             0% { transform: scale(1); }
@@ -88,7 +87,7 @@
         <div id="product-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4  pt-4">
             <!-- Sản phẩm sẽ được render bằng JavaScript -->
         </div>
-		<nav class="mt-4">
+<nav class="mt-4">
   <ul id="productPagination" class="pagination justify-content-center"></ul>
 </nav>
         <!-- Loading -->
@@ -117,7 +116,7 @@ $(document).ready(function () {
     let allProducts = [];
     let filteredProducts = [];
     let currentPage = 1;
-    const rowsPerPage = 8; // ✅ số sản phẩm mỗi trang
+    const rowsPerPage = 8;
 
     // ✅ Đọc URL params để lọc theo category từ MegaMenu
     const urlParams = new URLSearchParams(window.location.search);
@@ -129,18 +128,26 @@ $(document).ready(function () {
             const res = await fetch("/alotra-website/api/categories/tree");
             if (!res.ok) return;
             const categories = await res.json();
+
             const select = $("#categoryFilter");
+
+            // ✅ Hàm đệ quy để thêm categories và tìm ID từ slug
             let categoryIdFromSlug = null;
 
             function addCategoryOptions(catList, prefix = '') {
                 catList.forEach(cat => {
                     select.append(`<option value="${cat.id}">${prefix}${cat.title}</option>`);
+
+                    // ✅ Tìm categoryId từ URL slug
                     if (categorySlugFromUrl && cat.url && cat.url.includes(`category=${categorySlugFromUrl}`)) {
                         categoryIdFromSlug = cat.id;
                     }
+
                     if (cat.children && cat.children.length > 0) {
                         cat.children.forEach(child => {
                             select.append(`<option value="${child.id}">${prefix}&nbsp;&nbsp;└─ ${child.title}</option>`);
+
+                            // ✅ Tìm trong children
                             if (categorySlugFromUrl && child.url && child.url.includes(`category=${categorySlugFromUrl}`)) {
                                 categoryIdFromSlug = child.id;
                             }
@@ -150,6 +157,8 @@ $(document).ready(function () {
             }
 
             addCategoryOptions(categories);
+
+            // ✅ Tự động chọn category từ URL
             if (categoryIdFromSlug) {
                 select.val(categoryIdFromSlug);
                 console.log(`✅ Auto-selected category ID ${categoryIdFromSlug} from URL`);
@@ -168,6 +177,7 @@ $(document).ready(function () {
         try {
             const res = await fetch("/alotra-website/api/products/public");
             if (!res.ok) throw new Error("Failed to load products");
+
             allProducts = await res.json();
             filteredProducts = [...allProducts];
             applyFiltersAndSort();
@@ -184,21 +194,22 @@ $(document).ready(function () {
         const categoryId = $("#categoryFilter").val();
         const sortBy = $("#sortBy").val();
 
+        // Filter
         filteredProducts = allProducts.filter(p => {
             const matchSearch = !searchTerm || p.name.toLowerCase().includes(searchTerm);
             const matchCategory = !categoryId || p.categoryId == categoryId;
             return matchSearch && matchCategory;
         });
 
+        // Sort
         switch (sortBy) {
-            case "name": filteredProducts.sort((a, b) => a.name.localeCompare(b.name)); break;
-            case "name_desc": filteredProducts.sort((a, b) => b.name.localeCompare(a.name)); break;
-            case "price": filteredProducts.sort((a, b) => (a.lowestPrice || 0) - (b.lowestPrice || 0)); break;
-            case "price_desc": filteredProducts.sort((a, b) => (b.lowestPrice || 0) - (a.lowestPrice || 0)); break;
-            case "newest": filteredProducts.sort((a, b) => b.id - a.id); break;
+        case "name": filteredProducts.sort((a, b) => a.name.localeCompare(b.name)); break;
+        case "name_desc": filteredProducts.sort((a, b) => b.name.localeCompare(a.name)); break;
+        case "price": filteredProducts.sort((a, b) => (a.lowestPrice || 0) - (b.lowestPrice || 0)); break;
+        case "price_desc": filteredProducts.sort((a, b) => (b.lowestPrice || 0) - (a.lowestPrice || 0)); break;
+        case "newest": filteredProducts.sort((a, b) => b.id - a.id); break;
         }
-
-        currentPage = 1; // ✅ khi lọc hoặc sắp xếp thì về trang 1
+        currentPage = 1;
         renderProducts();
         renderPagination();
     }
@@ -213,6 +224,7 @@ $(document).ready(function () {
             $("#emptyState").removeClass("d-none");
             return;
         }
+
         $("#emptyState").addClass("d-none");
 
         const start = (currentPage - 1) * rowsPerPage;
@@ -258,7 +270,6 @@ $(document).ready(function () {
             grid.append(card);
         });
     }
-
     // ================= RENDER PAGINATION =================
     function renderPagination() {
         const pagination = $("#productPagination");
@@ -321,7 +332,6 @@ $(document).ready(function () {
             renderPagination();
         }));
     }
-
     // ================= EVENT HANDLERS =================
     $("#searchInput").on("input", debounce(applyFiltersAndSort, 300));
     $("#categoryFilter, #sortBy").on("change", applyFiltersAndSort);
@@ -330,6 +340,7 @@ $(document).ready(function () {
         $("#searchInput").val("");
         $("#categoryFilter").val("");
         $("#sortBy").val("name");
+        // ✅ Xóa URL params khi clear filter
         window.history.replaceState({}, '', window.location.pathname);
         applyFiltersAndSort();
     });
@@ -359,7 +370,7 @@ $(document).ready(function () {
                 updateCartFloatingCount();
             },
             error: function() {
-                showCartToast("❌ Không thể thêm vào giỏ hàng.", true);
+
             }
         });
     });
@@ -401,11 +412,11 @@ $(document).ready(function () {
     }
 
     // ================= INIT =================
+    // ✅ Load categories trước để có thể auto-select từ URL
     loadCategories().then(() => loadProducts());
 });
 </script>
 </th:block>
-
 
 </body>
 </html>

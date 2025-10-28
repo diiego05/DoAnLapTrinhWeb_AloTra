@@ -10,7 +10,7 @@ const contextPath = window.location.pathname.split('/')[1] ? '/' + window.locati
 // ======================= 📥 LOAD CATEGORIES FOR MEGA MENU ======================
 async function loadCategoryMenu() {
     const container = document.getElementById('categoryMenuContainer');
-    
+
     try {
         // Show loading spinner
         container.innerHTML = `
@@ -23,13 +23,13 @@ async function loadCategoryMenu() {
         `;
 
         const res = await fetch(`${contextPath}/api/categories/tree`);
-        
+
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
 
         const categories = await res.json();
-        
+
         if (!categories || categories.length === 0) {
             container.innerHTML = `
                 <div class="col-12 text-center text-muted py-5">
@@ -42,9 +42,9 @@ async function loadCategoryMenu() {
 
         renderMegaMenu(categories);
         initDropdownHover();
-        
+
         console.log('✅ MegaMenu loaded successfully with', categories.length, 'categories');
-        
+
     } catch (error) {
         console.error('❌ Lỗi load categories:', error);
         container.innerHTML = `
@@ -69,7 +69,7 @@ function renderMegaMenu(categories) {
     const html = categories.map(cat => {
         const hasChildren = cat.children && cat.children.length > 0;
         const categoryUrl = cat.url || `${contextPath}/products?category=${cat.id}`;
-        
+
         return `
             <div class="col-lg-3 col-md-6 mb-4">
                 <h6 class="mega-menu-title text-success fw-bold mb-3">
@@ -84,7 +84,7 @@ function renderMegaMenu(categories) {
                             const childUrl = child.url || `${contextPath}/products?category=${child.id}`;
                             return `
                                 <li class="mb-2">
-                                    <a href="${childUrl}" 
+                                    <a href="${childUrl}"
                                        class="mega-menu-item d-flex align-items-center text-decoration-none text-dark p-2 rounded">
                                         ${child.icon ? `<i class="${child.icon} me-2 text-success"></i>` : '<i class="fas fa-chevron-right me-2 text-success" style="font-size: 10px;"></i>'}
                                         <span>${child.title}</span>
@@ -111,7 +111,7 @@ function initDropdownHover() {
 
     let hoverTimeout;
     let isMouseInside = false;
-    
+
     const dropdownToggle = menuDropdown.querySelector('.dropdown-toggle');
     const dropdownMenu = menuDropdown.querySelector('.dropdown-menu');
 
@@ -124,10 +124,10 @@ function initDropdownHover() {
     const showMenu = () => {
         clearTimeout(hoverTimeout);
         dropdownMenu.style.display = 'block';
-        
+
         // Force reflow for animation
         void dropdownMenu.offsetWidth;
-        
+
         requestAnimationFrame(() => {
             dropdownMenu.classList.add('show');
             dropdownToggle.setAttribute('aria-expanded', 'true');
@@ -142,7 +142,7 @@ function initDropdownHover() {
                 dropdownMenu.classList.remove('show');
                 dropdownToggle.setAttribute('aria-expanded', 'false');
                 menuDropdown.classList.remove('show');
-                
+
                 setTimeout(() => {
                     if (!menuDropdown.classList.contains('show')) {
                         dropdownMenu.style.display = 'none';
@@ -185,7 +185,7 @@ function initDropdownHover() {
 // ======================= 🚀 INIT ======================
 document.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Dynamic MegaMenu initializing...');
-    
+
     // Small delay to ensure DOM is fully ready
     setTimeout(() => {
         loadCategoryMenu();

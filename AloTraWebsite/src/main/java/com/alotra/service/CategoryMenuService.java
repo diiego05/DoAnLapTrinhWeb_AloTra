@@ -26,12 +26,12 @@ public class CategoryMenuService {
     public List<CategoryMenuDTO> buildMenu() {
         // Lấy tất cả categories sắp xếp theo sortOrder
         List<Category> allCategories = categoryRepository.findAllOrderBySortOrderAsc();
-        
+
         // Lọc ra các categories cấp cao nhất (không có parent)
         List<Category> topLevelCategories = allCategories.stream()
                 .filter(c -> c.getParent() == null)
                 .collect(Collectors.toList());
-        
+
         // Chuyển đổi sang DTO với children
         return topLevelCategories.stream()
                 .map(c -> convertToDTO(c, allCategories))
@@ -47,12 +47,12 @@ public class CategoryMenuService {
         dto.setTitle(category.getName());
         dto.setUrl("/alotra-website/products?category=" + category.getSlug());
         dto.setIcon("fas fa-mug-hot"); // Icon trà sữa
-        
+
         // Tìm các category con
         List<Category> children = allCategories.stream()
                 .filter(c -> c.getParent() != null && c.getParent().getId().equals(category.getId()))
                 .collect(Collectors.toList());
-        
+
         if (!children.isEmpty()) {
             List<CategoryMenuDTO> childDTOs = children.stream()
                     .map(child -> convertToDTO(child, allCategories))
@@ -61,7 +61,7 @@ public class CategoryMenuService {
         } else {
             dto.setChildren(new ArrayList<>());
         }
-        
+
         return dto;
     }
 

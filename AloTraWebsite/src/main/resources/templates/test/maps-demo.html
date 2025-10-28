@@ -40,7 +40,7 @@
             <h4 class="mb-3"><i class="fas fa-search me-2"></i>1. Tìm kiếm địa chỉ (Autocomplete)</h4>
             <div class="row">
                 <div class="col-md-8">
-                    <input type="text" id="autocompleteInput" class="form-control" 
+                    <input type="text" id="autocompleteInput" class="form-control"
                            placeholder="Nhập địa chỉ tìm kiếm...">
                 </div>
                 <div class="col-md-4">
@@ -59,8 +59,8 @@
             <h4 class="mb-3"><i class="fas fa-map-pin me-2"></i>2. Geocoding (Địa chỉ → Tọa độ)</h4>
             <div class="row">
                 <div class="col-md-8">
-                    <input type="text" id="geocodeInput" class="form-control" 
-                           placeholder="Nhập địa chỉ để geocode..." 
+                    <input type="text" id="geocodeInput" class="form-control"
+                           placeholder="Nhập địa chỉ để geocode..."
                            value="185 Cao Thắng, Phường 12, Quận 10, TP.HCM">
                 </div>
                 <div class="col-md-4">
@@ -80,12 +80,12 @@
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label class="form-label">Điểm A (lat, lng)</label>
-                    <input type="text" id="pointA" class="form-control" 
+                    <input type="text" id="pointA" class="form-control"
                            placeholder="10.762622, 106.660172" value="10.762622, 106.660172">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Điểm B (lat, lng)</label>
-                    <input type="text" id="pointB" class="form-control" 
+                    <input type="text" id="pointB" class="form-control"
                            placeholder="10.782622, 106.680172" value="10.782622, 106.680172">
                 </div>
             </div>
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function checkApiStatus() {
         const statusEl = document.getElementById('apiStatus');
         const loaded = await window.googleMapsLoader.load();
-        
+
         if (loaded) {
             statusEl.innerHTML = `
                 <div class="text-success">
@@ -163,17 +163,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ========== AUTOCOMPLETE ==========
     const autocompleteInput = document.getElementById('autocompleteInput');
     const autocomplete = await window.googleMapsLoader.createAutocomplete(autocompleteInput);
-    
+
     if (autocomplete) {
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
             const resultEl = document.getElementById('autocompleteResult');
-            
+
             if (place.geometry) {
                 const parsed = window.googleMapsLoader.parseVietnameseAddress(
                     place.address_components || []
                 );
-                
+
                 resultEl.innerHTML = `
                     <div class="text-success">
                         <strong>📍 ${place.formatted_address}</strong>
@@ -193,16 +193,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnGeocode').addEventListener('click', async () => {
         const address = document.getElementById('geocodeInput').value;
         const resultEl = document.getElementById('geocodeResult');
-        
+
         if (!address) {
             resultEl.innerHTML = '<div class="text-warning">⚠️ Vui lòng nhập địa chỉ</div>';
             return;
         }
 
         resultEl.innerHTML = '<div class="text-muted">Đang geocoding...</div>';
-        
+
         const result = await window.googleMapsLoader.geocode(address);
-        
+
         if (result) {
             resultEl.innerHTML = `
                 <div class="text-success">
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div><strong>Latitude:</strong> ${result.lat}</div>
                         <div><strong>Longitude:</strong> ${result.lng}</div>
                         <div class="mt-2">
-                            <a href="https://www.google.com/maps?q=${result.lat},${result.lng}" 
+                            <a href="https://www.google.com/maps?q=${result.lat},${result.lng}"
                                target="_blank" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-external-link-alt me-1"></i> Xem trên Google Maps
                             </a>

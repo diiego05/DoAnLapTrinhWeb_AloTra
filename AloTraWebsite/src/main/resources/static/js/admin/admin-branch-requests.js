@@ -49,8 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ${r.status}
                     </span>
                 </td>
-                <td>${r.createdAt ? new Date(r.createdAt).toLocaleString('vi-VN') : ''}</td>
-                <td>${r.note || ''}</td>
+
                 <td class="text-center">
                     <button class="btn btn-sm btn-info me-2 btn-view" data-id="${r.id}" title="Xem chi tiết">👁️</button>
                     ${r.status === 'PENDING' ? `

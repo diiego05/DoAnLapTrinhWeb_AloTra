@@ -1,6 +1,7 @@
 package com.alotra.config;
 
 import com.alotra.entity.User;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
@@ -18,20 +19,28 @@ public class GlobalModelAttributes {
         String userName = null;
         boolean isLoggedIn = false;
 
-        // ✅ KIỂM TRA KỸ CÀNG
-        if (auth != null
-            && auth.isAuthenticated()
-            && auth.getPrincipal() != null
-            && !(auth.getPrincipal() instanceof String) // Loại bỏ "anonymousUser"
-            && auth.getPrincipal() instanceof User user) {
+        // ✅ Safer authentication checks
+        // - avoid treating anonymous authentication as logged-in
+        // - avoid calling principal.getClass() when principal is null
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            Object principal = auth.getPrincipal();
+            if (principal == null) {
+                System.out.println("[DEBUG] Authentication principal is null");
+            } else {
+                System.out.println("[DEBUG] Authentication principal class: " + principal.getClass().getName());
 
-            userId = user.getId();
-            userName = user.getFullName();
-            isLoggedIn = true;
-
-            System.out.println("✅ User logged in: " + userName + " (ID: " + userId + ")");
+                // Exclude String principal (Spring may set "anonymousUser") and then check for User
+                if (!(principal instanceof String) && principal instanceof User user) {
+                    userId = user.getId();
+                    userName = user.getFullName();
+                    isLoggedIn = true;
+                    System.out.println("✅ User logged in: " + userName + " (ID: " + userId + ")");
+                } else {
+                    System.out.println("⚠️ Authenticated but principal is not User instance: " + principal.getClass().getName());
+                }
+            }
         } else {
-            System.out.println("⚠️ User not logged in (anonymousUser or null)");
+            System.out.println("⚠️ User not logged in or anonymous");
         }
 
         model.addAttribute("currentUserId", userId);

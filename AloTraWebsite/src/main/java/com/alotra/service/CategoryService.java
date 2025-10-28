@@ -19,6 +19,7 @@ public class CategoryService {
     private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
     private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
 
+    // --- PHƯƠNG THỨC MỚI ĐỂ TẠO SLUG ---
     private String generateSlug(String input) {
         if (input == null) {
             return "";
@@ -38,10 +39,8 @@ public class CategoryService {
     }
 
     public void save(Category category) {
-        // ✅ Tự động tạo slug
+        // Tự động tạo và gán slug từ tên trước khi lưu
         category.setSlug(generateSlug(category.getName()));
-
-        // ✅ Xử lý parent để tránh detached entity
         if (category.getParent() != null && category.getParent().getId() != null) {
             Category parent = categoryRepository.findById(category.getParent().getId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục cha"));
@@ -49,7 +48,6 @@ public class CategoryService {
         } else {
             category.setParent(null);
         }
-
         categoryRepository.save(category);
     }
 

@@ -96,6 +96,6 @@ public class HomeController {
     @GetMapping("/orders")
     public String orderHistoryPage(Model model) {
         model.addAttribute("pageTitle", "Lịch Sử Đơn Hàng");
-        return "orders";  // ✅ trỏ đến file templates/order/orders.html
+        return "order/orders";  // ✅ trỏ đến file templates/order/orders.html
     }
 }

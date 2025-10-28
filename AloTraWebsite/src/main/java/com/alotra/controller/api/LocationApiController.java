@@ -1,5 +1,6 @@
 package com.alotra.controller.api;
 
+
 import com.alotra.dto.BranchDistanceDTO;
 import com.alotra.service.LocationService;
 import lombok.RequiredArgsConstructor;

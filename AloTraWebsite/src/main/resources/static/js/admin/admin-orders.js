@@ -5,89 +5,88 @@ const filterButtons = document.querySelectorAll('#adminStatusFilter [data-status
 const branchFilter = document.getElementById('adminBranchFilter');
 const searchInput = document.getElementById('adminOrderSearch');
 const reloadBtn = document.getElementById('adminOrderReload');
-const paginationEl = document.getElementById('orderPagination');
+const paginationEl = document.getElementById('orderPagination')
 
 let currentStatus = '';
 let currentBranch = '';
 let searchKeyword = '';
 let paginator = null;
-
 const fmtVND = v => (Number(v) || 0).toLocaleString('vi-VN') + ' ₫';
 
 // =================== 🏷️ Map trạng thái ===================
 function mapStatusColor(status) {
-    switch (status) {
-        case 'PENDING': return 'warning';
-        case 'CONFIRMED': return 'secondary';
-        case 'SHIPPING': return 'info';
-        case 'COMPLETED': return 'success';
-        case 'CANCELED': return 'danger';
-        default: return 'secondary';
-    }
+	switch (status) {
+		case 'PENDING': return 'warning';
+		case 'CONFIRMED': return 'secondary';
+		case 'SHIPPING': return 'info';
+		case 'COMPLETED': return 'success';
+		case 'CANCELED': return 'danger';
+		default: return 'secondary';
+	}
 }
 function mapStatusText(status) {
-    switch (status) {
-        case 'PENDING': return 'Chờ xác nhận';
-        case 'CONFIRMED': return 'Đã xác nhận';
-        case 'SHIPPING': return 'Đang giao';
-        case 'COMPLETED': return 'Hoàn thành';
-        case 'CANCELED': return 'Đã hủy';
-        default: return status;
-    }
+	switch (status) {
+		case 'PENDING': return 'Chờ xác nhận';
+		case 'CONFIRMED': return 'Đã xác nhận';
+		case 'SHIPPING': return 'Đang giao';
+		case 'COMPLETED': return 'Hoàn thành';
+		case 'CANCELED': return 'Đã hủy';
+		default: return status;
+	}
 }
 
 // =================== 📥 Load chi nhánh ===================
 async function loadBranches() {
-    try {
-        const res = await apiFetch('/api/branches');
-        if (!res.ok) throw new Error();
-        const data = await res.json();
+	try {
+		const res = await apiFetch('/api/branches');
+		if (!res.ok) throw new Error();
+		const data = await res.json();
 
-        branchFilter.innerHTML = `<option value="">Tất cả chi nhánh</option>`;
-        data.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.id;
-            opt.textContent = b.name;
-            branchFilter.appendChild(opt);
-        });
-    } catch (err) {
-        console.error("❌ Lỗi tải chi nhánh:", err);
-    }
+		branchFilter.innerHTML = `<option value="">Tất cả chi nhánh</option>`;
+		data.forEach(b => {
+			const opt = document.createElement('option');
+			opt.value = b.id;
+			opt.textContent = b.name;
+			branchFilter.appendChild(opt);
+		});
+	} catch (err) {
+		console.error("❌ Lỗi tải chi nhánh:", err);
+	}
 }
 
 // =================== 📥 Load danh sách đơn ===================
 filterButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        filterButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentStatus = btn.dataset.status;
-        loadAdminOrders();
-    });
+	btn.addEventListener('click', () => {
+		filterButtons.forEach(b => b.classList.remove('active'));
+		btn.classList.add('active');
+		currentStatus = btn.dataset.status;
+		loadAdminOrders();
+	});
 });
 
 branchFilter.addEventListener('change', () => {
-    currentBranch = branchFilter.value;
-    loadAdminOrders();
+	currentBranch = branchFilter.value;
+	loadAdminOrders();
 });
 
 searchInput.addEventListener('input', () => {
-    searchKeyword = searchInput.value.trim().toLowerCase();
-    loadAdminOrders();
+	searchKeyword = searchInput.value.trim().toLowerCase();
+	loadAdminOrders();
 });
 
 reloadBtn.addEventListener('click', () => {
-    searchKeyword = '';
-    searchInput.value = '';
-    branchFilter.value = '';
-    currentBranch = '';
-    currentStatus = '';
-    filterButtons.forEach(b => b.classList.remove('active'));
-    filterButtons[0].classList.add('active');
-    loadAdminOrders();
+	searchKeyword = '';
+	searchInput.value = '';
+	branchFilter.value = '';
+	currentBranch = '';
+	currentStatus = '';
+	filterButtons.forEach(b => b.classList.remove('active'));
+	filterButtons[0].classList.add('active');
+	loadAdminOrders();
 });
 
 async function loadAdminOrders() {
-    ordersList.innerHTML = `
+	ordersList.innerHTML = `
         <tr>
             <td colspan="8" class="text-center text-muted py-4">
                 <div class="spinner-border spinner-border-sm me-2"></div>
@@ -96,35 +95,36 @@ async function loadAdminOrders() {
         </tr>
     `;
 
-    try {
-        let url = `/api/admin/orders`;
-        const params = [];
+	try {
+		let url = `/api/admin/orders`;
+		const params = [];
 
-        if (currentStatus) params.push(`status=${currentStatus}`);
-        if (currentBranch) params.push(`branchId=${currentBranch}`);
-        if (params.length > 0) url += `?${params.join('&')}`;
+		if (currentStatus) params.push(`status=${currentStatus}`);
+		if (currentBranch) params.push(`branchId=${currentBranch}`);
+		if (params.length > 0) url += `?${params.join('&')}`;
 
-        const res = await apiFetch(url);
-        if (!res.ok) throw new Error();
-        let data = await res.json();
+		const res = await apiFetch(url);
+		if (!res.ok) throw new Error();
+		let data = await res.json();
 
-        if (searchKeyword) {
-            data = data.filter(o => o.code.toLowerCase().includes(searchKeyword));
-        }
+		if (searchKeyword) {
+			data = data.filter(o => o.code.toLowerCase().includes(searchKeyword));
+		}
 
-        if (data.length === 0) {
-            ordersList.innerHTML = `
+		if (data.length === 0) {
+			ordersList.innerHTML = `
                 <tr><td colspan="8" class="text-center text-muted py-4">Không có đơn hàng</td></tr>
             `;
-            paginationEl.innerHTML = '';
-            return;
-        }
+			paginationEl.innerHTML = '';
+			return;
+		}
 
-        ordersList.innerHTML = data.map(o => `
+		ordersList.innerHTML = data.map(o => `
             <tr class="order-row" style="cursor:pointer" onclick="showAdminOrderDetail(${o.id})">
                 <td class="fw-bold">#${o.code}</td>
                 <td>${new Date(o.createdAt).toLocaleString('vi-VN')}</td>
                 <td>${o.branchName || '(Không có)'}</td>
+
                 <td class="text-success fw-bold">${fmtVND(o.total)}</td>
                 <td>${o.paymentMethod}</td>
                 <td><span class="badge bg-${mapStatusColor(o.status)}">${mapStatusText(o.status)}</span></td>
@@ -135,17 +135,15 @@ async function loadAdminOrders() {
                 </td>
             </tr>
         `).join('');
-
-        if (paginator) paginator.refresh();
-    } catch (err) {
-        console.error(err);
-        ordersList.innerHTML = `
+		if (paginator) paginator.refresh();
+	} catch (err) {
+		console.error(err);
+		ordersList.innerHTML = `
             <tr><td colspan="8" class="text-center text-danger py-4">Lỗi tải đơn hàng</td></tr>
         `;
-        paginationEl.innerHTML = '';
-    }
+		paginationEl.innerHTML = '';
+	}
 }
-
 // =================== 🧭 Phân trang front-end ===================
 function initPaginator() {
     const rowsPerPage = 10;
@@ -218,39 +216,38 @@ function initPaginator() {
 
     return { refresh };
 }
-
 // =================== 📜 Modal chi tiết ===================
 window.showAdminOrderDetail = async function(orderId) {
-    const modal = new bootstrap.Modal(document.getElementById("adminOrderModal"));
-    modal.show();
+	const modal = new bootstrap.Modal(document.getElementById("adminOrderModal"));
+	modal.show();
 
-    const loadingEl = document.getElementById("adminModalLoading");
-    const contentEl = document.getElementById("adminModalContent");
+	const loadingEl = document.getElementById("adminModalLoading");
+	const contentEl = document.getElementById("adminModalContent");
 
-    loadingEl.style.display = "block";
-    contentEl.style.display = "none";
+	loadingEl.style.display = "block";
+	contentEl.style.display = "none";
 
-    const res = await apiFetch(`/api/admin/orders/${orderId}`);
-    if (!res.ok) {
-        loadingEl.textContent = "⚠️ Lỗi tải dữ liệu!";
-        return;
-    }
-    const order = await res.json();
+	const res = await apiFetch(`/api/admin/orders/${orderId}`);
+	if (!res.ok) {
+		loadingEl.textContent = "⚠️ Lỗi tải dữ liệu!";
+		return;
+	}
+	const order = await res.json();
 
-    document.getElementById("adminModalOrderCode").textContent = `#${order.code}`;
-    document.getElementById("adminModalOrderDate").textContent = new Date(order.createdAt).toLocaleString('vi-VN');
-    document.getElementById("adminModalOrderStatus").textContent = mapStatusText(order.status);
-    document.getElementById("adminModalOrderStatus").className = `badge fs-6 bg-${mapStatusColor(order.status)}`;
-    document.getElementById("adminModalPayment").textContent = order.paymentMethod;
-    document.getElementById("adminModalBranchName").textContent = order.branchName || '(Không có)';
-    document.getElementById("adminModalAddress").textContent = order.deliveryAddress || '—';
+	document.getElementById("adminModalOrderCode").textContent = `#${order.code}`;
+	document.getElementById("adminModalOrderDate").textContent = new Date(order.createdAt).toLocaleString('vi-VN');
+	document.getElementById("adminModalOrderStatus").textContent = mapStatusText(order.status);
+	document.getElementById("adminModalOrderStatus").className = `badge fs-6 bg-${mapStatusColor(order.status)}`;
+	document.getElementById("adminModalPayment").textContent = order.paymentMethod;
+	document.getElementById("adminModalBranchName").textContent = order.branchName || '(Không có)';
+	document.getElementById("adminModalAddress").textContent = order.deliveryAddress || '—';
 
-    document.getElementById("adminModalSubtotal").textContent = fmtVND(order.subtotal);
-    document.getElementById("adminModalDiscount").textContent = fmtVND(order.discount);
-    document.getElementById("adminModalShipping").textContent = fmtVND(order.shippingFee);
-    document.getElementById("adminModalTotal").textContent = fmtVND(order.total);
+	document.getElementById("adminModalSubtotal").textContent = fmtVND(order.subtotal);
+	document.getElementById("adminModalDiscount").textContent = fmtVND(order.discount);
+	document.getElementById("adminModalShipping").textContent = fmtVND(order.shippingFee);
+	document.getElementById("adminModalTotal").textContent = fmtVND(order.total);
 
-    document.getElementById("adminModalOrderItems").innerHTML = order.items.map(it => `
+	document.getElementById("adminModalOrderItems").innerHTML = order.items.map(it => `
         <tr>
             <td>${it.productName}</td>
             <td>${it.sizeName || '-'}</td>
@@ -260,8 +257,8 @@ window.showAdminOrderDetail = async function(orderId) {
         </tr>
     `).join('');
 
-    document.getElementById("adminModalOrderHistory").innerHTML = order.statusHistory.length
-        ? order.statusHistory.map(h => `
+	document.getElementById("adminModalOrderHistory").innerHTML = order.statusHistory.length
+		? order.statusHistory.map(h => `
             <li class="mb-2 d-flex align-items-start">
                 <div class="timeline-dot bg-${mapStatusColor(h.status)} me-2"></div>
                 <div>
@@ -271,10 +268,10 @@ window.showAdminOrderDetail = async function(orderId) {
                 </div>
             </li>
         `).join('')
-        : '<li class="text-muted">Không có lịch sử</li>';
+		: '<li class="text-muted">Không có lịch sử</li>';
 
-    loadingEl.style.display = "none";
-    contentEl.style.display = "block";
+	loadingEl.style.display = "none";
+	contentEl.style.display = "block";
 };
 
 // =================== 🚀 Khởi chạy ===================

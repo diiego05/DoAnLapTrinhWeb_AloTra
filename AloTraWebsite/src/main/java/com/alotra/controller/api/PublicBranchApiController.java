@@ -3,12 +3,11 @@ package com.alotra.controller.api;
 import com.alotra.dto.BranchDTO;
 import com.alotra.entity.Branch;
 import com.alotra.service.BranchService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 import com.alotra.service.AddressService;
 import com.alotra.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -53,10 +52,6 @@ public class PublicBranchApiController {
         return branchService.getAllBranchesActiveDTO();
     }
 
-    /**
-     * 📍 Gợi ý chi nhánh ACTIVE gần nhất theo lat/lng hoặc addressId
-     * ✅ Không yêu cầu đăng nhập - dùng cho checkout public
-     */
     @GetMapping("/nearest")
     public ResponseEntity<BranchDTO> getNearestBranch(
             @RequestParam(required = false) Double lat,
@@ -64,7 +59,7 @@ public class PublicBranchApiController {
             @RequestParam(required = false) Long addressId
     ) {
         System.out.println("🔍 [DEBUG] getNearestBranch called - addressId: " + addressId + ", lat: " + lat + ", lng: " + lng);
-        
+
         Double qLat = lat, qLng = lng;
 
         // ✅ Nếu có addressId, lấy tọa độ từ address (không cần check user)
@@ -115,5 +110,4 @@ public class PublicBranchApiController {
         List<BranchDTO> branches = branchService.findBranchesWithProduct(productId);
         return ResponseEntity.ok(branches);
     }
-
 }

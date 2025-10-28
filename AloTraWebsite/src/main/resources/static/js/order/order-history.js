@@ -4,7 +4,6 @@ import { apiFetch } from '/alotra-website/js/auth-helper.js';
 const ordersList=document.getElementById('ordersList');
 const filterButtons=document.querySelectorAll('[data-status]');
 const paginationContainer=document.getElementById('ordersPagination');
-
 let currentStatus='';
 let selectedRating=0;
 let currentReviewOrderItemId=null;
@@ -22,6 +21,7 @@ const UPLOAD_PRESET='ml_default';
 const toNum=v=>Number.isNaN(Number(v))?0:Number(v);
 const fmtVND=v=>toNum(v).toLocaleString('vi-VN')+' ₫';
 
+/* ✅ Trạng thái đơn hàng */
 function mapStatusColor(s){
   switch(s){
     case'PENDING':return'warning';
@@ -44,16 +44,18 @@ function mapStatusText(s){
     default:return s;
   }
 }
+/* ✅ Trạng thái thanh toán (đồng bộ với enum PaymentStatus trong Java) */
 function mapPaymentStatusColor(s){
   switch(s){
-    case 'PENDING': return 'warning';
-    case 'SUCCESS': return 'success';
-    case 'FAILED': return 'danger';
-    case 'REFUNDED': return 'secondary';
-    case 'CANCELED': return 'dark';
+    case 'PENDING': return 'warning';     // ⏳ Chờ thanh toán
+    case 'SUCCESS': return 'success';     // ✅ Đã thanh toán
+    case 'FAILED': return 'danger';       // ❌ Thất bại
+    case 'REFUNDED': return 'secondary';  // 💸 Hoàn tiền
+    case 'CANCELED': return 'dark';       // 🚫 Hủy
     default: return 'secondary';
   }
 }
+
 function mapPaymentStatusText(s){
   switch(s){
     case 'PENDING': return 'Chờ thanh toán';
@@ -64,6 +66,8 @@ function mapPaymentStatusText(s){
     default: return s || 'Không xác định';
   }
 }
+
+/* ✅ Phương thức thanh toán */
 function mapPaymentMethodText(m){
   if(!m)return'—';
   switch(m){
@@ -91,20 +95,19 @@ async function loadOrders(){
   try{
     const res=await apiFetch(`/api/orders${currentStatus?`?status=${currentStatus}`:''}`);
     if(!res.ok)throw new Error(`orders ${res.status}`);
-    allOrders=await res.json();
-    if(!allOrders||allOrders.length===0){
+	allOrders=await res.json();
+	   if(!allOrders||allOrders.length===0){
       ordersList.innerHTML=`<div class="text-center text-muted py-5">Không có đơn hàng</div>`;
       return;
     }
-    currentPage=1;
-    renderOrdersPage();
-    renderPagination();
+	currentPage=1;
+	    renderOrdersPage();
+	    renderPagination();
   }catch(e){
     console.error('❌ Lỗi loadOrders:',e);
     ordersList.innerHTML=`<div class="text-center text-danger py-5">Lỗi tải đơn hàng</div>`;
   }
 }
-
 /* ======================= PHÂN TRANG ======================= */
 function renderOrdersPage(){
   const start=(currentPage-1)*rowsPerPage;
@@ -172,15 +175,16 @@ function renderPagination(){
   }));
 }
 
-/* ======================= CARD ĐƠN ======================= */
+/* ======================= HIỂN THỊ CARD ĐƠN ======================= */
 function canShowPayButton(o){
   const paymentStatus = o.payment?.status || o.paymentStatus || null;
-  return o.status === 'PENDING' && o.paymentMethod === 'BANK' && paymentStatus !== 'SUCCESS';
+   return o.status === 'PENDING' && o.paymentMethod === 'BANK' && paymentStatus !== 'SUCCESS';
 }
+
 
 function renderOrderCard(o){
   const paymentStatus = o.payment?.status || o.paymentStatus || null;
-  const isRetry = o.payment && o.payment.status === 'PENDING';
+  const isRetry = o.payment && o.payment.status === 'PENDING'; // để đổi text nút
 
   return `
   <div class="card shadow-sm border-0 order-card">
@@ -192,6 +196,7 @@ function renderOrderCard(o){
         </div>
         <span class="badge bg-${mapStatusColor(o.status)}">${mapStatusText(o.status)}</span>
       </div>
+
       <div class="mb-2"><strong>Tổng tiền:</strong> <span class="text-success fw-bold">${fmtVND(o.total)}</span></div>
       <div><strong>Phương thức:</strong> ${mapPaymentMethodText(o.paymentMethod)}</div>
       <div><strong>Thanh toán:</strong>
@@ -199,6 +204,7 @@ function renderOrderCard(o){
           ${mapPaymentStatusText(paymentStatus)}
         </span>
       </div>
+
       <div class="mt-3 border-top pt-2">
         ${o.items?.length ? o.items.map(it=>`
           <div class="d-flex justify-content-between small mb-1">
@@ -207,6 +213,7 @@ function renderOrderCard(o){
           </div>
         `).join('') : '<div class="text-muted small fst-italic">Không có sản phẩm</div>'}
       </div>
+
       <div class="mt-3 d-flex justify-content-end gap-2 flex-wrap">
         ${canShowPayButton(o)?`
           <button class="btn btn-sm btn-warning" onclick="redirectToPayment(${o.id})">
@@ -224,13 +231,17 @@ function renderOrderCard(o){
   </div>`;
 }
 
+
 /* ======================= THANH TOÁN ======================= */
 window.redirectToPayment = async function (orderId) {
   try {
-    const res = await fetch(`/alotra-website/api/payment/vnpay/create?orderId=${orderId}`, { method: "POST" });
+    // Gọi API tạo link thanh toán VNPay cho đơn hàng này
+   const res = await fetch(`/alotra-website/api/payment/vnpay/create?orderId=${orderId}`, { method: "POST" });
+
     if (!res.ok) throw new Error("Không thể tạo link thanh toán VNPay");
+
     const paymentUrl = await res.text();
-    window.location.href = paymentUrl;
+    window.location.href = paymentUrl;  // ➝ chuyển hướng trực tiếp đến trang VNPay
   } catch (e) {
     console.error("❌ Lỗi khi tạo thanh toán VNPay:", e);
     showAlert("❌ Không thể tạo thanh toán VNPay. Vui lòng thử lại sau.");
@@ -480,6 +491,8 @@ window.cancelOrder=async function(orderId){
     showAlert("⚠️ Đã xảy ra lỗi khi hủy đơn.");
   }
 };
+
+/* ======================= STYLE ======================= */
 const style=document.createElement('style');
 style.textContent=`
   .order-card:hover { background-color: #f9f9f9; transition: all 0.2s ease; }

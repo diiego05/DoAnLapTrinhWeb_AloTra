@@ -16,11 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Comparator;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
-import java.util.Comparator; // (SỬA) Import thêm Comparator
 import java.util.List;
-import java.util.stream.Collectors; // (SỬA) Import thêm Collectors
 
 @RestController
 @RequestMapping("/api/shipper/orders")
@@ -44,7 +43,6 @@ public class ShipperOrderApiController {
                 .map(ShippingAssignment::getOrderId)
                 .toList();
 
-        // (SỬA) Lấy danh sách Order
         List<Order> orders = orderRepository.findAllById(orderIds);
 
         // (SỬA) Sắp xếp danh sách Order: Mới nhất đến cũ nhất
@@ -55,7 +53,7 @@ public class ShipperOrderApiController {
         // (SỬA) Map và trả về
         return orders.stream()
                 .map(this::mapToOrderDTOWithPayment)
-                .collect(Collectors.toList()); // Dùng collect để tương thích tốt hơn
+                .collect(Collectors.toList());
     }
 
     // ======================= 📄 Lấy chi tiết đơn hàng =======================

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
+       th:replace="~{layouts/default_layout :: layout(pageTitle='Lịch sử đơn hàng', content=~{::content}, additionalJs=~{::additionalJs})}">
 <head>
-    <!-- head handled by layout -->
+
+
 </head>
 <body>
 <th:block th:fragment="content">
@@ -26,7 +27,7 @@
         <div id="ordersList" class="d-flex flex-column gap-3">
             <div class="text-center text-muted py-5">Đang tải dữ liệu...</div>
         </div>
-        <nav class="mt-4">
+         <nav class="mt-4">
   <ul id="ordersPagination" class="pagination justify-content-center"></ul>
 </nav>
     </div>
@@ -174,8 +175,7 @@
 </th:block>
 
 <th:block th:fragment="additionalJs">
-    <script type="module" th:src="@{/js/order-history.js}"></script>
+    <script type="module" th:src="@{/js/order/order-history.js}"></script>
 </th:block>
-
 </body>
 </html>

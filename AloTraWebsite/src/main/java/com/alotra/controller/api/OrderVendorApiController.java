@@ -4,15 +4,13 @@ import com.alotra.dto.OrderDTO;
 import com.alotra.service.OrderService;
 import com.alotra.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-
+import org.springframework.format.annotation.DateTimeFormat;
 @RestController
 @RequestMapping("/api/vendor/orders")
 @RequiredArgsConstructor
@@ -23,7 +21,7 @@ public class OrderVendorApiController {
 
     /**
      * 🧾 Danh sách đơn hàng theo chi nhánh của vendor
-     * Hỗ trợ lọc theo trạng thái, thời gian và từ khóa tìm kiếm mã đơn.
+     * ✅ OrderDTO đã bao gồm thông tin thanh toán mới nhất (PaymentDTO)
      */
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getOrders(

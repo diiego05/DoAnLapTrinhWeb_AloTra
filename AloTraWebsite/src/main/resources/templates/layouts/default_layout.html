@@ -13,14 +13,12 @@
 
     <!-- Chat Widget CSS -->
     <link rel="stylesheet" th:href="@{/css/chat-widget.css}">
-    <link rel="stylesheet" th:href="@{/css/order-history.css}">
+      <link rel="stylesheet" th:href="@{/css/order-history.css}">
 
     <!-- Dynamic Menu CSS -->
     <link rel="stylesheet" th:href="@{/css/dynamic-menu.css}">
 </head>
-
 <body th:fragment="body(content, additionalJs)" class="d-flex flex-column h-100" th:data-user-id="${currentUserId != null ? currentUserId : ''}">
-
 <!-- Header -->
 <header th:replace="~{fragments/header :: header}"></header>
 
@@ -29,11 +27,10 @@
     <div class="container">
         <div th:replace="${content}"></div>
     </div>
- <footer th:replace="~{fragments/footer :: footer}"></footer>
-
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
 </main>
 
-<!-- Footer -->
+
 
 <!-- Cart Floating Button -->
 <div id="floating-cart">
@@ -95,19 +92,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 
+
 <!-- 🗺️ Google Maps Loader (Load trước các script khác) -->
 <script th:src="@{/js/google-maps-loader.js}"></script>
+
 
 <!-- Custom JS -->
 <script th:src="@{/js/main.js}"></script>
 
+
 <!-- Dynamic Menu JS -->
 <script th:src="@{/js/dynamic-menu.js}"></script>
+
 
 <!-- Chat Widget JS -->
 <script th:src="@{/js/chat-widget.js}"></script>
 <script th:src="@{/js/global-modal.js}"></script>
-
 <!-- 🌟 Vị trí nhúng JS riêng cho từng trang -->
 <th:block th:replace="${additionalJs}"></th:block>
 

@@ -27,8 +27,8 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
 .room-item{padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:.2s;border-left:3px solid transparent;background:#f9f9f9}
 .room-item:hover{background:#f0f0f0}
 .room-item.active{background:#e3f2fd;border-left-color:#667eea}
-.room-item-name{font-weight:600;color:#333;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.room-item-email{font-size:12px;color:#999;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-item-name{font-weight:600;color:#333;font-size:14px}
+.room-item-email{font-size:12px;color:#999;margin-top:3px}
 .room-item-status{font-size:12px;color:#4caf50;margin-top:3px}
 .unread-badge{display:inline-block;background:#f44336;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;margin-top:5px}
 
@@ -202,9 +202,19 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
 
     <script>
-        const API_URL = 'http://localhost:8080/alotra-website/api/chat';
-        const USER_API_URL = 'http://localhost:8080/alotra-website/api/users';
-        const WS_URL = 'http://localhost:8080/alotra-website/ws/chat';
+        // derive base path from current location so admin UI works in any host/context
+        function _deriveBase() {
+            try {
+                const origin = window.location.origin;
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                const context = pathParts.length > 0 ? `/${pathParts[0]}` : '';
+                return origin + context;
+            } catch (e) { return ''; }
+        }
+
+        const API_URL = _deriveBase() + '/api/chat';
+        const USER_API_URL = _deriveBase() + '/api/users';
+        const WS_URL = _deriveBase() + '/ws/chat';
 
         let stompClient = null;
         let currentRoomId = null;
@@ -282,8 +292,8 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
                     : '';
 
                 roomEl.innerHTML = `
-                    <div class="room-item-name" title="${room.userName}">${room.userName}</div>
-                    <div class="room-item-email" title="${room.userEmail}">${room.userEmail}</div>
+                    <div class="room-item-name">${room.userName}</div>
+                    <div class="room-item-email">${room.userEmail}</div>
                     <div class="room-item-status">${room.status}</div>
                     ${unreadHTML}
                 `;
@@ -461,28 +471,49 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
-            stompClient.connect({}, function() {
-                console.log('✅ Admin WebSocket Connected');
+            // If admin uses JWT in localStorage/sessionStorage, attach it; otherwise rely on session cookie
+            const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
 
-                // Subscribe to all room messages
-                allRooms.forEach(room => {
-                    stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
-                        const msg = JSON.parse(message.body);
-                        console.log('📥 Message received:', msg);
+            let attempts = 0;
+            const doConnect = () => {
+                stompClient.connect(headers, function() {
+                    attempts = 0;
+                    console.log('✅ Admin WebSocket Connected');
 
-                        if (msg.id && currentRoomId === msg.roomId) {
-                            displayMessage(msg);
-                            document.getElementById('messagesContainer').scrollTop =
-                                document.getElementById('messagesContainer').scrollHeight;
-                        }
+                    // Subscribe to all room messages
+                    allRooms.forEach(room => {
+                        stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
+                            const msg = JSON.parse(message.body);
+                            console.log('📥 Message received:', msg);
 
-                        // Reload rooms to update unread count
-                        loadRooms();
+                            if (msg.id && currentRoomId === msg.roomId) {
+                                displayMessage(msg);
+                                document.getElementById('messagesContainer').scrollTop =
+                                    document.getElementById('messagesContainer').scrollHeight;
+                            }
+
+                            // Reload rooms to update unread count
+                            loadRooms();
+                        });
                     });
+                }, function(error) {
+                    console.error('❌ WebSocket connection error:', error);
+                    attempts++;
+                    const backoff = Math.min(30000, 1000 * Math.pow(2, attempts));
+                    setTimeout(() => {
+                        try {
+                            const sock = new SockJS(WS_URL);
+                            stompClient = Stomp.over(sock);
+                            stompClient.debug = null;
+                        } catch (e) { console.warn('Error recreating SockJS client', e); }
+                        doConnect();
+                    }, backoff);
                 });
-            }, function(error) {
-                console.error('❌ WebSocket connection error:', error);
-            });
+            };
+
+            doConnect();
         }
 
         // Search Rooms
@@ -516,6 +547,53 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
             await getCurrentAdminId();
             await loadRooms();
             connectWebSocket();
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const userIdParam = params.get('userId');
+                if (userIdParam) {
+                    console.log('🔎 userId param present:', userIdParam);
+                    // Try to find an existing room for that user
+                    const existing = allRooms.find(r => String(r.userId) === String(userIdParam));
+                    if (existing) {
+                        // Select it after a tick to ensure UI rendered
+                        setTimeout(() => selectRoom(existing), 120);
+                    } else {
+                        // If not present, call API to create/get the room and then select it
+                        try {
+                            const resp = await fetch(`${API_URL}/user/${encodeURIComponent(userIdParam)}`, {
+                                method: 'GET',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            if (resp.ok) {
+                                const room = await resp.json();
+                                // Prepend to rooms list and display
+                                allRooms.unshift(room);
+                                displayRooms(allRooms);
+                                // Subscribe to this room if websocket already connected
+                                if (stompClient && stompClient.connected) {
+                                    try {
+                                        stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
+                                            const msg = JSON.parse(message.body);
+                                            console.log('📥 Message received (subscribed late):', msg);
+                                            if (msg.id && currentRoomId === msg.roomId) displayMessage(msg);
+                                            loadRooms();
+                                        });
+                                    } catch (e) { console.warn('❌ Failed to subscribe to new room', e); }
+                                }
+                                // Select the room UI
+                                setTimeout(() => selectRoom(room), 120);
+                            } else {
+                                console.warn('⚠️ Could not get/create room for userId', userIdParam, resp.status);
+                            }
+                        } catch (err) {
+                            console.error('❌ Error creating/getting room for userId param:', err);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('❌ Error handling userId param', e);
+            }
         });
     </script>
 </body>

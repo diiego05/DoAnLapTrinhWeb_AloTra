@@ -1,6 +1,3 @@
-// address-autocomplete.js
-// Tích hợp Google Places Autocomplete cho các form nhập địa chỉ
-
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('addressLine1');
     if (!input || !window.google) return;
